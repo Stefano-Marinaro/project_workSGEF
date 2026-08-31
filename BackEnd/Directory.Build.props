@@ -1,0 +1,30 @@
+<Project>
+
+  <!--
+    Proprietà comuni a TUTTI i progetti sotto BackEnd/.
+    MSBuild importa questo file automaticamente in ogni .csproj dell'albero.
+    Riferimento: PIANO_BACKEND_GoCare.md, Fase 0.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- I warning NON bloccano la build; solo gli errori la fanno fallire. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <!-- CA1716: il namespace "GoCare.Shared" e' imposto dal piano, non si rinomina. -->
+    <NoWarn>$(NoWarn);CA1716</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Nessun progetto di libreria produce un pacchetto NuGet in v0. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

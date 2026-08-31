@@ -1,0 +1,46 @@
+## Normalizzazione automatica dei fine riga:
+## nel repo tutto viene salvato con LF; al checkout ognuno lo riceve
+## nel formato nativo della sua macchina (CRLF su Windows).
+* text=auto
+
+## Codice sorgente e file di progetto (checkout nativo)
+*.cs        text diff=csharp
+*.csx       text diff=csharp
+*.vb        text
+*.fs        text
+*.sql       text
+*.json      text
+*.xml       text
+*.config    text
+*.props     text
+*.targets   text
+*.csproj    text
+*.md        text
+
+## File usati anche fuori da Windows (Docker/Linux): forzati a LF
+*.yml       text eol=lf
+*.yaml      text eol=lf
+*.sh        text eol=lf
+Dockerfile  text eol=lf
+.dockerignore text eol=lf
+
+## File specifici Windows / Visual Studio: forzati a CRLF
+*.sln       text eol=crlf
+*.slnx      text eol=crlf
+*.cmd       text eol=crlf
+*.bat       text eol=crlf
+*.ps1       text eol=crlf
+
+## Binari: nessuna conversione di fine riga o di encoding
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.pdf       binary
+*.docx      binary
+*.xlsx      binary
+*.dll       binary
+*.exe       binary
+*.pfx       binary
+*.snk       binary

@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!-- TargetFramework / Nullable / ImplicitUsings arrivano da Directory.Build.props -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\GoCare.Auth\GoCare.Auth.csproj" />
+    <ProjectReference Include="..\GoCare.Auth.Contracts\GoCare.Auth.Contracts.csproj" />
+    <ProjectReference Include="..\GoCare.Business\GoCare.Business.csproj" />
+    <ProjectReference Include="..\GoCare.Shared\GoCare.Shared.csproj" />
+  </ItemGroup>
+
+</Project>
