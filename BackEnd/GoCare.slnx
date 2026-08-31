@@ -1,14 +1,11 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/GoCare.Api/GoCare.Api.csproj" />
-    <Project Path="src/GoCare.Auth.Contracts/GoCare.Auth.Contracts.csproj" />
-    <Project Path="src/GoCare.Auth/GoCare.Auth.csproj" />
-    <Project Path="src/GoCare.Business/GoCare.Business.csproj" />
+    <Project Path="src/GoCare.Application/GoCare.Application.csproj" />
     <Project Path="src/GoCare.Shared/GoCare.Shared.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/GoCare.Api.IntegrationTests/GoCare.Api.IntegrationTests.csproj" />
-    <Project Path="tests/GoCare.Auth.Tests/GoCare.Auth.Tests.csproj" />
-    <Project Path="tests/GoCare.Business.Tests/GoCare.Business.Tests.csproj" />
+    <Project Path="tests/GoCare.Application.Tests/GoCare.Application.Tests.csproj" />
   </Folder>
 </Solution>
