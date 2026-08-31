@@ -1,0 +1,5 @@
+# .gitignore a livello di repository (comune a BackEnd/ e frontend/).
+# Ogni sottoprogetto ha il proprio .gitignore per le regole specifiche.
+
+# Cache di Visual Studio
+.vs/
