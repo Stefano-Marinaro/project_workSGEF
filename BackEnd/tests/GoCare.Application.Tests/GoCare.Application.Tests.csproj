@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\GoCare.Business\GoCare.Business.csproj" />
+    <ProjectReference Include="..\..\src\GoCare.Application\GoCare.Application.csproj" />
   </ItemGroup>
 
 </Project>
