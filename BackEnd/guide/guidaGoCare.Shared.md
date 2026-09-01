@@ -93,6 +93,11 @@ come `SystemClock` può stare accanto alla sua interfaccia.
 | `exception switch { … }` | *switch expression*: pattern matching sul tipo a runtime, produce un valore. `_` = "qualsiasi altro caso" (default). |
 | `x is Tipo variabile` | controlla il tipo **e** assegna alla variabile se combacia, in un colpo solo. `is not Tipo v` per il caso opposto. |
 | BOM UTF-8 | i file `.cs` creati da Visual Studio hanno il BOM in testa; quelli scritti "a mano" spesso no. Non rompe la compilazione; `dotnet format` lo uniforma. |
+| `_` sui campi privati | `private readonly X _foo;` — l'underscore distingue il **campo** (stato dell'oggetto) da parametri/locali con nome simile, senza dover scrivere `this.`. **Non** si usa su `const` né su `static readonly` usati come costanti: quelli vanno `PascalCase` (`MaxPageSize`), come le proprietà pubbliche. Parametri e variabili locali: `camelCase` **senza** `_`. |
+| `cond ? a : b` | *operatore ternario*: se `cond` è vera → `a`, altrimenti → `b`. È un'espressione, produce un valore (non è un `if`). |
+| `x is < 1 or > 100` | *pattern relazionale*: "`x` è minore di 1 **oppure** maggiore di 100". Stesso risultato di `x < 1 \|\| x > 100`, ma nomina `x` una volta sola. |
+| `(double)x` in una divisione | `int / int` è divisione **intera** (`50 / 20 == 2`, resto buttato). Un cast a `double` sul divisore → `50 / 20.0 == 2.5`. |
+| `Math.Ceiling` | arrotonda **sempre verso l'alto** (`2.1 → 3.0`). Restituisce `double`: serve `(int)` davanti per tornare intero. |
 
 ---
 
@@ -298,24 +303,194 @@ Concetti chiave:
 - LINQ `GroupBy` + `ToDictionary` — da lista di `ValidationFailure` a mappa
   `campo → messaggi[]`.
 
-### 4.7 `ICurrentUser` (`Abstractions/`) — *interfaccia da scrivere*
+### 4.7 `ICurrentUser` (`Abstractions/`)
 
 Ogni richiesta autenticata porta un **JWT**. ASP.NET Core lo valida ed espone i
-**claim** (coppie `chiave = valore`) su `HttpContext.User`. Nel nostro token
-(piano §5.1): `sub` (id account), `role`, `person_id`, `association_id`,
-`email_verified`.
+**claim** (coppie `chiave = valore`) su `HttpContext.User`.
 
 I Service devono sapere **chi chiama** per autorizzare ("questo trasporto è
 tuo?") e per marcare i record creati. Pescare dentro `HttpContext.User` ovunque è
-scomodo e poco testabile → si incapsula dietro `ICurrentUser` con proprietà
-pulite. I Service dipendono da `ICurrentUser`; nei test un finto con valori
-fissi. Stesso schema di `IClock`.
+scomodo, duplicato e poco testabile, e trascina `Microsoft.AspNetCore.*` dentro
+classi che dovrebbero essere sola logica → si incapsula dietro `ICurrentUser`,
+una **porta** che espone solo lo stretto necessario:
 
-`PersonId` e `AssociationId` sono `Guid?` (nullable): un account è *o* un utente
-(ha `PersonId`) *o* un'associazione (ha `AssociationId`), mai entrambi.
+```csharp
+public interface ICurrentUser
+{
+    Guid? AccountId { get; }       // null se richiesta anonima
+    bool IsAuthenticated { get; }
+    bool IsInRole(string role);
+}
+```
 
-L'implementazione `CurrentUser` (da fare) userà `IHttpContextAccessor` per
-raggiungere l'`HttpContext` della richiesta corrente da una classe non-controller.
+- `AccountId` è `Guid?` (nullable): una richiesta può essere anonima (login,
+  registrazione). Chi lo usa gestisce il caso `null`.
+- `IsAuthenticated` — comodità leggibile (in pratica `AccountId is not null`).
+- `IsInRole` è un **metodo**, non una proprietà, perché fa una domanda con un
+  parametro; `role` in camelCase.
+
+Stesso schema di `IClock`: interfaccia nel kernel condiviso, implementazione reale
+(`CurrentUser`, che legge `IHttpContextAccessor`) registrata a runtime nell'host,
+finto con valori fissi nei test.
+
+Solo l'**interfaccia** sta in `GoCare.Shared`; `CurrentUser` la scriveremo con
+`GoCare.Api`, per tenere `GoCare.Shared` il più possibile senza dipendenze di
+runtime.
+
+**Da decidere in Fase 3 (Auth):** quale claim porta l'id (`sub` standard vs
+`ClaimTypes.NameIdentifier`, che ASP.NET a volte rimappa) e se aggiungere
+`PersonId` / `AssociationId` (`Guid?` — un account è *o* utente *o* associazione,
+mai entrambi) quando `TokenService` li metterà nel token.
+
+### 4.8 `Pagination/` — `PageQuery` e `PagedResult<T>`
+
+Gli endpoint di lista (`GET /notifications`, `GET /transports`) non restituiscono
+tutte le righe: il client chiede **una pagina alla volta**
+(`?page=3&pageSize=20`). Servono due tipi speculari, uno per direzione.
+
+**`PageQuery` — l'input (client → server).** Rappresenta la coppia
+`Page`/`PageSize` **dopo la pulizia**: dei numeri grezzi del client non ci si
+fida (`?page=-5&pageSize=999999` metterebbe in ginocchio il DB).
+
+```csharp
+public sealed record PageQuery
+{
+    private const int MaxPageSize = 100;
+    private const int DefaultPageSize = 20;
+
+    public int Page { get; }
+    public int PageSize { get; }
+
+    public PageQuery(int page = 1, int pageSize = DefaultPageSize)
+    {
+        Page = page < 1 ? 1 : page;
+        PageSize = pageSize is < 1 or > MaxPageSize ? DefaultPageSize : pageSize;
+    }
+
+    public int Skip => (Page - 1) * PageSize;
+}
+```
+
+- `const` privati (`PascalCase`, niente `_`) per non avere numeri magici sparsi:
+  un solo punto da toccare.
+- `{ get; }` senza `set`, valorizzate solo nel costruttore → oggetto
+  **immutabile** dopo la creazione.
+- parametri con default → `new PageQuery()` = pagina 1 da 20; `new PageQuery(3)` =
+  pagina 3 da 20.
+- `Page` sotto 1 → forzato a 1 (le pagine partono da 1, non da 0).
+- `PageSize` fuori da `[1, 100]` → ripiega su 20 (un valore folle è di norma un
+  bug del client; dargli il default è più prudente che dargli 100 righe).
+- `Skip` — proprietà **calcolata** (`=>`, nessun valore memorizzato): quante righe
+  saltare per arrivare all'inizio della pagina. `(Page-1)*PageSize`. È il numero
+  da passare a `query.Skip(...).Take(PageSize)` in EF Core.
+
+**`PagedResult<T>` — l'output (server → client).** La pagina corrente + i
+metadati per navigare.
+
+```csharp
+public sealed record PagedResult<T>(
+    IReadOnlyList<T> Items,
+    int TotalCount,
+    int Page,
+    int PageSize)
+{
+    public int TotalPages =>
+        PageSize <= 0 ? 0 : (int)Math.Ceiling(TotalCount / (double)PageSize);
+}
+```
+
+- **`record` posizionale**: i parametri nell'intestazione diventano proprietà
+  `{ get; init; }` + costruttore, generati dal compilatore. Si usa qui (puro
+  trasporto dati, nessuna normalizzazione), mentre `PageQuery` ha il corpo scritto
+  a mano proprio perché lì serve la logica di pulizia.
+- `<T>` generico: lo stesso contenitore vale per `PagedResult<TransportDto>`,
+  `PagedResult<NotificationDto>`… Il tipo della riga lo decide il chiamante.
+- `IReadOnlyList<T>` per `Items`: sola lettura, il client non deve poter
+  aggiungere/togliere righe da una risposta.
+- `TotalCount` = righe totali su **tutte** le pagine (richiede un `COUNT(*)`
+  separato sul DB). Serve al client per "1–20 di 350" e per sapere quante pagine
+  esistono.
+- `TotalPages` è **derivato** da `TotalCount`/`PageSize`, quindi sta nel corpo e
+  non fra i parametri:
+  - `(double)` sul divisore: `int / int` è divisione **intera** (`50/20 == 2`,
+    resto buttato); col cast → `50 / 20.0 == 2.5`.
+  - `Math.Ceiling` arrotonda **verso l'alto**: 50 righe da 20/pagina → 3 pagine
+    (20+20+10). Restituisce `double` → `(int)` davanti.
+  - `PageSize <= 0 ? 0 : …` — guardia anti divisione per zero (`PagedResult` può
+    essere costruito a mano nei test, senza passare da `PageQuery`).
+
+Entrambi in `GoCare.Shared` perché non dipendono da nulla (né EF né ASP.NET) e
+servono a controller e Service di ogni area.
+
+### 4.9 `DependencyInjection.cs` — `AddSharedKernel()`
+
+Un servizio è disponibile per la DI solo se **registrato** nel contenitore. Per
+non spargere le registrazioni di `Shared` nel `Program.cs` dell'host, `Shared`
+espone **un metodo solo** che le fa tutte:
+
+```csharp
+public static class DependencyInjection
+{
+    public static IServiceCollection AddSharedKernel(this IServiceCollection services)
+    {
+        services.AddSingleton<IClock, SystemClock>();
+        services.AddHttpContextAccessor();
+        services.AddExceptionHandler<GlobalExceptionHandler>();
+        services.AddProblemDetails();
+        services.AddScoped<ValidationFilter>();
+        return services;
+    }
+}
+```
+
+L'host scrive `builder.Services.AddSharedKernel();` e ha tutto. È lo schema di
+`AddControllers()`, `AddDbContext()`… ogni libreria porta il suo pacchetto.
+
+**Metodo di estensione:** `static` method in `static class`, primo parametro con
+`this` davanti (`this IServiceCollection services`) → lo chiami *come se* fosse un
+metodo di `IServiceCollection` (`services.AddSharedKernel()`). Restituisce
+`IServiceCollection` per concatenare.
+
+**`IServiceCollection`** è un'**interfaccia** (la `I` maiuscola) definita e
+implementata da Microsoft (classe concreta `ServiceCollection`); l'istanza la crea
+il framework in `WebApplication.CreateBuilder` (`builder.Services`). Tu la ricevi
+già pronta e ci chiami sopra i metodi — non la istanzi né la implementi. È
+tipizzata come interfaccia per lo stesso motivo per cui i Service dipendono da
+`IClock` e non da `SystemClock`: dipendere dal contratto. È il "carrello" della
+DI: la lista di *"quando qualcuno chiede X, dagli Y"*, riempita all'avvio e
+congelata da `builder.Build()`.
+
+**Lifetime (durata di vita di un servizio registrato):**
+
+| Metodo | Quante istanze | Quando |
+|---|---|---|
+| `AddSingleton` | **una** per tutta la vita dell'app | oggetti **senza stato** e **thread safe** (`SystemClock`) |
+| `AddScoped` | **una per richiesta HTTP** | roba legata alla richiesta (`DbContext`, `CurrentUser`, un filtro) |
+| `AddTransient` | **una nuova a ogni richiesta** del tipo | oggetti leggeri usa-e-getta |
+
+- **Senza stato (stateless):** l'oggetto non ha campi mutabili che ricorda tra una
+  chiamata e l'altra. `SystemClock` legge l'orologio del SO e restituisce, non
+  salva niente → una sola istanza o mille è identico.
+- **Thread safe:** un server serve tante richieste in parallelo, ognuna su un
+  thread. Un Singleton è toccato da più thread insieme. È thread safe se questo
+  non rompe niente — vero se non c'è stato condiviso da modificare (`++_valore`
+  fatto da due thread insieme perde un incremento: leggi-calcola-scrivi non è
+  atomico). Un Singleton **con** stato condiviso va protetto (`lock`,
+  `Interlocked`, tipi `Concurrent*`) o, meglio, evitato: usa `Scoped`.
+
+**Cosa `AddSharedKernel` NON fa:**
+- non registra `IEmailSender` né `ICurrentUser`: le implementazioni
+  (`SmtpEmailSender`, `CurrentUser`) stanno fuori da `Shared` → le registra l'host;
+- non fa `app.UseExceptionHandler()` né aggancia il `ValidationFilter` alla
+  pipeline MVC: quelle toccano l'`app` (middleware) e `AddControllers`, competono
+  al `Program.cs`. `AddSharedKernel` tocca **solo** `IServiceCollection`.
+- `AddExceptionHandler<GlobalExceptionHandler>()` da solo non basta: senza
+  `app.UseExceptionHandler()` nell'host, l'handler non viene mai invocato.
+
+Convenzione alternativa Microsoft: mettere questi metodi nel namespace
+`Microsoft.Extensions.DependencyInjection` (così l'host non scrive nemmeno
+`using GoCare.Shared;`). Qui si tiene `namespace GoCare.Shared;` per esplicitare
+la provenienza. Stile, cambiabile.
 
 ---
 
@@ -353,17 +528,20 @@ analyzer attivi, `NoWarn` per `CA1716` (namespace "Shared") e `CA1848`
 ## 6. Stato di `GoCare.Shared`
 
 **Fatto:**
-- `Abstractions/IClock.cs`, `SystemClock.cs`, `IEmailSender.cs`
+- `Abstractions/IClock.cs`, `SystemClock.cs`, `IEmailSender.cs`,
+  `ICurrentUser.cs` (interfaccia)
 - `Errors/DomainException.cs`, `NotFoundException.cs`, `ConflictException.cs`,
   `ForbiddenException.cs`, `ValidationException.cs`, `GlobalExceptionHandler.cs`
 - `Validation/ValidationFilter.cs`
+- `Pagination/PageQuery.cs`, `PagedResult.cs`
+- `DependencyInjection.cs` — `AddSharedKernel()`
 
-**Da fare:**
-- `Abstractions/ICurrentUser.cs` (interfaccia) + `CurrentUser.cs` (implementazione
-  con `IHttpContextAccessor`)
-- `Pagination/PageQuery.cs` + `PagedResult<T>.cs`
-- `DependencyInjection.cs` — `AddSharedKernel()` che registra `IClock`,
-  `ICurrentUser`, `GlobalExceptionHandler`, `AddProblemDetails()`,
-  `AddHttpContextAccessor()`, `ValidationFilter`.
-- Nell'host: agganciare `UseExceptionHandler()`, il `ValidationFilter` globale,
-  Swagger.
+`GoCare.Shared` è **completo lato codice** (build 0/0). I pezzi rimasti vivono
+nell'host `GoCare.Api`.
+
+**Da fare (nell'host `GoCare.Api`, Fase 1):**
+- `CurrentUser.cs` — implementazione di `ICurrentUser` con `IHttpContextAccessor`
+  (in `GoCare.Api` o `GoCare.Application/Infrastructure/`); registrarla nella DI
+  dell'host.
+- `Program.cs`: `builder.Services.AddSharedKernel()`, `app.UseExceptionHandler()`,
+  `AddControllers(o => o.Filters.AddService<ValidationFilter>())`, Swagger.
