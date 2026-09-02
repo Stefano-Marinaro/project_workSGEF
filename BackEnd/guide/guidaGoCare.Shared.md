@@ -539,9 +539,9 @@ analyzer attivi, `NoWarn` per `CA1716` (namespace "Shared") e `CA1848`
 `GoCare.Shared` è **completo lato codice** (build 0/0). I pezzi rimasti vivono
 nell'host `GoCare.Api`.
 
-**Da fare (nell'host `GoCare.Api`, Fase 1):**
-- `CurrentUser.cs` — implementazione di `ICurrentUser` con `IHttpContextAccessor`
-  (in `GoCare.Api` o `GoCare.Application/Infrastructure/`); registrarla nella DI
-  dell'host.
+**Da fare (nell'host `GoCare.Api`, Fase 1):** vedi `guidaGoCare.Api.md`.
+- `Security/CurrentUser.cs` — implementazione di `ICurrentUser` con
+  `IHttpContextAccessor`; registrarla `AddScoped<ICurrentUser, CurrentUser>()`.
 - `Program.cs`: `builder.Services.AddSharedKernel()`, `app.UseExceptionHandler()`,
   `AddControllers(o => o.Filters.AddService<ValidationFilter>())`, Swagger.
+- `appsettings.json`: connection string `AuthDb` e `BusinessDb` (placeholder).
