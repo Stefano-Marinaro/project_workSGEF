@@ -1,6 +1,6 @@
 {
   "expo": {
-    "scheme" : "EsempioAppVideo",
+    "scheme": "EsempioAppVideo",
     "name": "EsempioAppVideo",
     "slug": "EsempioAppVideo",
     "version": "1.0.0",
@@ -27,7 +27,8 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "@react-native-community/datetimepicker"
     ]
   }
 }
