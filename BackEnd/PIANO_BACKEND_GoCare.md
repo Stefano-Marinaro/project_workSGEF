@@ -91,9 +91,13 @@ BackEnd/
 │  │  │  │               TransportRequestRejection, Accompagnatore,
 │  │  │  │               TransportModificationRequest, TripStatusTransition,
 │  │  │  │               Notification, ContactAccessLog, DeviceToken
-│  │  │  └─ Enums/                         # AccountStatus, AccountRole, TripType, TripDirection,
-│  │  │                                    # RequestStatus, ExecutionStatus, MembershipRole,
-│  │  │                                    # InvitationStatus, NotificationType
+│  │  │  └─ Enums/                         # (Auth, non ancora scritti) AccountStatus, AccountRole
+│  │  │                                    # (dominio) ETripType, ETripDirection, ETripRequestStatus,
+│  │  │                                    # ETripTransitionStatus, EModificationRequestStatus,
+│  │  │                                    # EMembershipRole, EGroupAdminRole, EInvitationGroupStatus,
+│  │  │                                    # ENotificationType, ENotificationChannel ([Flags]),
+│  │  │                                    # ENotificationSubject, EAccreditationStatus (da scrivere,
+│  │  │                                    # per Association.StatoAccreditamento)
 │  │  ├─ Services/
 │  │  │  ├─ Auth/
 │  │  │  │  ├─ IAuthService.cs     / AuthService.cs        # registrazione, login, refresh, logout
@@ -190,7 +194,7 @@ POST /transports
 - [x] `.editorconfig` (convenzioni Visual Studio) + `.gitattributes`.
 - [ ] `docker-compose.yml` con PostgreSQL (due database `gocare_auth`, `gocare_business`) e MailHog.
 - [x] `.gitignore` per .NET.
-- [ ] `appsettings.json` + `appsettings.Development.json` + user-secrets: **due** connection string (`AuthDb`, `BusinessDb`), chiavi JWT, config SMTP, chiavi push, soglie di dominio (ore per "non coperta", scadenza token).
+- [ ] `appsettings.json` + `appsettings.Development.json` + user-secrets: **due** connection string (`AuthDb`, `BusinessDb`), chiavi JWT, config SMTP, chiavi push, soglie di dominio (ore per "non coperta", scadenza token). *(fatte solo le due connection string; manca JWT/SMTP/push/soglie, e user-secrets non ancora usato — la password locale coincide col placeholder)*
 - [ ] Configurazione tipizzata: un `IOptions<T>` per gruppo di impostazioni, validato all'avvio.
 
 ---
@@ -200,19 +204,19 @@ POST /transports
 > Da costruire per prima: il progetto applicativo ne dipende. Nessun concetto di GoCare qui dentro.
 
 - [x] **`Abstractions/IClock` + `SystemClock`** – astrazione del tempo iniettata al posto di `DateTimeOffset.UtcNow`; serve per testare "data non nel passato" (UC 1.1) e la soglia "non coperta" (PA-04).
-- [ ] **`Abstractions/ICurrentUser`** – estrae dai claim del token JWT: `AccountId`, `Ruolo`, `AssociationId?`, `PersonId?`. Iniettata nei Service e nei controller.
+- [x] **`Abstractions/ICurrentUser`** – estrae dai claim del token JWT: `AccountId`, `Ruolo`, `AssociationId?`, `PersonId?`. Iniettata nei Service e nei controller.
 - [x] **`Abstractions/IEmailSender`** – porta e-mail transazionali (riusata da area Auth e area dominio).
-- [ ] **`Pagination/PagedResult<T>` + `PageQuery`** – contenitore `{ items, page, pageSize, totalCount }` e parametri `?page=&pageSize=&sort=` per tutte le liste (UC 5, 6, 7, storici).
-- [ ] **`Errors/`** – eccezioni tipizzate (`NotFoundException`, `ConflictException`, `ForbiddenException`, `ValidationException`, `DomainException`) + `GlobalExceptionHandler` che le mappa in `ProblemDetails` (404 / 409 / 403 / 400 / 422) e cattura le eccezioni non previste → 500 pulito senza stack trace.
-- [ ] **`Validation/ValidationFilter`** – filtro `IActionFilter`/endpoint filter che esegue i validator FluentValidation registrati per il tipo di Request prima dell'action.
-- [ ] Setup **Swagger/OpenAPI** nell'host: gruppi per area (Auth / dominio), schema di sicurezza Bearer, esempi di request.
+- [x] **`Pagination/PagedResult<T>` + `PageQuery`** – contenitore `{ items, page, pageSize, totalCount }` e parametri `?page=&pageSize=&sort=` per tutte le liste (UC 5, 6, 7, storici).
+- [x] **`Errors/`** – eccezioni tipizzate (`NotFoundException`, `ConflictException`, `ForbiddenException`, `ValidationException`, `DomainException`) + `GlobalExceptionHandler` che le mappa in `ProblemDetails` (404 / 409 / 403 / 400 / 422) e cattura le eccezioni non previste → 500 pulito senza stack trace.
+- [x] **`Validation/ValidationFilter`** – filtro `IActionFilter`/endpoint filter che esegue i validator FluentValidation registrati per il tipo di Request prima dell'action.
+- [ ] Setup **Swagger/OpenAPI** nell'host: gruppi per area (Auth / dominio), schema di sicurezza Bearer, esempi di request. *(fatto il setup base — `AddSwaggerGen`/`UseSwaggerUI`, attivo in Development; mancano gruppi per area, schema Bearer, esempi)*
 
 ---
 
 ## 4. Fase 2 – Persistenza e database
 
-- [ ] Aggiungere Npgsql EF Core Provider al progetto `GoCare.Application`.
-- [ ] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`).
+- [x] Aggiungere Npgsql EF Core Provider al progetto `GoCare.Application`.
+- [ ] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`). *(fatto: `gocare_auth`/`gocare_business` creati, `BusinessDbContext` scritto e registrato; manca `AuthDbContext` — a cura del collega — e nessuna migrazione ancora generata)*
 - [ ] Comandi EF: ogni `dotnet ef migrations|database …` richiede `--context AuthDbContext|BusinessDbContext`, `--startup-project src/GoCare.Api` e `--project src/GoCare.Application`.
 - [ ] Entità in `Models/`; configurazioni `IEntityTypeConfiguration` in `Data/Auth/Configurations` e `Data/Business/Configurations`.
 - [ ] Convenzioni comuni: chiavi `Guid` (v7/sequenziali), `created_at`/`updated_at`, `row_version` per concorrenza ottimistica, naming snake_case.
@@ -235,15 +239,15 @@ POST /transports
 - `Person` — Id, Nome, Cognome, DataNascita, IndirizzoDomicilio, Telefono, Email di contatto, flag capacità (è caregiver / è assistito), `deleted_at`, `anonymized_at`.
 - `Association` — Id, Denominazione, Sede, AreaOperativita (PA-05), Telefoni[], Email, OrariReperibilita, StatoAccreditamento, `deleted_at`.
 - `CareGroup` — Id, Nome (univoco per creatore), Descrizione?, CreatoDaPersonId, `deleted_at`.
-- `CareGroupMembership` — Id, CareGroupId, PersonId, RuoloNelGruppo (Caregiver | Assistito), RuoloAmministrativo (Admin | Membro), StatoInvito (InAttesa | Accettato), InvitoEmail, InvitoToken, timestamps.
+- `CareGroupMembership` — Id, CareGroupId, PersonId, RuoloNelGruppo (Caregiver | Assistito), RuoloAmministrativo (Admin | Membro), StatoInvito (InAttesa | Accettato | Rifiutato — `EInvitationGroupStatus`), InvitoEmail, InvitoToken, timestamps.
 - `SavedDestination` — Id, PersonId, Etichetta, IndirizzoCompleto, Note?.
-- `TransportRequest` — Id, RichiedentePersonId, BeneficiarioPersonId, CareGroupId?, TipoViaggio, Direzione, DataOraAndata, DataOraRitorno?, IndirizzoPartenza (snapshot), IndirizzoDestinazione (snapshot), KmPrevisti, ContattiRiferimento (snapshot), Stato (`InAttesa`, `Confermata`, `InEsecuzione`, `Conclusa`, `Rifiutata`, `NonCoperta`, `Annullata`), AssociazioneAssegnatariaId?, CausaleAnnullamento?, AnnullatoDa?, timestamps, `row_version`.
+- `TransportRequest` — Id, RichiedentePersonId, BeneficiarioPersonId, CareGroupId?, TipoViaggio, Direzione, DataOraAndata, DataOraRitorno?, IndirizzoPartenza (snapshot), IndirizzoDestinazione (snapshot), KmPrevisti, ContattiRiferimento (snapshot), Stato (`InAttesa`, `Confermata`, `InEsecuzione`, `Conclusa`, `NonCoperta`, `Annullata`), AssociazioneAssegnatariaId?, CausaleAnnullamento?, AnnullatoDa?, timestamps, `row_version`.
 - `TransportRequestRecipient` — Id, TransportRequestId, AssociationId (associazioni destinatarie calcolate per area – PA-05).
 - `TransportRequestRejection` — Id, TransportRequestId, AssociationId, Causale?, At.
 - `Accompagnatore` — Id, TransportRequestId, Nome, Cognome, Parentela, Contatto.
 - `TransportModificationRequest` — Id, TransportRequestId, Campo (DataOrario | Destinazione | Accompagnatori), ValorePrecedente, ValoreProposto, Stato (`InAttesaApprovazione`, `Approvata`, `Rifiutata`), MessaggioEsito?, timestamps.
 - `TripStatusTransition` — Id, TransportRequestId, Stato (`NonPresoInCarico`, `PresoInCarico`, `InArrivo`, `InVisita`, `InRitorno`, `Concluso`, + eventuale `SospesoImprevisto` – PA-07), Timestamp, EseguitoDaAssociationId, OperatoreLabel.
-- `Notification` — Id, DestinatarioType (Person | Association), DestinatarioId, Tipo, Titolo, Corpo, RelatedEntityId?, Canali (Push | Email), LettaAt?, CreatedAt.
+- `Notification` — Id, DestinatarioType (Person | Association), DestinatarioId, Tipo, Titolo, Corpo, RelatedEntityId?, Canali (Push | Email, combinabili — `[Flags] ENotificationChannel`), LettaAt?, CreatedAt.
 - `ContactAccessLog` — Id, TransportRequestId, AssociationId, DatiAccedutiTipo, At (PA-06).
 - `DeviceToken` — Id, DestinatarioType, DestinatarioId, PushToken, Piattaforma, DisattivatoAt?.
 
@@ -395,12 +399,17 @@ POST /transports
 ## 9. Fase 7 – `TripStateMachine` (formalizzazione §12.7)
 
 - [ ] **Stati della richiesta:** `InAttesa` → `Confermata` → `InEsecuzione` → `Conclusa`.
-  Terminali alternativi: `Rifiutata`/`NonCoperta`, `Annullata`.
+  Terminali alternativi: `NonCoperta`, `Annullata`. Il rifiuto di una singola
+  associazione non è uno stato della richiesta: resta registrato in
+  `TransportRequestRejection`; l'esito aggregato negativo (tutte le associazioni
+  competenti hanno rifiutato, o soglia scaduta) è sempre `NonCoperta`
+  (`ICoverageEvaluator`).
 - [ ] **Stati di esecuzione** (aggiornati via account associazione): `NonPresoInCarico` → `PresoInCarico` → `InArrivo` → `InVisita` → `InRitorno` → `Concluso`.
+  Enum `ETripTransitionStatus`: `Pending` → `InCharge` → `Arriving` → `OnSite` → `Returning` → `Completed`.
 - [ ] **Regole (in `Services/Internal/TripStateMachine.cs`, testate una per una):**
   - Sequenza obbligata: nessun salto avanti, nessun ritorno indietro.
-  - `SoloAndata` (ricovero, trasferimento) → salta `InRitorno`.
-  - `SoloRitorno` (dimissione) → salta `InVisita`.
+  - `SoloAndata` (ricovero, trasferimento; `ETripDirection.OnlyGo`) → salta `InRitorno`/`Returning`.
+  - `SoloRitorno` (dimissione; `ETripDirection.OnlyReturn`) → salta `InVisita`/`OnSite`.
   - Ogni transizione registra stato + timestamp + operatore (label).
   - `Concluso` chiude il viaggio, lo rende non modificabile, lo sposta negli storici di utente e associazione.
   - Notifiche cambio stato: solo push; e-mail solo per eventi di esito.

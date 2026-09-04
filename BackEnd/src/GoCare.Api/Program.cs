@@ -1,4 +1,5 @@
 using GoCare.Api.Security;          // CurrentUser
+using GoCare.Application;
 using GoCare.Shared;                // AddSharedKernel()
 using GoCare.Shared.Abstractions;   // ICurrentUser
 using GoCare.Shared.Validation;     // ValidationFilter
@@ -13,6 +14,8 @@ builder.Services.AddControllers(options =>          // abilita i controller MVC
 {
     options.Filters.AddService<ValidationFilter>(); // esegue ValidationFilter (preso dalla DI) su OGNI azione, globalmente
 });
+
+builder.Services.AddApplication(builder.Configuration); // permette la connessione al db tramite la stringa di connessione in appsettings.json
 
 builder.Services.AddEndpointsApiExplorer();         // raccoglie i metadati degli endpoint per OpenAPI
 builder.Services.AddSwaggerGen();                   // genera il documento OpenAPI (Swagger)
