@@ -299,6 +299,9 @@ default (usa `Microsoft.AspNetCore.OpenApi` senza UI). In GoCare Swashbuckle
   `/swagger` e `/swagger/v1/swagger.json` rispondono 200 (nessun errore di
   risoluzione DI a runtime).
 
-**Da fare (Fase 2):** i due `DbContext` (`AuthDbContext`, `BusinessDbContext`) in
-`GoCare.Application/Data/`, `AddDbContext` con `UseNpgsql(GetConnectionString(...))`
-in `Program.cs`, prime migrazioni.
+**Fatto (Fase 2, lato dominio):** `AddApplication(builder.Configuration)`
+aggiunta in `Program.cs` — registra `BusinessDbContext`. Dettagli in
+`guidaGoCare.Application.md`.
+
+**Da fare:** `AuthDbContext` (a cura del collega) e la sua registrazione in
+`AddApplication`; prime migrazioni EF Core.

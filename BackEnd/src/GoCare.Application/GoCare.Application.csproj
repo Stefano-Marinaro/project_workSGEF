@@ -18,8 +18,4 @@
     <ProjectReference Include="..\GoCare.Shared\GoCare.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Models\Domain\" />
-  </ItemGroup>
-
 </Project>
