@@ -1,6 +1,6 @@
 ﻿namespace GoCare.Application.Models.Enums;
 
-public enum EMembershipRole
+public enum EGroupRole
 {
     Caregiver,
     Assisted

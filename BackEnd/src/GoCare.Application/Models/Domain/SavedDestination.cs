@@ -1,6 +1,6 @@
 ﻿namespace GoCare.Application.Models.Domain;
 
-public sealed class SavedDestinations(Guid id, Guid personId, string placeName, Address savedAddress)
+public sealed class SavedDestination(Guid id, Guid personId, string placeName, Address savedAddress)
 {
     public Guid Id { get; } = id;
     public Guid PersonId { get; } = personId;

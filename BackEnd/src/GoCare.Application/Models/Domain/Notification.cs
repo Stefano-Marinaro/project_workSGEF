@@ -4,8 +4,8 @@ namespace GoCare.Application.Models.Domain;
 
 public sealed class Notification(
     Guid id,
-    ENotificationSubject recipientType,
-    Guid recipientId,
+    ENotificationSubject subjectType,
+    Guid subjectId,
     ENotificationType type,
     string title,
     string body,
@@ -14,8 +14,8 @@ public sealed class Notification(
     DateTimeOffset createdAt)
 {
     public Guid Id { get; } = id;
-    public ENotificationSubject RecipientType { get; } = recipientType;
-    public Guid RecipientId { get; } = recipientId;
+    public ENotificationSubject SubjectType { get; } = subjectType;
+    public Guid SubjectId { get; } = subjectId;
     public ENotificationType Type { get; } = type;
     public string Title { get; } = title;
     public string Body { get; } = body;

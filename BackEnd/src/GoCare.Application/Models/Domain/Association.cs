@@ -9,8 +9,8 @@ public sealed class Association(Guid id, string name, Address headquarter, List<
     public Address Headquarter { get; private set; } = headquarter;
     public List<string> Phones { get; private set; } = phones;
     public string Email { get; private set; } = email;
-    public string? Hours { get; private set; }
-    public EAccreditationStatus Status { get; private set; }
+    public string? AvailabilityHours { get; private set; }
+    public EAccreditationStatus Status { get; private set; } = EAccreditationStatus.Pending;
     public DateTimeOffset? DeletedAt { get; private set; }
     public List<string> CoveredProvinces { get; private set; } = coveredProvinces;
 

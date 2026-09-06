@@ -3,5 +3,6 @@
 public enum EModificationField
 {
     Schedule,
-    Destination
+    EndAddress, // destinazione viaggio andata
+    ReturnEndAddress //destinazione viaggio ritorno 
 }

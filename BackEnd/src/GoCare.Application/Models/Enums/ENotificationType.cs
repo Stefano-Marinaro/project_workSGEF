@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace GoCare.Application.Models.Enums;
+﻿namespace GoCare.Application.Models.Enums;
 
 public enum ENotificationType
 {
@@ -13,6 +9,7 @@ public enum ENotificationType
     ModificationRequested,
     ModificationApproved,
     ModificationRejected,
+    CompanionUpdated,
     TripCancelledByUser,
     TripCancelledByAssociation,
     TripReminder

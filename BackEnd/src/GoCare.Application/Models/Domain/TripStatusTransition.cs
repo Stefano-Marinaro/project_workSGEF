@@ -7,16 +7,16 @@ public sealed class TripStatusTransition(
     Guid transportRequestId,
     ETripTransitionStatus status,
     Guid madeByAssociationId,
-    string OperatorLabel,
-    DateTimeOffset timestamp
+    string operatorLabel,
+    DateTimeOffset occurredAt
     )
 {
     public Guid Id { get; } = id;
     public Guid TransportRequestId { get; } = transportRequestId;
     public ETripTransitionStatus Status { get; } = status;
     public Guid MadeByAssociationId { get; } = madeByAssociationId;
-    public string OperatorLabel { get; } = OperatorLabel; // chi ha cambiato lo stato, stringa semplice
-    public DateTimeOffset Timestamp { get; } = timestamp;
+    public string OperatorLabel { get; } = operatorLabel; // chi ha cambiato lo stato , stringa semplice Es: "Mauro Rossi, autista"
+    public DateTimeOffset OccurredAt { get; } = occurredAt;
 
 }
     

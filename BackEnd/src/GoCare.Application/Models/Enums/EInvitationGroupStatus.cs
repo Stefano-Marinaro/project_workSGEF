@@ -4,5 +4,6 @@ public enum EInvitationGroupStatus
 {
     Pending,
     Accepted,
-    Refused
+    Refused,
+    Revoked
 }

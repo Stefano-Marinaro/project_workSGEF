@@ -8,8 +8,8 @@ public sealed class Person(Guid id, string name, string surname, DateOnly birthD
     public DateOnly BirthDate { get; private set; } = birthDate;
     public string Email { get; private set; } = email;
     public string Phone { get; private set; } = phone;
-    public Address? PersonAddress { get; private set; }
+    public Address? HomeAddress { get; private set; }
     public DateTimeOffset? DeletedAt { get; private set; } // Offset = istante preciso univoco nel tempo a prescindere dai fusi orario
-    public DateTimeOffset? AnonimizedAt { get; private set; }
+    public DateTimeOffset? AnonymizedAt { get; private set; }
 
 }

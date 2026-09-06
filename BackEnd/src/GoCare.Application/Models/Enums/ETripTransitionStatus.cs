@@ -1,6 +1,6 @@
 ﻿namespace GoCare.Application.Models.Enums;
 
-public enum ETripTransitionStatus
+public enum ETripTransitionStatus // ciclo di vita di un trasporto
 {
     Pending,
     InCharge,

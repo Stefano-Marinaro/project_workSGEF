@@ -3,7 +3,7 @@
 public sealed record Address(
     string Street,
     string Number,
-    string Cap,
+    string PostalCode,
     string City,
     string Province
     );

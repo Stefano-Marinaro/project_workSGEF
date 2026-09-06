@@ -11,12 +11,15 @@ public static class DependencyInjection
         this IServiceCollection services,
         IConfiguration configuration)
     {
+        var businessCs = configuration.GetConnectionString("BusinessDb")
+            ?? throw new InvalidOperationException("Connection string 'BusinessDb' mancante.");
+
         services.AddDbContext<BusinessDbContext>(options =>
-            options.UseNpgsql(configuration.GetConnectionString("BusinessDb")));
+            options.UseNpgsql(businessCs).UseSnakeCaseNamingConvention());
 
         // Area Auth: stessa forma, altro context e altra connection string
         //   services.AddDbContext<AuthDbContext>(options =>
-        //       options.UseNpgsql(configuration.GetConnectionString("AuthDb")));
+        //       options.UseNpgsql(authCs).UseSnakeCaseNamingConvention());
 
         return services;
     }

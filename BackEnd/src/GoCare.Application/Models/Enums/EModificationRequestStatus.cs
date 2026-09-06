@@ -4,5 +4,6 @@ public enum EModificationRequestStatus
 {
     PendingApproval,
     Approved,
-    Rejected
+    Rejected,
+    Retracted // chi ha chiesto la modifica la annulla prima che sia approvata o rifiutata.
 }
