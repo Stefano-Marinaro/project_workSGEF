@@ -1,12 +1,23 @@
-﻿using GoCare.Application.Models.Enums;
+using GoCare.Application.Models.Enums;
 
 namespace GoCare.Application.Models.Domain;
 
-public sealed class ContactAccessLog(Guid id, Guid transportRequestId, Guid associationId, EContactDataKind dataKind, DateTimeOffset accessedAt )
+public sealed class ContactAccessLog
 {
-    public Guid Id { get; } = id;
-    public Guid TransportRequestId { get; } = transportRequestId;
-    public Guid AssociationId { get; } = associationId;
-    public EContactDataKind DataKind { get; } = dataKind;
-    public DateTimeOffset AccessedAt { get; } = accessedAt;
+    private ContactAccessLog() { } // costruttore vuoto: EF (materializzazione dal DB)
+
+    public ContactAccessLog(Guid id, Guid transportRequestId, Guid associationId, EContactDataKind dataKind, DateTimeOffset accessedAt)
+    {
+        Id = id;
+        TransportRequestId = transportRequestId;
+        AssociationId = associationId;
+        DataKind = dataKind;
+        AccessedAt = accessedAt;
+    }
+
+    public Guid Id { get; }
+    public Guid TransportRequestId { get; }
+    public Guid AssociationId { get; }
+    public EContactDataKind DataKind { get; }
+    public DateTimeOffset AccessedAt { get; }
 }

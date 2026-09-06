@@ -1,24 +1,35 @@
-﻿using GoCare.Application.Models.Enums;
+using GoCare.Application.Models.Enums;
 
 namespace GoCare.Application.Models.Domain;
 
-public sealed class TransportModificationRequest(
-    Guid id, 
-    Guid transportRequestId,
-    EModificationField field,
-    string previousValue,
-    string proposedValue,
-    DateTimeOffset createdAt
-    )
+public sealed class TransportModificationRequest
 {
-    public Guid Id { get; } = id;
-    public Guid TransportRequestId { get; } = transportRequestId;
-    public EModificationField Field { get; } = field;
-    public string PreviousValue { get; } = previousValue;
-    public string ProposedValue { get; } = proposedValue;
+    private TransportModificationRequest() { } // costruttore vuoto: EF (materializzazione dal DB)
+
+    public TransportModificationRequest(
+        Guid id,
+        Guid transportRequestId,
+        EModificationField field,
+        string previousValue,
+        string proposedValue,
+        DateTimeOffset createdAt)
+    {
+        Id = id;
+        TransportRequestId = transportRequestId;
+        Field = field;
+        PreviousValue = previousValue;
+        ProposedValue = proposedValue;
+        CreatedAt = createdAt;
+    }
+
+    public Guid Id { get; }
+    public Guid TransportRequestId { get; }
+    public EModificationField Field { get; }
+    public string PreviousValue { get; } = null!;
+    public string ProposedValue { get; } = null!;
     public EModificationRequestStatus Status { get; private set; } = EModificationRequestStatus.PendingApproval;
     public string? OutcomeMessage { get; private set; }
-    public DateTimeOffset CreatedAt { get; } = createdAt;
+    public DateTimeOffset CreatedAt { get; }
     public DateTimeOffset? ResolvedAt { get; private set; }
 
     public void Approve(DateTimeOffset at)
@@ -52,4 +63,3 @@ public sealed class TransportModificationRequest(
         ResolvedAt = at;
     }
 }
-

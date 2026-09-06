@@ -4,6 +4,7 @@ namespace GoCare.Application.Models.Domain;
 
 public sealed class CareGroupMembership
 {
+    private CareGroupMembership() { }
     private CareGroupMembership(
         Guid careGroupId,
         Guid personId,

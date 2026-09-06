@@ -1,29 +1,54 @@
-﻿using GoCare.Application.Models.Enums;
+using GoCare.Application.Models.Enums;
 
 namespace GoCare.Application.Models.Domain;
+public sealed class TransportRequest
+{
+    // Costruttore vuoto privato: lo usa SOLO EF per materializzare dal DB.
+    // Non passa l'invariante (i dati sul DB sono già validi), quindi non chiama EnsureScheduleConsistency.
+    private TransportRequest() { }
 
-public sealed class TransportRequest(
+    // Costruttore vero, usato dall'applicazione.
+    public TransportRequest(
         Guid id, Guid requestedById, Guid beneficiaryId, Guid? careGroupId, ETripType tripType, ETripDirection tripDirection,
         DateTimeOffset departureDateHour, DateTimeOffset? returnDateHour, Address startAddress, Address endAddress, Address? returnEndAddress,
         string referencePhone, string referenceEmail, DateTimeOffset createdAt)
-{
-    public Guid Id { get; } = id;
-    public Guid RequestedById { get; } = requestedById;
-    public Guid BeneficiaryId { get; } = beneficiaryId;
-    public Guid? CareGroupId { get; private set; } = careGroupId;
-    public ETripType TripType { get; private set; } = tripType;
-    public ETripDirection TripDirection { get; private set; } = tripDirection;
-    public DateTimeOffset DepartureDateHour { get; private set; } = departureDateHour;
-    public DateTimeOffset? ReturnDateHour { get; private set; } = returnDateHour;
-    public Address StartAddress { get; private set; } = startAddress;
-    public Address EndAddress { get; private set; } = endAddress;
-    public Address? ReturnEndAddress { get; private set; } = returnEndAddress;
-    public string ReferencePhone { get; private set; } = referencePhone;
-    public string ReferenceEmail { get; private set;} = referenceEmail;
+    {
+        Id = id;
+        RequestedById = requestedById;
+        BeneficiaryId = beneficiaryId;
+        CareGroupId = careGroupId;
+        TripType = tripType;
+        TripDirection = tripDirection;
+        DepartureDateHour = departureDateHour;
+        ReturnDateHour = returnDateHour;
+        StartAddress = startAddress;
+        EndAddress = endAddress;
+        ReturnEndAddress = returnEndAddress;
+        ReferencePhone = referencePhone;
+        ReferenceEmail = referenceEmail;
+        CreatedAt = createdAt;
+
+        EnsureScheduleConsistency(departureDateHour, returnDateHour, returnEndAddress);
+    }
+
+    public Guid Id { get; }
+    public Guid RequestedById { get; }
+    public Guid BeneficiaryId { get; }
+    public DateTimeOffset CreatedAt { get; }
+
+    public Guid? CareGroupId { get; private set; }
+    public ETripType TripType { get; private set; }
+    public ETripDirection TripDirection { get; private set; }
+    public DateTimeOffset DepartureDateHour { get; private set; }
+    public DateTimeOffset? ReturnDateHour { get; private set; }
+    public Address StartAddress { get; private set; } = null!;
+    public Address EndAddress { get; private set; } = null!;
+    public Address? ReturnEndAddress { get; private set; }
+    public string ReferencePhone { get; private set; } = null!;
+    public string ReferenceEmail { get; private set; } = null!;
     public ETripRequestStatus RequestStatus { get; private set; } = ETripRequestStatus.Pending;
     public Guid? AssignedAssociationId { get; private set; }
     public Guid? DeletedBy { get; private set; }
-    public DateTimeOffset CreatedAt { get; } = createdAt;
     public DateTimeOffset? AcceptedAt { get; private set; }
     public DateTimeOffset? NotCoveredAt { get; private set; }
     public DateTimeOffset? DeletedAt { get; private set; }
@@ -32,7 +57,6 @@ public sealed class TransportRequest(
         DateTimeOffset departure,
         DateTimeOffset? returnDateHour,
         Address? returnEndAddress)
-  
     {
         var isRoundTrip = TripDirection == ETripDirection.RoundTrip;
 
@@ -69,7 +93,7 @@ public sealed class TransportRequest(
         EnsureScheduleConsistency(DepartureDateHour, ReturnDateHour, newReturnEndAddress);
 
         EndAddress = newEndAddress;
-        ReturnEndAddress = newReturnEndAddress; 
+        ReturnEndAddress = newReturnEndAddress;
     }
 
     public void RequestNotCovered(DateTimeOffset at)
