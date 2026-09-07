@@ -1,5 +1,5 @@
 import { StyleSheet, Text } from 'react-native'
-import { Link } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
 
 // themed components
 import ThemedView from  '../../components/ThemedView.jsx'
@@ -8,15 +8,18 @@ import ThemedText from '../../components/ThemedText.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import { useState } from 'react'
-import { TouchableWithoutFeedback } from 'react-native'
+import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
 
 const Register = () => {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const [role, setRole] = useState('caregiver')
+    const router = useRouter()
 
     const handleSubmit = () => {
         console.log('Register form submitted', email, password)
+        router.replace({ pathname: '/login', params: { role } })
     }
 
   return (
@@ -43,6 +46,22 @@ const Register = () => {
                 onChangeText={setPassword}
                 value={password}
             />
+
+            <ThemedText style={styles.roleLabel}>I am registering as</ThemedText>
+            <View style={styles.roleOptions}>
+                <Pressable
+                    onPress={() => setRole('caregiver')}
+                    style={[styles.roleOption, role === 'caregiver' && styles.selectedRole]}
+                >
+                    <ThemedText>Caregiver / Persona</ThemedText>
+                </Pressable>
+                <Pressable
+                    onPress={() => setRole('association')}
+                    style={[styles.roleOption, role === 'association' && styles.selectedRole]}
+                >
+                    <ThemedText>Associazione</ThemedText>
+                </Pressable>
+            </View>
 
 
             <ThemedButton onPress={handleSubmit}>
@@ -78,6 +97,29 @@ const styles = StyleSheet.create({
     link: {
         marginVertical: 10,
         borderBottomWidth: 1
-    }
+    },
+    roleLabel: {
+        alignSelf: 'flex-start',
+        marginLeft: '10%',
+        marginBottom: 8,
+    },
+    roleOptions: {
+        width: '80%',
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 10,
+    },
+    roleOption: {
+        flex: 1,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#aaa',
+        borderRadius: 6,
+        alignItems: 'center',
+    },
+    selectedRole: {
+        borderColor: '#2f80ed',
+        backgroundColor: '#dbeafe',
+    },
 })
 

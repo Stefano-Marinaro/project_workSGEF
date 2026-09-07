@@ -30,7 +30,7 @@ const DashboardLayout = () => {
                 )}}
             />
             <Tabs.Screen 
-                name="listOfTransports" 
+                name="transport" 
                 options={{title:"I Miei Viaggi", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
@@ -40,8 +40,18 @@ const DashboardLayout = () => {
                 )}}
             />
             <Tabs.Screen 
-                name="create" 
+                name="transport/new" 
                 options={{title:"Nuovo Viaggio", tabBarIcon: ({ focused }) => (
+                    <Ionicons 
+                        size={24} 
+                        name={ focused ? 'create' : 'create-outline'} 
+                        color={ focused ?  theme.iconColorFocused :  theme.iconColor }
+                    />
+                )}}
+            />
+            <Tabs.Screen 
+                name="group" 
+                options={{title:"Gruppo", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
                         name={ focused ? 'create' : 'create-outline'} 

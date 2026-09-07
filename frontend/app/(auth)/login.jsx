@@ -1,5 +1,5 @@
 import { StyleSheet, Text, Keyboard } from 'react-native'
-import { Link } from 'expo-router'
+import { Link, useLocalSearchParams, useRouter } from 'expo-router'
 
 // themed components
 import ThemedView from  '../../components/ThemedView.jsx'
@@ -8,15 +8,19 @@ import ThemedText from '../../components/ThemedText.jsx'
 import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import { useState } from 'react'
-import { TouchableWithoutFeedback } from 'react-native'
+import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
 
 const Login = () => {
 
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const params = useLocalSearchParams()
+    const router = useRouter()
+    const [role, setRole] = useState(params.role === 'association' ? 'association' : 'caregiver')
 
     const handleSubmit = () => {
         console.log('login form submitted', email, password)
+        router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
     }
 
   return (
@@ -43,6 +47,22 @@ const Login = () => {
                 onChangeText={setPassword}
                 value={password}
             />
+
+            <ThemedText style={styles.roleLabel}>Continue as</ThemedText>
+            <View style={styles.roleOptions}>
+                <Pressable
+                    onPress={() => setRole('caregiver')}
+                    style={[styles.roleOption, role === 'caregiver' && styles.selectedRole]}
+                >
+                    <ThemedText>Caregiver / Persona</ThemedText>
+                </Pressable>
+                <Pressable
+                    onPress={() => setRole('association')}
+                    style={[styles.roleOption, role === 'association' && styles.selectedRole]}
+                >
+                    <ThemedText>Associazione</ThemedText>
+                </Pressable>
+            </View>
 
             <ThemedButton onPress={handleSubmit}>
                 <Text style={{ color: '#f2f2f2'}}>Login</Text>
@@ -79,6 +99,29 @@ const styles = StyleSheet.create({
         marginVertical: 10,
         borderBottomWidth: 1,
         textAlign: 'center',
+    },
+    roleLabel: {
+        alignSelf: 'flex-start',
+        marginLeft: '10%',
+        marginBottom: 8,
+    },
+    roleOptions: {
+        width: '80%',
+        flexDirection: 'row',
+        gap: 8,
+        marginBottom: 10,
+    },
+    roleOption: {
+        flex: 1,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#aaa',
+        borderRadius: 6,
+        alignItems: 'center',
+    },
+    selectedRole: {
+        borderColor: '#2f80ed',
+        backgroundColor: '#dbeafe',
     },
   })
 

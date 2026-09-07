@@ -3,11 +3,11 @@ import { useState } from 'react'
 import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
 import { Picker } from '@react-native-picker/picker' //Picker, stile tendina (select)
 
-import ThemedView from '../../components/ThemedView'
-import Spacer from '../../components/Spacer'
-import ThemedText from '../../components/ThemedText'
-import ThemedTextInput from '../../components/ThemedTextInput'
-import ThemedButton from '../../components/ThemedButton'
+import ThemedView from '../../../components/ThemedView'
+import Spacer from '../../../components/Spacer'
+import ThemedText from '../../../components/ThemedText'
+import ThemedTextInput from '../../../components/ThemedTextInput'
+import ThemedButton from '../../../components/ThemedButton'
 
 // Gli accompagnatori
 const COMPANIONS = [
