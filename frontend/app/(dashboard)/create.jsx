@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Modal, View, TouchableOpacity } from 'react-native'
 import { useState } from 'react'
-import DateTimePicker from '@react-native-community/datetimepicker'
-import { Picker } from '@react-native-picker/picker'
+import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
+import { Picker } from '@react-native-picker/picker' //Picker, stile tendina (select)
 
 import ThemedView from '../../components/ThemedView'
 import Spacer from '../../components/Spacer'
@@ -9,6 +9,7 @@ import ThemedText from '../../components/ThemedText'
 import ThemedTextInput from '../../components/ThemedTextInput'
 import ThemedButton from '../../components/ThemedButton'
 
+// Gli accompagnatori
 const COMPANIONS = [
     { label: 'Nessuno', value: null },
     { label: 'Mario Rossi', value: 'mario_rossi' },
@@ -16,7 +17,11 @@ const COMPANIONS = [
     { label: 'Anna Verdi', value: 'anna_verdi' },
 ]
 
+
 const Create = () => {
+    //useState è una funzione React che dà memoria a un componente, cioè l'informazione salvata 
+    //su questa variabile const rimane tale un render e un altro e 
+    //può essere modificata solo da setPickupAddress
     const [pickupAddress, setPickupAddress] = useState('')
     const [destinationAddress, setDestinationAddress] = useState('')
     const [notes, setNotes] = useState('')
@@ -28,11 +33,15 @@ const Create = () => {
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showTimePicker, setShowTimePicker] = useState(false)
 
+    //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
+    //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
     const onChangeDate = (event, selectedDate) => {
         if (Platform.OS === 'android') {
             setShowDatePicker(false)
         }
         if (selectedDate) setDate(selectedDate)
+        // è un controllo di sicurezza in caso l'utente
+        //"tocca fuori" prima di aver selezionato una data quindi aggiorni lo stato se è arrivato davvero un valore
     }
 
     const onChangeTime = (event, selectedTime) => {
@@ -41,6 +50,9 @@ const Create = () => {
         }
         if (selectedTime) setTime(selectedTime)
     }
+
+    // tutte le informazioni fornite, che verrà collegata con una funzione fetch per il backend C#
+    //date.toISOString(),split('T')[0], converte la data in formato ISO e prende la parte prima di T([0], lo split li divide in 0 e 1) non compresa
 
     const handleSubmit = () => {
         const payload = {
@@ -55,6 +67,10 @@ const Create = () => {
     }
 
     return (
+        //TouchableWithoutFeedback è un wrapper invisibile che intercetta i tap, se l'utente tocca un punto qualsiasi dello schermo fuori dai campi di testo, keyboard.dismiss() chiude la tastiera
+        //ScrollView rende il contenuto scrollabile 
+        //contentContainerStyle definisce lo stile del contenuto dentro (dove metti alignItems, paddingBottom ecc)
+        //keyboardShouldPersistTaps="handled": senza questa prop, se la tastiera è aperta e tocchi un bottone, il primo tap si "sprecherebbe" solo per chiudere la tastiera. Con "handled", il tap viene passato correttamente all'elemento anche se la tastiera è aperta.
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <ThemedView style={styles.container}>
                 <ScrollView
@@ -93,13 +109,13 @@ const Create = () => {
 
                     <Spacer height={10} />
 
-                    {/* Selezione Data */}
+                    {/* Selezione Data, la data è gia formattata in italiano grazie alla funzione toLocateDateString */}
                     <ThemedButton
                         onPress={() => setShowDatePicker(true)}
                         style={styles.input}
                     >
                         <Text style={styles.btnText}>
-                            Data: {date.toLocaleDateString('it-IT')}
+                            Data: {date.toLocaleDateString('it-IT')} 
                         </Text>
                     </ThemedButton>
 
@@ -118,6 +134,8 @@ const Create = () => {
                         Accompagnatore
                     </ThemedText>
                     <ThemedView style={styles.pickerWrapper}>
+                        
+                        {/*selectedValue, lo stato attuale */}
                         <Picker
                             selectedValue={companion}
                             onValueChange={(itemValue) => setCompanion(itemValue)}
