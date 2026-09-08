@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Modal, View, TouchableOpacity } from 'react-native'
+import { Pressable, View, ScrollView, StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Modal, TouchableOpacity } from 'react-native'
 import { useState } from 'react'
 import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
 import { Picker } from '@react-native-picker/picker' //Picker, stile tendina (select)
@@ -11,12 +11,33 @@ import ThemedButton from '../../../components/ThemedButton'
 
 // Gli accompagnatori
 const COMPANIONS = [
-    { label: 'Nessuno', value: null },
+    { label: 'Nobody', value: null },
     { label: 'Mario Rossi', value: 'mario_rossi' },
     { label: 'Luigi Bianchi', value: 'luigi_bianchi' },
     { label: 'Anna Verdi', value: 'anna_verdi' },
 ]
 
+// Tipo di viaggio
+const TYPE_OF_TRANSPORT = [
+    { label: 'Nobody', value: null },
+    { label: 'Visit', value: 'visit' },
+    { label: 'Admission', value: 'admission' },
+    { label: 'Discharge', value: 'discharge' },
+    { label: 'Transfer', value: 'transfer' },
+]
+
+const DIRECTIONS = [
+    { label: 'Round Trip', value: 'round_trip' },
+    { label: 'Outbound Only', value: 'outbound' },
+    { label: 'Return Only', value: 'return' },
+]
+
+// Gruppo cura (placeholder - UC9 non ancora implementato)
+const CARE_GROUPS = [
+    { label: 'Nobody', value: null },
+    { label: 'Mamma Rossi', value: 'gruppo_1' },
+    { label: 'Nonno Bianchi', value: 'gruppo_2' },
+]
 
 const Create = () => {
     //useState è una funzione React che dà memoria a un componente, cioè l'informazione salvata 
@@ -25,10 +46,13 @@ const Create = () => {
     const [pickupAddress, setPickupAddress] = useState('')
     const [destinationAddress, setDestinationAddress] = useState('')
     const [notes, setNotes] = useState('')
+    const [direction, setDirection] = useState('round_trip')
 
     const [date, setDate] = useState(new Date())
     const [time, setTime] = useState(new Date())
     const [companion, setCompanion] = useState(null)
+    const [typeOfTransport, setTypeOfTransport] = useState(null)
+    const [careGroup, setCareGroup] = useState(null)
 
     const [showDatePicker, setShowDatePicker] = useState(false)
     const [showTimePicker, setShowTimePicker] = useState(false)
@@ -62,6 +86,9 @@ const Create = () => {
             date: date.toISOString().split('T')[0],
             time: time.toTimeString().split(' ')[0],
             companion,
+            typeOfTransport,
+            direction,
+            careGroup,
         }
         console.log('transport form submitted', payload)
     }
@@ -79,13 +106,13 @@ const Create = () => {
                 >
                     <Spacer />
                     <ThemedText title={true} style={styles.title}>
-                        Crea Nuovo Trasporto
+                        Create New Transport 
                     </ThemedText>
 
                     {/* Indirizzo di Partenza */}
                     <ThemedTextInput
                         style={styles.input}
-                        placeholder="Indirizzo di Partenza"
+                        placeholder="Starting Address"
                         onChangeText={setPickupAddress}
                         value={pickupAddress}
                     />
@@ -93,7 +120,7 @@ const Create = () => {
                     {/* Indirizzo di Arrivo */}
                     <ThemedTextInput
                         style={styles.input}
-                        placeholder="Indirizzo di Destinazione"
+                        placeholder="Delivery Address"
                         onChangeText={setDestinationAddress}
                         value={destinationAddress}
                     />
@@ -101,7 +128,7 @@ const Create = () => {
                     {/* Note */}
                     <ThemedTextInput
                         style={styles.input}
-                        placeholder="Note o dettagli sul percorso (opzionale)"
+                        placeholder="Notes or details about the route (optional)"
                         onChangeText={setNotes}
                         value={notes}
                         multiline
@@ -115,7 +142,7 @@ const Create = () => {
                         style={styles.input}
                     >
                         <Text style={styles.btnText}>
-                            Data: {date.toLocaleDateString('it-IT')} 
+                            Date: {date.toLocaleDateString('it-IT')} 
                         </Text>
                     </ThemedButton>
 
@@ -125,13 +152,15 @@ const Create = () => {
                         style={styles.input}
                     >
                         <Text style={styles.btnText}>
-                            Ora: {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
+                            Time: {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
                         </Text>
                     </ThemedButton>
 
+                    <Spacer height={30} />
+
                     {/* Accompagnatore */}
                     <ThemedText style={styles.label}>
-                        Accompagnatore
+                        Companion
                     </ThemedText>
                     <ThemedView style={styles.pickerWrapper}>
                         
@@ -148,8 +177,64 @@ const Create = () => {
 
                     <Spacer height={30} />
 
+                    {/* Tipo di viaggio */}
+                    <ThemedText style={styles.label}>
+                        Type of Transport
+                    </ThemedText>
+                    <ThemedView style={styles.pickerWrapper}>
+                        
+                        {/*selectedValue, lo stato attuale */}
+                        <Picker
+                            selectedValue={typeOfTransport}
+                            onValueChange={(itemValue) => setTypeOfTransport(itemValue)}
+                        >
+                            {TYPE_OF_TRANSPORT.map((item) => (
+                                <Picker.Item key={item.value ?? 'none'} label={item.label} value={item.value} />
+                            ))}
+                        </Picker>
+                    </ThemedView>
+
+                    <Spacer height={30} /> 
+
+                    {/* Direzione del viaggio */}
+                    <ThemedText style={styles.label}>
+                        Direction
+                    </ThemedText>
+                    
+                    <View style={styles.roleOptions}>
+                        {DIRECTIONS.map((item) => (
+                            <Pressable
+                                key={item.value}
+                                onPress={() => setDirection(item.value)}
+                                    style={[styles.roleOption, direction === item.value && styles.selectedRole]}
+                            >
+                                <ThemedText>{item.label}</ThemedText>
+                            </Pressable>
+                        ))}
+                    </View>
+
+                    <Spacer height={30} /> 
+
+                    {/* Per chi (gruppo cura) - placeholder */}
+                    <ThemedText style={styles.label}>
+                        Select the Care Group
+                    </ThemedText>
+                    <ThemedView style={styles.pickerWrapper}>
+                    <Picker
+                        selectedValue={careGroup}
+                        onValueChange={(itemValue) => setCareGroup(itemValue)}
+                    >
+                    {CARE_GROUPS.map((item) => (
+                        <Picker.Item key={item.value ?? 'none'} label={item.label} value={item.value} />
+                    ))}
+                    </Picker>
+
+                </ThemedView>
+
+                    <Spacer height={30} />
+
                     <ThemedButton onPress={handleSubmit} style={styles.input}>
-                        <Text style={styles.btnText}>Conferma Prenotazione</Text>
+                        <Text style={styles.btnText}>Transport Confirmation</Text>
                     </ThemedButton>
 
                     <Spacer height={50} />
@@ -283,5 +368,23 @@ const styles = StyleSheet.create({
         color: '#007AFF',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    roleOptions: {
+    width: '80%',
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 10,
+    },
+    roleOption: {
+        flex: 1,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#aaa',
+        borderRadius: 6,
+        alignItems: 'center',
+    },
+    selectedRole: {
+        borderColor: '#2f80ed',
+        backgroundColor: '#dbeafe',
     },
 })
