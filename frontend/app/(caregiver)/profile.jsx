@@ -1,4 +1,5 @@
 import { StyleSheet, Image, ScrollView, useColorScheme } from 'react-native'
+import { useRouter } from 'expo-router'
 
 import ThemedView from '../../components/ThemedView'
 import Spacer from '../../components/Spacer'
@@ -65,7 +66,10 @@ const Profile = () => {
 
                 <Spacer height={30}/>
 
-                <ThemedButton style={styles.input}>
+                <ThemedButton 
+                    style={styles.input}
+                    onPress={() => router.push('/editProfile')}
+                >
                     <ThemedText style={styles.btnText}>Modify Profile</ThemedText>
                 </ThemedButton>
 
