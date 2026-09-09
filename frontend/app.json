@@ -1,8 +1,8 @@
 {
   "expo": {
-    "scheme": "EsempioAppVideo",
-    "name": "EsempioAppVideo",
-    "slug": "EsempioAppVideo",
+    "scheme": "GoCare",
+    "name": "GoCare",
+    "slug": "GoCare",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.EsempioAppVideo"
+      "package": "com.anonymous.GoCare"
     },
     "web": {
       "favicon": "./assets/favicon.png"
