@@ -17,7 +17,7 @@ const Home = () => {
 
             <Spacer height={10}/>
             
-            <ThemedText>Supporto alla mobilità e alla cura</ThemedText>
+            <ThemedText>Support for mobility and care</ThemedText>
                 
             <Link href="/login" style={styles.link}> 
                 <ThemedText> Login Page </ThemedText>

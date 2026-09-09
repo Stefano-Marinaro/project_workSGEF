@@ -29,9 +29,17 @@ const DashboardLayout = () => {
                     />
                 )}}
             />
+            {/* Questa Tabs dice editProfile esiste ed è raggiungibile tramite router.push, ma non mostrarla nella tab bar */}
+            <Tabs.Screen 
+                name="editProfile" 
+                options={{
+                    href: null,
+                    title: "Edit Profile"
+                }}
+            />
             <Tabs.Screen 
                 name="transport" 
-                options={{title:"I Miei Viaggi", tabBarIcon: ({ focused }) => (
+                options={{title:"My Transports", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
                         name={ focused ? 'car' : 'car-outline'} 
@@ -41,7 +49,7 @@ const DashboardLayout = () => {
             />
             <Tabs.Screen 
                 name="transport/new" 
-                options={{title:"Nuovo Viaggio", tabBarIcon: ({ focused }) => (
+                options={{title:"New Transport", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
                         name={ focused ? 'create' : 'create-outline'} 
@@ -51,10 +59,10 @@ const DashboardLayout = () => {
             />
             <Tabs.Screen 
                 name="group" 
-                options={{title:"Gruppo", tabBarIcon: ({ focused }) => (
+                options={{title:"Groups", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
-                        name={ focused ? 'create' : 'create-outline'} 
+                        name={ focused ? 'people' : 'people-outline'} 
                         color={ focused ?  theme.iconColorFocused :  theme.iconColor }
                     />
                 )}}
