@@ -6,6 +6,7 @@ import Spacer from '../../components/Spacer'
 import ThemedText from '../../components/ThemedText'
 import ThemedButton from '../../components/ThemedButton'
 import { Colors } from '../../constants/Colors'
+import { router } from 'expo-router'
 
 
 const MOCK_USER = {

@@ -68,6 +68,12 @@ const Login = () => {
                 <Text style={{ color: '#f2f2f2'}}>Login</Text>
             </ThemedButton>
 
+            <Link href='/forgot_password' style={styles.forgotLink}>
+                <ThemedText style={styles.forgotLinkText}>
+                    Forgot Password?
+                </ThemedText>
+            </Link>
+
             <Spacer height={100}/>
 
             <Link href='/register' style={styles.link}>
@@ -98,6 +104,16 @@ const styles = StyleSheet.create({
     link: {
         marginVertical: 10,
         borderBottomWidth: 1,
+        textAlign: 'center',
+    },
+    forgotLink: {
+        marginTop: 2,
+        borderBottomWidth: 1,
+        borderBottomColor: '#6849a7',
+    },
+    forgotLinkText: {
+        color: '#6849a7',
+        fontSize: 14,
         textAlign: 'center',
     },
     roleLabel: {
