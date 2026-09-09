@@ -8,6 +8,7 @@ import { router } from 'expo-router'
 
 const handleLogout = () => {router.push('/logout')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro
 
+
 const AssociationProfile = () => (
 	<ThemedView style={styles.container} safe={true}>
 		<ThemedText title={true}>Profilo associazione</ThemedText>

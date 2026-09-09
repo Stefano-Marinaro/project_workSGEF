@@ -8,10 +8,11 @@ import ThemedButton from '../../components/ThemedButton'
 import { Colors } from '../../constants/Colors'
 import { router } from 'expo-router'
 
-
 const MOCK_USER = {
     name: 'Mario Rossi',
     ruolo: 'Son',
+    dateOfBirth : '11/10/1995',
+    placeOfBirth: 'Assisi',
     email: 'mariorossi@gmail.com',
     dataIscrizione: '12/06/2026',
     password: 'mariorossi12', // in mock va in chiaro, poi l'API pensa a gestire la sicurezza
@@ -22,6 +23,9 @@ const Profile = () => {
     const colorScheme = useColorScheme()
     const theme = Colors[colorScheme] ?? Colors.light
     const handleLogout = () => {router.push('/logout')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro
+    const handleModify = () => {router.push('/editProfile')}
+    const handleModifyPassword = () => {router.push('/editPassword')}
+
     return (
         <ThemedView style={styles.container}>
             <ScrollView
@@ -49,11 +53,10 @@ const Profile = () => {
                         {MOCK_USER.ruolo}
                     </ThemedText>
                 </ThemedView>
-                
- 
-                <Spacer height={30} />
 
-                {/* Card Informazioni */}
+                <Spacer height={30}/>
+
+                {/* Card Informazioni Personali */}
                 <ThemedView style={[styles.card, {backgroundColor: theme.uiBackground }]}>
                     <ThemedText style={styles.label}>Email</ThemedText>
                     <ThemedText style={styles.value}>{MOCK_USER.email}</ThemedText>
@@ -67,11 +70,34 @@ const Profile = () => {
 
                 <Spacer height={30}/>
 
+                {/* Card Informazioni Utente */}
+                <ThemedView style={[styles.card, {backgroundColor: theme.uiBackground }]}>
+                    <ThemedText style={styles.label}>Date of Birth</ThemedText>
+                    <ThemedText style={styles.value}>{MOCK_USER.dateOfBirth}</ThemedText>
+
+                    <Spacer height={16} />
+
+                    <ThemedText style={styles.label}>Place of Birth</ThemedText>
+                    <ThemedText style={styles.value}>{MOCK_USER.placeOfBirth}</ThemedText>
+
+                </ThemedView>
+
+                <Spacer height={30} />
+
                 <ThemedButton 
                     style={styles.input}
                     onPress={() => router.push('/editProfile')}
                 >
                     <ThemedText style={styles.btnText}>Modify Profile</ThemedText>
+                </ThemedButton>
+
+                <Spacer height={15} />
+
+                <ThemedButton 
+                    style={styles.input}
+                    onPress={handleModifyPassword}
+                >
+                    <ThemedText style={styles.btnText}>Modify Password</ThemedText>
                 </ThemedButton>
 
                 <Spacer height={15} />

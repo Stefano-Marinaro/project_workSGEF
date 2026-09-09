@@ -37,6 +37,15 @@ const DashboardLayout = () => {
                     title: "Edit Profile"
                 }}
             />
+
+            <Tabs.Screen 
+                name="editPassword" 
+                options={{
+                    href: null,
+                    title: "Edit Password"
+                }}
+            />
+
             <Tabs.Screen 
                 name="transport" 
                 options={{title:"My Transports", tabBarIcon: ({ focused }) => (
