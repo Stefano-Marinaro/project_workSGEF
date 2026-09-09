@@ -23,7 +23,7 @@ const Register = () => {
     }
 
   return (
-    <TouchableWithoutFeedback /*onPress={() => Keyboard.dismiss()}*/>
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
         <ThemedView style={styles.container}>
 
             <Spacer/>
