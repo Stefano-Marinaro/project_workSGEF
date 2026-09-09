@@ -7,6 +7,7 @@ import ThemedText from '../../components/ThemedText'
 import ThemedButton from '../../components/ThemedButton'
 import { Colors } from '../../constants/Colors'
 
+
 const MOCK_USER = {
     name: 'Mario Rossi',
     ruolo: 'Son',
@@ -19,8 +20,7 @@ const MOCK_USER = {
 const Profile = () => {
     const colorScheme = useColorScheme()
     const theme = Colors[colorScheme] ?? Colors.light
-    const router = useRouter()
-
+    const handleLogout = () => {router.push('/logout')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro
     return (
         <ThemedView style={styles.container}>
             <ScrollView
@@ -75,7 +75,7 @@ const Profile = () => {
 
                 <Spacer height={15} />
 
-                <ThemedButton style={[styles.input, { backgroundColor: Colors.warning }]}>
+                <ThemedButton style={[styles.input, { backgroundColor: Colors.warning }]} onPress={handleLogout}>
                     <ThemedText style={styles.btnText}>Logout</ThemedText>
                 </ThemedButton>
 
