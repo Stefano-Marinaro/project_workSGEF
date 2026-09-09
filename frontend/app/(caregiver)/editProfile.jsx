@@ -16,6 +16,8 @@ import { Colors } from '../../constants/Colors'
 const MOCK_USER = {
     name: 'Mario Rossi',
     ruolo: 'Son',
+    dateOfBirth: '10/11/1995',
+    placeOfBirth: 'Assisi',
     email: 'mariorossi@gmail.com',
     dataIscrizione: '12/06/2026',
     password: 'mariorossi12',
@@ -30,10 +32,11 @@ const EditProfile = () => {
     // stato locale precompilato coi dati mock (per ora, poi arriverà dal backend)
     const [name, setName] = useState(MOCK_USER.name)
     const [email, setEmail] = useState(MOCK_USER.email)
-    const [password, setPassword] = useState(MOCK_USER.password)
+    const [dateOfBirth, setDateOfBirth] = useState(MOCK_USER.dateOfBirth)
+    const [placeOfBirth, setPlaceOfBirth] = useState(MOCK_USER.placeOfBirth)
 
     const handleSave = () => {
-        const payload = { name, email, password }
+        const payload = { name, email, dateOfBirth, placeOfBirth }
         console.log('profile update submitted', payload)
         router.back() // torna alla pagina profile
     }
@@ -78,13 +81,25 @@ const EditProfile = () => {
 
                     <Spacer height={16} />
 
-                    <ThemedText style={styles.label}>Password</ThemedText>
+                    <ThemedText style={styles.label}>Date of Birth</ThemedText>
                     <ThemedTextInput
                         style={styles.textInput}
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
+                        value={dateOfBirth}
+                        onChangeText={setDateOfBirth}
+                        keyboardType="dateOfBirth"
                     />
+
+                    <Spacer height={16} />
+
+                    <ThemedText style={styles.label}>Place of Birth</ThemedText>
+                    <ThemedTextInput
+                        style={styles.textInput}
+                        value={placeOfBirth}
+                        onChangeText={setPlaceOfBirth}
+                        keyboardType="placeOfBirth"
+                    />
+
+                    
                 </ThemedView>
 
                 <Spacer height={30} />
