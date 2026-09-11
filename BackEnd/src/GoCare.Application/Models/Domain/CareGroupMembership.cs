@@ -121,7 +121,7 @@ public sealed class CareGroupMembership
         if (Status != EInvitationGroupStatus.Accepted)
             throw new InvalidOperationException("Si può cambiare il ruolo solo di un membro con invito accettato.");
 
-        AdminRole = adminRole;
+        AdminRole = adminRole; // ruolo admin/member
     }
 
     public void RemoveFromGroup(DateTimeOffset at)

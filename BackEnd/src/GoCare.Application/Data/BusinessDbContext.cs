@@ -247,14 +247,14 @@ public sealed class BusinessDbContext(DbContextOptions<BusinessDbContext> option
 
             modification.HasOne<TransportRequest>()
                 .WithMany()
-                .HasForeignKey(c => c.TransportRequestId)
+                .HasForeignKey(t => t.TransportRequestId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<TripStatusTransition>(transition =>
         {
             transition.HasKey(t => t.Id);
-            transition.Property(t  => t.OperatorLabel).HasMaxLength(200);
+            transition.Property(t => t.OperatorLabel).HasMaxLength(200);
 
             transition.HasOne<TransportRequest>()
                 .WithMany()
@@ -309,7 +309,3 @@ public sealed class BusinessDbContext(DbContextOptions<BusinessDbContext> option
         #endregion
     }
 }
-
-            
-
-            

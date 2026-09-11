@@ -17,9 +17,11 @@ public static class DependencyInjection
         services.AddDbContext<BusinessDbContext>(options =>
             options.UseNpgsql(businessCs).UseSnakeCaseNamingConvention());
 
-        // Area Auth: stessa forma, altro context e altra connection string
-        //   services.AddDbContext<AuthDbContext>(options =>
-        //       options.UseNpgsql(authCs).UseSnakeCaseNamingConvention());
+        var authCs = configuration.GetConnectionString("AuthDb")
+              ?? throw new InvalidOperationException("Connection string 'AuthDb' mancante.");
+
+        services.AddDbContext<AuthDbContext>(options =>
+            options.UseNpgsql(authCs).UseSnakeCaseNamingConvention());
 
         return services;
     }
