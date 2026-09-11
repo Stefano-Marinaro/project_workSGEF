@@ -1,6 +1,6 @@
 # Piano di sviluppo – Backend GoCare
 
-> Documento di pianificazione estratto da `Project_GoCare_Revisione_v2.pdf`.
+> Documento di pianificazione allineato a `Project_GoCare.md` (guida funzionale del progetto).
 > **Non contiene codice**: è la sequenza di step da eseguire per costruire il backend.
 > Ogni step è pensato per essere spuntato man mano.
 
@@ -34,21 +34,21 @@
 
 ---
 
-## 0.1 Razionale architetturale (variante C – layered / N-tier)
+## 0.1 Struttura interna di `GoCare.Application`
 
-**Organizzazione per livello tecnico dentro il progetto applicativo:**
-- `Controllers/` – classi `[ApiController]`, una per area funzionale. Fanno **solo**: bind del DTO, chiamata a **un** metodo di Service, mapping del risultato in `ActionResult`. Nessuna logica, nessun accesso a `DbContext`.
-- `Dtos/` – record `…Request` / `…Response`. Sono i contratti verso il client React Native. Al client non escono mai i `Models`.
-- `Models/` – entità EF; in v0 fanno anche da modello di dominio (niente classi separate).
-- `Services/` – la logica applicativa: validazione di dominio, transazioni (`SaveChangesAsync`), orchestrazione, chiamate agli helper interni e alle Port. Un'interfaccia `I…Service` + implementazione per area. **È il livello che in altri progetti si chiama "Manager".**
-- `Data/` – i `DbContext`, `IEntityTypeConfiguration`, migrazioni; repository **opzionali** (in v0 il Service usa `DbContext` direttamente).
-- `Infrastructure/` – implementazioni delle Port (push, e-mail, calcolo km, lettura account tra aree).
+Organizzazione per livello tecnico:
+- `Controllers/` – classi `[ApiController]`, una per area funzionale. Fanno solo: bind del DTO, chiamata a **un** metodo di Service, mapping del risultato in `ActionResult`. Nessuna logica, nessun `DbContext`.
+- `Dtos/` – record `…Request` / `…Response`, contratti verso il client. I `Models` non escono mai verso il client.
+- `Models/` – entità EF; in v0 fanno anche da modello di dominio.
+- `Services/` – logica applicativa: validazione di dominio, `SaveChangesAsync`, orchestrazione, chiamate agli helper interni e alle Port. `I…Service` + implementazione per area.
+- `Data/` – `DbContext`, `IEntityTypeConfiguration`, migrazioni. Repository opzionali (in v0 il Service usa `DbContext` direttamente).
+- `Infrastructure/` – implementazioni delle Port (push, e-mail, lettura account tra aree).
 
-**Un solo progetto, due database:** `GoCare.Application` contiene sia l'area autenticazione sia il dominio. Le due aree restano distinte come cartelle (`Controllers/Auth/`, `Services/Auth/`, `Data/AuthDbContext.cs` …) ma nulla nel compilatore impedisce a un'area di vedere l'altra: la disciplina è a carico del team. Restano **due `DbContext`** verso **due database PostgreSQL** (`gocare_auth`, `gocare_business`), con due set di migrazioni.
+**Un solo progetto, due database.** Area auth e area dominio come cartelle (`Controllers/Auth/`, `Services/Auth/`, `Data/AuthDbContext.cs` …). Due `DbContext` verso due database PostgreSQL (`gocare_auth`, `gocare_business`), due set di migrazioni. Nessuna transazione atomica `Account` ↔ `Person`: alla registrazione si genera **un** `Guid`, usato come chiave primaria sia dell'`Account` sia del profilo di dominio (`Person` o `Association`); si crea il profilo nello stesso request; se fallisce, `ProfileReconciliationJob` lo ricrea con lo stesso id. `Account` e profilo sono entità distinte su database distinti, **senza foreign key** tra i due: il legame è l'uguaglianza dell'id, il `Role` discrimina la tabella. Assunzione v0: ogni profilo di dominio ha esattamente un account (non si opera su persone non registrate).
 
-Poiché i due `DbContext` puntano a **database diversi**, non esiste una transazione atomica tra `Account` (auth) e `Person` (dominio). Mitigazione v0: alla registrazione si genera il `PersonId` a monte, lo si salva su `Account`, si crea `Person` subito dopo nello stesso request; se la creazione di `Person` fallisce dopo il commit di `Account`, `ProfileReconciliationJob` la ricrea dai dati di `Account`.
+Comunicazione auth ↔ dominio: chiamata diretta in-process; l'area dominio legge lo stato account via `IAccountReader`, non tocca `AuthDbContext`.
 
-**Cosa NON introduciamo:** MediatR/CQRS, pattern `Result<T>`, un livello `Manager` separato dai Service, mapper generici oltre a Mapster/estensioni manuali, **eventi di integrazione / bus** (non servono in v0 con un progetto unico; Auth e dominio si chiamano direttamente).
+Non si introducono: MediatR/CQRS, `Result<T>`, livello `Manager` separato, eventi di integrazione / bus.
 
 ---
 
@@ -86,14 +86,23 @@ BackEnd/
 │  │  ├─ Models/
 │  │  │  ├─ (area Auth)  Account, EmailVerificationToken, PasswordResetToken,
 │  │  │  │               RefreshToken, FailedLoginAttempt
-│  │  │  ├─ (area dominio) Person, Association, CareGroup, CareGroupMembership,
-│  │  │  │               SavedDestination, TransportRequest, TransportRequestRecipient,
-│  │  │  │               TransportRequestRejection, Accompagnatore,
+│  │  │  ├─ Domain/         (area dominio) Person, Association, Address,
+│  │  │  │               CareGroup, CareGroupMembership,
+│  │  │  │               SavedDestination, TransportRequest, TransportRequestCandidate,
+│  │  │  │               TransportRequestRejection, Companion,
 │  │  │  │               TransportModificationRequest, TripStatusTransition,
 │  │  │  │               Notification, ContactAccessLog, DeviceToken
-│  │  │  └─ Enums/                         # AccountStatus, AccountRole, TripType, TripDirection,
-│  │  │                                    # RequestStatus, ExecutionStatus, MembershipRole,
-│  │  │                                    # InvitationStatus, NotificationType
+│  │  │  │               (Address = value object / owned type EF Core: Via, Numero,
+│  │  │  │               Cap, Citta, Provincia; usato da Person, SavedDestination,
+│  │  │  │               Association, TransportRequest)
+│  │  │  └─ Enums/                         # Auth (da scrivere): EAccountStatus, EAccountRole
+│  │  │                                    # dominio: ETripType, ETripDirection, ETripRequestStatus,
+│  │  │                                    # ETripTransitionStatus, EModificationField,
+│  │  │                                    # EModificationRequestStatus, EGroupRole, EGroupAdminRole,
+│  │  │                                    # EInvitationGroupStatus, ENotificationType,
+│  │  │                                    # ENotificationChannel ([Flags]), ENotificationSubject,
+│  │  │                                    # EAccreditationStatus, ERejectionKind,
+│  │  │                                    # EContactDataKind, EDevicePlatform
 │  │  ├─ Services/
 │  │  │  ├─ Auth/
 │  │  │  │  ├─ IAuthService.cs     / AuthService.cs        # registrazione, login, refresh, logout
@@ -131,7 +140,7 @@ BackEnd/
 │  │  │  └─ AccountReader.cs               # implementa IAccountReader leggendo AuthDbContext
 │  │  ├─ Jobs/
 │  │  │  ├─ TripReminderJob.cs             # promemoria giorno prima (UC 4.3 / 4.7)
-│  │  │  ├─ CoverageTimeoutJob.cs          # richiesta → NonCoperta (PA-04)
+│  │  │  ├─ CoverageTimeoutJob.cs          # richiesta → NotCovered (PA-04)
 │  │  │  ├─ ProfileReconciliationJob.cs    # ricrea Person mancanti dopo un Account (2 DB, non atomico)
 │  │  │  └─ TokenCleanupJob.cs
 │  │  ├─ Mapping/                          # estensioni DTO↔Model (o profili Mapster)
@@ -167,12 +176,11 @@ POST /transports
      └─ ITransportService.CreateAsync(dto, currentUser)
          1. validazione di dominio (data non nel passato, coerenza direzione↔orari)
          2. se beneficiario ≠ richiedente → verifica appartenenza al gruppo cura
-         3. IKmCalculator.CalculateAsync(partenza, destinazione)
-         4. costruisce TransportRequest (stato InAttesa) + Accompagnatori + Recipients (per area, PA-05)
-         5. se destinazione nuova e confermata → crea SavedDestination
-         6. BusinessDbContext.SaveChangesAsync()
-         7. INotificationDispatcher.NotifyNewRequest(...) → push/email alle associazioni (UC 4.7)
-         8. ritorna TransportDetailResponse
+         3. costruisce TransportRequest (stato Pending) + Companions + Candidates (per area, PA-05)
+         4. se destinazione nuova e confermata → crea SavedDestination
+         5. BusinessDbContext.SaveChangesAsync()
+         6. INotificationDispatcher.NotifyNewRequest(...) → push/email alle associazioni (UC 4.7)
+         7. ritorna TransportDetailResponse
  └─ 201 Created
 ```
 
@@ -190,7 +198,7 @@ POST /transports
 - [x] `.editorconfig` (convenzioni Visual Studio) + `.gitattributes`.
 - [ ] `docker-compose.yml` con PostgreSQL (due database `gocare_auth`, `gocare_business`) e MailHog.
 - [x] `.gitignore` per .NET.
-- [ ] `appsettings.json` + `appsettings.Development.json` + user-secrets: **due** connection string (`AuthDb`, `BusinessDb`), chiavi JWT, config SMTP, chiavi push, soglie di dominio (ore per "non coperta", scadenza token).
+- [ ] `appsettings.json` + `appsettings.Development.json` + user-secrets: **due** connection string (`AuthDb`, `BusinessDb`), chiavi JWT, config SMTP, chiavi push, soglie di dominio (ore per "non coperta", scadenza token). *(fatte solo le due connection string; manca JWT/SMTP/push/soglie, e user-secrets non ancora usato — la password locale coincide col placeholder)*
 - [ ] Configurazione tipizzata: un `IOptions<T>` per gruppo di impostazioni, validato all'avvio.
 
 ---
@@ -199,23 +207,23 @@ POST /transports
 
 > Da costruire per prima: il progetto applicativo ne dipende. Nessun concetto di GoCare qui dentro.
 
-- [x] **`Abstractions/IClock` + `SystemClock`** – astrazione del tempo iniettata al posto di `DateTimeOffset.UtcNow`; serve per testare "data non nel passato" (UC 1.1) e la soglia "non coperta" (PA-04).
-- [ ] **`Abstractions/ICurrentUser`** – estrae dai claim del token JWT: `AccountId`, `Ruolo`, `AssociationId?`, `PersonId?`. Iniettata nei Service e nei controller.
+- [x] **`Abstractions/IClock` + `SystemClock`** – astrazione del tempo, iniettata al posto di `DateTimeOffset.UtcNow`.
+- [x] **`Abstractions/ICurrentUser`** – dai claim del token JWT: `AccountId` (`Guid?`), `IsAuthenticated`, `IsInRole(role)`. `AccountId` è anche l'id del profilo di dominio (PK condivisa), quindi non servono claim `PersonId`/`AssociationId` separati. Iniettata nei Service e nei controller.
 - [x] **`Abstractions/IEmailSender`** – porta e-mail transazionali (riusata da area Auth e area dominio).
-- [ ] **`Pagination/PagedResult<T>` + `PageQuery`** – contenitore `{ items, page, pageSize, totalCount }` e parametri `?page=&pageSize=&sort=` per tutte le liste (UC 5, 6, 7, storici).
-- [ ] **`Errors/`** – eccezioni tipizzate (`NotFoundException`, `ConflictException`, `ForbiddenException`, `ValidationException`, `DomainException`) + `GlobalExceptionHandler` che le mappa in `ProblemDetails` (404 / 409 / 403 / 400 / 422) e cattura le eccezioni non previste → 500 pulito senza stack trace.
-- [ ] **`Validation/ValidationFilter`** – filtro `IActionFilter`/endpoint filter che esegue i validator FluentValidation registrati per il tipo di Request prima dell'action.
-- [ ] Setup **Swagger/OpenAPI** nell'host: gruppi per area (Auth / dominio), schema di sicurezza Bearer, esempi di request.
+- [x] **`Pagination/PagedResult<T>` + `PageQuery`** – contenitore `{ items, page, pageSize, totalCount }` e parametri `?page=&pageSize=&sort=` per tutte le liste (UC 5, 6, 7, storici).
+- [x] **`Errors/`** – eccezioni tipizzate (`NotFoundException`, `ConflictException`, `ForbiddenException`, `ValidationException`, `DomainException`) + `GlobalExceptionHandler` che le mappa in `ProblemDetails` (404 / 409 / 403 / 400 / 422) e cattura le eccezioni non previste → 500 pulito senza stack trace.
+- [x] **`Validation/ValidationFilter`** – filtro `IActionFilter`/endpoint filter che esegue i validator FluentValidation registrati per il tipo di Request prima dell'action.
+- [ ] Setup **Swagger/OpenAPI** nell'host: gruppi per area (Auth / dominio), schema di sicurezza Bearer, esempi di request. *(fatto il setup base — `AddSwaggerGen`/`UseSwaggerUI`, attivo in Development; mancano gruppi per area, schema Bearer, esempi)*
 
 ---
 
 ## 4. Fase 2 – Persistenza e database
 
-- [ ] Aggiungere Npgsql EF Core Provider al progetto `GoCare.Application`.
-- [ ] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`).
+- [x] Aggiungere Npgsql EF Core Provider al progetto `GoCare.Application`.
+- [ ] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`). *(fatto: `gocare_auth`/`gocare_business` creati, `BusinessDbContext` scritto e registrato; manca `AuthDbContext` — a cura del collega — e nessuna migrazione ancora generata)*
 - [ ] Comandi EF: ogni `dotnet ef migrations|database …` richiede `--context AuthDbContext|BusinessDbContext`, `--startup-project src/GoCare.Api` e `--project src/GoCare.Application`.
 - [ ] Entità in `Models/`; configurazioni `IEntityTypeConfiguration` in `Data/Auth/Configurations` e `Data/Business/Configurations`.
-- [ ] Convenzioni comuni: chiavi `Guid` (v7/sequenziali), `created_at`/`updated_at`, `row_version` per concorrenza ottimistica, naming snake_case.
+- [ ] Convenzioni comuni: chiavi `Guid` (v7/sequenziali), `created_at` dove rilevante (nessun `updated_at` globale), naming snake_case, **enum con prefisso `E`** (dominio e Auth: `ETripType`, `EAccountStatus`, …). Concorrenza ottimistica dove serve tramite la colonna di sistema Postgres `xmin` (shadow property configurata in `BusinessDbContext`); nessun `row_version` CLR.
 - [ ] **Soft delete**: colonna `deleted_at` + query filter globale; gli storici restano leggibili.
 - [ ] Migrazioni: `dotnet ef migrations` per contesto, auto-apply in Development, script SQL versionati per ambienti superiori.
 - [ ] Seed minimo (enum se non gestiti come `enum` C#, associazione demo).
@@ -225,27 +233,27 @@ POST /transports
 ### Entità (in `Models/`)
 
 **Area Auth (DB `gocare_auth`):**
-- `Account` — Id, Email (univoca), PasswordHash, Ruolo (Utente | Associazione), Stato (`NonVerificato`, `Attivo`, `InAttesaAccreditamento`, `Sospeso`, `Eliminato`), PersonId? / AssociationId? (riferimento logico all'entità di dominio), timestamps.
+- `Account` — `Id`, `Email` (univoca), `PasswordHash`, `Role` (`EAccountRole`: Person | Association), `Status` (`EAccountStatus`: Unverified | Active | Suspended | Deleted), `CreatedAt`, `EmailVerifiedAt?`, `SuspendedAt?`, `DeletedAt?`. **Nessuna colonna di riferimento al profilo**: `Account.Id` è lo **stesso `Guid`** di `Person.Id` / `Association.Id` (PK condivisa, discriminata da `Role`); nessuna FK tra i due database. `EmailVerifiedAt is not null` = e-mail confermata (claim `email_verified`); `Status` è il ciclo di vita dell'account. **L'accreditamento non è uno stato dell'account**: è `Association.Status` (`EAccreditationStatus`, dominio). Un'associazione registrata e verificata ha account `Active` come un utente qualsiasi.
 - `EmailVerificationToken` — Id, AccountId, Token, ScadenzaAt, UsatoAt?.
 - `PasswordResetToken` — Id, AccountId, Token, ScadenzaAt, UsatoAt? (monouso).
 - `RefreshToken` — Id, AccountId, Token, ScadenzaAt, RevocatoAt?, UserAgent/IP (facoltativo).
 - `FailedLoginAttempt` — contatore per rate limiting e blocco temporaneo.
 
 **Area dominio (DB `gocare_business`):**
-- `Person` — Id, Nome, Cognome, DataNascita, IndirizzoDomicilio, Telefono, Email di contatto, flag capacità (è caregiver / è assistito), `deleted_at`, `anonymized_at`.
-- `Association` — Id, Denominazione, Sede, AreaOperativita (PA-05), Telefoni[], Email, OrariReperibilita, StatoAccreditamento, `deleted_at`.
-- `CareGroup` — Id, Nome (univoco per creatore), Descrizione?, CreatoDaPersonId, `deleted_at`.
-- `CareGroupMembership` — Id, CareGroupId, PersonId, RuoloNelGruppo (Caregiver | Assistito), RuoloAmministrativo (Admin | Membro), StatoInvito (InAttesa | Accettato), InvitoEmail, InvitoToken, timestamps.
-- `SavedDestination` — Id, PersonId, Etichetta, IndirizzoCompleto, Note?.
-- `TransportRequest` — Id, RichiedentePersonId, BeneficiarioPersonId, CareGroupId?, TipoViaggio, Direzione, DataOraAndata, DataOraRitorno?, IndirizzoPartenza (snapshot), IndirizzoDestinazione (snapshot), KmPrevisti, ContattiRiferimento (snapshot), Stato (`InAttesa`, `Confermata`, `InEsecuzione`, `Conclusa`, `Rifiutata`, `NonCoperta`, `Annullata`), AssociazioneAssegnatariaId?, CausaleAnnullamento?, AnnullatoDa?, timestamps, `row_version`.
-- `TransportRequestRecipient` — Id, TransportRequestId, AssociationId (associazioni destinatarie calcolate per area – PA-05).
-- `TransportRequestRejection` — Id, TransportRequestId, AssociationId, Causale?, At.
-- `Accompagnatore` — Id, TransportRequestId, Nome, Cognome, Parentela, Contatto.
-- `TransportModificationRequest` — Id, TransportRequestId, Campo (DataOrario | Destinazione | Accompagnatori), ValorePrecedente, ValoreProposto, Stato (`InAttesaApprovazione`, `Approvata`, `Rifiutata`), MessaggioEsito?, timestamps.
-- `TripStatusTransition` — Id, TransportRequestId, Stato (`NonPresoInCarico`, `PresoInCarico`, `InArrivo`, `InVisita`, `InRitorno`, `Concluso`, + eventuale `SospesoImprevisto` – PA-07), Timestamp, EseguitoDaAssociationId, OperatoreLabel.
-- `Notification` — Id, DestinatarioType (Person | Association), DestinatarioId, Tipo, Titolo, Corpo, RelatedEntityId?, Canali (Push | Email), LettaAt?, CreatedAt.
-- `ContactAccessLog` — Id, TransportRequestId, AssociationId, DatiAccedutiTipo, At (PA-06).
-- `DeviceToken` — Id, DestinatarioType, DestinatarioId, PushToken, Piattaforma, DisattivatoAt?.
+- `Person` — `Id` (= `Account.Id` del titolare, PK condivisa), `Name`, `Surname`, `BirthDate` (`DateOnly`), `Email`, `Phone`, `HomeAddress` (`Address?`, owned type), `DeletedAt`, `AnonymizedAt`. Nessun flag di ruolo.
+- `Association` — `Id` (= `Account.Id` del titolare, PK condivisa), `Name`, `Headquarter` (`Address`, owned type, obbligatoria), `Phones` (`List<string>`), `Email`, `AvailabilityHours` (`string?`), `Status` (`EAccreditationStatus`: Pending | Accredited | Rejected), `DeletedAt`, `CoveredProvinces` (`List<string>`, PA-05).
+- `CareGroup` — `Id`, `Name` (univoco per creatore), `Description` (`string?`), `CreatedBy` (`Guid`), `DeletedAt`.
+- `CareGroupMembership` — chiave primaria composta (`CareGroupId`, `PersonId`), nessun `Id` surrogato. `AdminRole` (`EGroupAdminRole`: Admin | Member), `Role` (`EGroupRole`: Caregiver | Assisted), `Status` (`EInvitationGroupStatus`: Pending | Accepted | Refused | Revoked), `InvitationEmail` (`string?`), `InvitationToken` (`string?`), `CreatedAt`, `RespondedAt?`, `DeletedAt?`. Costruita solo via factory `CreateInvitation(...)` / `CreateOwner(...)` (costruttori privati). Metodi: `Accept` / `Decline` (→ `Refused`) / `Revoke` (→ `Revoked` + `DeletedAt`) / `ChangeRole` / `ChangeAdminRole` / `RemoveFromGroup` (→ `DeletedAt`).
+- `SavedDestination` — `Id`, `PersonId`, `PlaceName`, `SavedAddress` (`Address`), `Note?`.
+- `TransportRequest` — `Id`, `RequestedById`, `BeneficiaryId`, `CareGroupId?`, `TripType` (`ETripType`), `TripDirection` (`ETripDirection`), `DepartureDateHour`, `ReturnDateHour?`, `StartAddress` (snapshot), `EndAddress` (snapshot), `ReturnEndAddress?` (snapshot; valorizzato solo se `TripDirection = RoundTrip` e la destinazione del ritorno è diversa dalla partenza — altrimenti `null` = torna a `StartAddress`), `ReferencePhone` + `ReferenceEmail` (snapshot, due stringhe piatte), `CreatedAt`, `RequestStatus` (`ETripRequestStatus`: Pending | Confirmed | InProgress | Completed | NotCovered | Cancelled), `AssignedAssociationId?`, `AcceptedAt?`, `NotCoveredAt?`, `DeletedBy?`, `DeletedAt?`. Concorrenza ottimistica via shadow property `xmin` (colonna di sistema Postgres, configurata in `BusinessDbContext`), non una proprietà CLR. Metodi: `Accept` / `ChangeSchedule` / `ChangeDestination` / `RequestNotCovered` / `Cancel`. Niente `KmPrevisti` in v0 (§15).
+- `TransportRequestCandidate` — chiave primaria composta (`TransportRequestId`, `AssociationId`), nessun `Id` surrogato né altri campi. Righe immutabili: associazioni candidate calcolate per area alla creazione (PA-05).
+- `TransportRequestRejection` — `Id`, `TransportRequestId`, `AssociationId`, `Kind` (`ERejectionKind`: Declined | CancelledAfterAcceptance), `Reason?`, `RejectedAt`. `Declined` = rifiuto pre-accettazione (UC 6), `Reason` di norma `null`. `CancelledAfterAcceptance` = disdetta post-accettazione (UC 3), `Reason` obbligatoria. `Id` surrogato (coppia non unica).
+- `Companion` — `Id`, `TransportRequestId`, `Name`, `Surname`, `Relationship`, `Phone` (tutte `{ get; }`). Entità immutabile; le modifiche alla lista si fanno con replace-all.
+- `TransportModificationRequest` — `Id`, `TransportRequestId`, `Field` (`EModificationField`: Schedule | EndAddress | ReturnEndAddress), `PreviousValue` / `ProposedValue` (`string`, payload serializzato), `Status` (`EModificationRequestStatus`: PendingApproval | Approved | Rejected | Retracted), `OutcomeMessage?`, `CreatedAt`, `ResolvedAt?`. `Id` proprio. Mutabile via `Approve(at)` / `Reject(at, outcomeMessage)` / `Retract(at)`.
+- `TripStatusTransition` — `Id`, `TransportRequestId`, `Status` (`ETripTransitionStatus`: Pending | InCharge | Arriving | OnSite | Returning | Completed), `MadeByAssociationId`, `OperatorLabel` (`string`, PA-03), `OccurredAt`. Log append-only immutabile, una riga per cambio di stato; lo stato corrente è la riga con `OccurredAt` più recente. Lo stato eccezionale `SospesoImprevisto` (PA-07) non è ancora nell'enum.
+- `Notification` — `Id`, `SubjectType` (`ENotificationSubject`: Association | Person), `SubjectId`, `Type` (`ENotificationType`), `Title`, `Body`, `Channels` (`[Flags] ENotificationChannel`: None | Push | Email), `RelatedEntityId?`, `CreatedAt`, `ReadAt?`. `SubjectId` / `RelatedEntityId` sono `Guid` non FK (polimorfici). Solo `ReadAt` mutabile (`MarkRead`).
+- `ContactAccessLog` — `Id`, `TransportRequestId`, `AssociationId`, `DataKind` (`EContactDataKind`: Requester | Beneficiary), `AccessedAt` (PA-06). Immutabile.
+- `DeviceToken` — `Id`, `SubjectType` (`ENotificationSubject`), `SubjectId`, `PushToken` (`string`), `Platform` (`EDevicePlatform`: Ios | Android | Web), `CreatedAt`, `DeactivatedAt?`. Metodo `Deactivate(at)`.
 
 ---
 
@@ -256,8 +264,8 @@ POST /transports
 ### 5.1 Fondamenta dell'area
 - [ ] `AuthDbContext`, configurazioni EF, prima migrazione (`--context AuthDbContext`).
 - [ ] `PasswordService` con algoritmo di hashing moderno (Argon2/PBKDF2).
-- [ ] `TokenService`: access token breve con claim `sub`, `role`, `person_id`/`association_id`, `email_verified`; refresh token persistito e revocabile.
-- [ ] Configurazione autenticazione JWT nell'host + policy di autorizzazione (`Ruolo=Utente`, `Ruolo=Associazione`, `AssociazioneAccreditata`).
+- [ ] `TokenService`: access token breve con claim `sub` (= `Account.Id`, che è anche l'id del profilo di dominio), `role`, `email_verified`; refresh token persistito e revocabile.
+- [ ] Configurazione autenticazione JWT nell'host + policy di autorizzazione per ruolo (`Ruolo=Utente`, `Ruolo=Associazione`). Il requirement `AssociazioneAccreditata` **non** deriva da un claim di Auth: si risolve lato dominio leggendo `Association.Status` (`BusinessDbContext`), perché l'accreditamento può cambiare dopo l'emissione del token.
 - [ ] Rate limiting su login e forgot-password.
 - [ ] Registrazione servizi dell'area dentro `DependencyInjection.AddApplication` (DbContext, Service, validator, `ApplicationPart` dei controller).
 
@@ -265,11 +273,11 @@ POST /transports
 
 | Controller · action | Route | Service · metodo | UC |
 |---|---|---|---|
-| `AuthController.RegisterUser` | `POST /auth/register/user` | `AuthService.RegisterUserAsync` – valida, unicità e-mail, hash password, genera `PersonId`, crea `Account` `NonVerificato`, chiama `IProfileProvisioningService.CreateForAccountAsync` (crea `Person`), genera token, invia e-mail | 10.1 / CG-01 |
-| `AuthController.RegisterAssociation` | `POST /auth/register/association` | `AuthService.RegisterAssociationAsync` – come sopra (crea `Association`); dopo verifica resta `InAttesaAccreditamento` (PA-11) | 10.1 / AS-01 |
-| `EmailVerificationController.Verify` | `GET /auth/verify-email/:token` | `AccountService.VerifyEmailAsync` – valida token, `email_verified=true`, porta ad `Attivo` (o `InAttesaAccreditamento`) | 10.1 |
+| `AuthController.RegisterUser` | `POST /auth/register/user` | `AuthService.RegisterUserAsync` – valida, unicità e-mail, hash password, genera **un** `Guid` (id condiviso), crea `Account` `Unverified`, chiama `IProfileProvisioningService.CreateForAccountAsync` (crea `Person` con lo stesso id), genera token, invia e-mail | 10.1 / CG-01 |
+| `AuthController.RegisterAssociation` | `POST /auth/register/association` | `AuthService.RegisterAssociationAsync` – come sopra (crea `Association` con lo stesso id e `Status = Pending`, dominio); l'account segue lo stesso ciclo di un utente (PA-11) | 10.1 / AS-01 |
+| `EmailVerificationController.Verify` | `GET /auth/verify-email/:token` | `AccountService.VerifyEmailAsync` – valida token, `Account.Verify(at)` → `EmailVerifiedAt` valorizzato e `Status = Active` (per utenti e associazioni) | 10.1 |
 | `EmailVerificationController.Resend` | `POST /auth/verify-email/resend` | `AccountService.ResendVerificationAsync` | 10.1 |
-| `AuthController.Login` | `POST /auth/login` | `AuthService.LoginAsync` – verifica credenziali e stato, blocca `NonVerificato`, limita tentativi, emette access+refresh, restituisce ruolo | 10.2 / CG-02, AS-02 |
+| `AuthController.Login` | `POST /auth/login` | `AuthService.LoginAsync` – verifica credenziali e stato (`Account.CanLogIn`: solo `Active`), limita tentativi, emette access+refresh, restituisce ruolo | 10.2 / CG-02, AS-02 |
 | `AuthController.Refresh` | `POST /auth/refresh` | `AuthService.RefreshAsync` – ruota il refresh token, revoca il precedente | 10.2 |
 | `AuthController.Logout` | `POST /auth/logout` | `AuthService.LogoutAsync` – revoca refresh token / sessione | 10.2 |
 | `PasswordController.Forgot` | `POST /auth/forgot-password` | `PasswordService.RequestResetAsync` – risposta **sempre neutra**; se l'account esiste genera `PasswordResetToken` monouso e invia e-mail | 10.3 |
@@ -279,24 +287,24 @@ POST /transports
 
 ### 5.3 `IAccountReader` (interno)
 - [ ] `IAccountReader` in `Services/Auth/` – espone stato/ruolo/email_verified di un account per i controlli dell'area dominio, senza che questa tocchi `AuthDbContext`. Implementato in `Infrastructure/AccountReader.cs` (legge `AuthDbContext`), registrato in `AddApplication`.
-- [ ] Provisioning del profilo: `IProfileProvisioningService` (in `Services/`) con `CreateForAccountAsync(accountId, personId, ruolo, datiAnagrafici)`, `AccreditAssociationAsync(associationId)`, `AnonymizeForDeletedAccountAsync(accountId)`. Chiamato **direttamente** dai Service dell'area Auth. Nessun evento.
+- [ ] Provisioning del profilo: `IProfileProvisioningService` (in `Services/`) con `CreateForAccountAsync(accountId, datiAnagrafici)` (il profilo nasce con `Id == accountId`), `AccreditAssociationAsync(associationId)`, `RejectAssociationAsync(associationId, motivazione?)`, `AnonymizeForDeletedAccountAsync(accountId)`. `AccreditAssociationAsync` / `RejectAssociationAsync` scrivono **solo** `Association.Status` su `BusinessDbContext`, non toccano l'`Account`. Chiamato **direttamente** dai Service dell'area Auth (per `CreateForAccountAsync` / `AnonymizeForDeletedAccountAsync`) e dal controller admin (per accredit/reject). Nessun evento. `datiAnagrafici` non include più un `ruolo` caregiver/assistito: quel ruolo si assegna solo dentro un `CareGroupMembership`, non alla registrazione.
 
 ---
 
 ## 6. Fase 4 – Concerns trasversali nell'host (`GoCare.Api`)
 
 - [ ] **Composizione**: `Program.cs` chiama `AddApplication`, registra l'`ApplicationPart` di `GoCare.Application`, la pipeline JWT, `GlobalExceptionHandler`, `ValidationFilter` globale, Swagger.
-- [ ] **Autorizzazione**: policy per ruolo + requirement `AssociazioneAccreditata`. I controlli a livello di risorsa ("è l'associazione assegnataria", "è amministratore del gruppo", "il richiedente può prenotare per l'assistito") stanno **nei Service**.
+- [ ] **Autorizzazione**: policy per ruolo (dai claim JWT). Il requirement `AssociazioneAccreditata` e i controlli a livello di risorsa ("è l'associazione assegnataria", "è amministratore del gruppo", "il richiedente può prenotare per l'assistito") stanno **nei Service di dominio** e leggono `BusinessDbContext` (per l'accreditamento: `Association.Status == Accredited`).
 - [ ] **Validazione**: FluentValidation, un validator per DTO di Request; regole ricorrenti (data non nel passato, coerenza direzione↔orari, campi obbligatori).
 - [ ] **Logging/telemetria**: Serilog strutturato, correlation id, OpenTelemetry opzionale.
 - [ ] **E-mail transazionali**: `IEmailSender` + template (verifica, reset, esito richiesta, presa in carico, disdetta, mancata copertura, promemoria, esito modifica, eliminazione account). Dev → MailHog.
 - [ ] **Push**: `IPushSender` (adapter FCM/APNs); `DevicesController` per i `DeviceToken`.
 - [ ] **Job schedulati** (`GoCare.Application/Jobs/`, Hosted Service / Hangfire / Quartz):
   - [ ] `TripReminderJob` – promemoria viaggio del giorno successivo (UC 4.3 / 4.7).
-  - [ ] `CoverageTimeoutJob` – richiesta senza accettazione entro soglia (PA-04) → `NonCoperta` + notifica UC 4.1.
-  - [ ] `ProfileReconciliationJob` – ricrea le `Person` mancanti per gli `Account` in cui il provisioning è fallito (due DB, non atomico).
+  - [ ] `CoverageTimeoutJob` – richiesta senza accettazione entro soglia (PA-04) → `NotCovered` + notifica UC 4.1.
+  - [ ] `ProfileReconciliationJob` – ricrea il profilo di dominio mancante (con `Id == Account.Id`) per gli `Account` in cui il provisioning è fallito (due DB, non atomico).
   - [ ] `TokenCleanupJob` – pulizia token scaduti.
-- [ ] **Concorrenza**: `row_version` su `TransportRequest`; `AssociationRequestService.AcceptAsync` implementa "prima accettazione vince" (UC 6.3).
+- [ ] **Concorrenza**: shadow property `xmin` (colonna di sistema Postgres) su `TransportRequest`, configurata in `BusinessDbContext`; `AssociationRequestService.AcceptAsync` implementa "prima accettazione vince" (UC 6.3).
 - [ ] **Audit**: `AssociationRequestService.GetRequesterContactsAsync` scrive `ContactAccessLog` (UC 6.5 / PA-06); ogni transizione di stato registra l'autore.
 - [ ] **Paginazione/sorting/filtri**: via `PageQuery` di `GoCare.Shared` in tutti i metodi di lista.
 
@@ -307,10 +315,10 @@ POST /transports
 - [ ] `Models/` + `Enums/` (vedi §4) + configurazioni EF + prime migrazioni di `AuthDbContext` e `BusinessDbContext`.
 - [ ] **`Services/Internal/TripStateMachine.cs`** – funzione pura `CanTransition(current, target, direction) → (bool, motivo)`. Regole in §9. Nessuna dipendenza da EF: testabile in isolamento.
 - [ ] **`Services/Internal/NotificationDispatcher.cs`** (`INotificationDispatcher`) – dato (destinatario, tipo, dati), crea la `Notification`, poi invia push e/o e-mail secondo le regole di canale (push per cambi stato intermedi; push + e-mail per eventi di esito). Usato dai Service che generano notifiche.
-- [ ] **`Services/Internal/CoverageEvaluator.cs`** (`ICoverageEvaluator`) – decide se una richiesta è `NonCoperta` (tutte le associazioni hanno rifiutato **oppure** < soglia ore alla data). Usato da `DeclineAsync` e da `CoverageTimeoutJob`.
-- [ ] **Port** (`Services/Internal/`): `IKmCalculator`, `IPushSender`. `IEmailSender` viene da `GoCare.Shared`.
-- [ ] **`Infrastructure/`**: implementazioni `KmCalculator`, `PushSender`, `SmtpEmailSender`, `AccountReader` (implementa `IAccountReader` leggendo `AuthDbContext`).
-- [ ] **`Services/ProfileProvisioningService.cs`**: `CreateForAccountAsync` (crea `Person`/`Association` sul DB dominio dato l'`Account`), `AccreditAssociationAsync`, `AnonymizeForDeletedAccountAsync` (anonimizza ed esce dai gruppi, con veto se ci sono viaggi futuri attivi). Chiamato direttamente da `AuthService`/`AccountService`.
+- [ ] **`Services/Internal/CoverageEvaluator.cs`** (`ICoverageEvaluator`) – decide se una richiesta è `NotCovered` (tutte le associazioni hanno rifiutato **oppure** < soglia ore alla data). Usato da `DeclineAsync` e da `CoverageTimeoutJob`.
+- [ ] **Port** (`Services/Internal/`): `IPushSender`. `IEmailSender` viene da `GoCare.Shared`. `IKmCalculator` predisposto ma non usato in v0 (calcolo km rinviato a V1 — §15).
+- [ ] **`Infrastructure/`**: implementazioni `PushSender`, `SmtpEmailSender`, `AccountReader` (implementa `IAccountReader` leggendo `AuthDbContext`). `KmCalculator`: implementazione stub/no-op in v0.
+- [ ] **`Services/ProfileProvisioningService.cs`**: `CreateForAccountAsync` (crea `Person`/`Association` sul DB dominio **con `Id == accountId`**; `Association.Status = Pending`), `AccreditAssociationAsync` (`Association.Status` → `Accredited`), `RejectAssociationAsync` (`Association.Status` → `Rejected`; **non tocca l'`Account`** — un'associazione rifiutata mantiene l'account `Active` e può fare login con app ristretta, cfr. Project §12.2; se il team decidesse di bloccarne il login, la sospensione dell'account è un'azione Auth separata e deliberata — PA-11 aperto), `AnonymizeForDeletedAccountAsync` (anonimizza il profilo con lo stesso id ed esce dai gruppi, con veto se ci sono viaggi futuri attivi). `CreateForAccountAsync` / `AnonymizeForDeletedAccountAsync` chiamati direttamente da `AuthService`/`AccountService`; `AccreditAssociationAsync` / `RejectAssociationAsync` dal controller admin.
 - [ ] `DependencyInjection.AddApplication`: registra i due `DbContext`, tutti i Service + helper interni, i validator, i job, l'`ApplicationPart` dei controller.
 
 ---
@@ -324,24 +332,33 @@ POST /transports
   - Valida campi e data non nel passato; se beneficiario ≠ richiedente verifica appartenenza al gruppo cura.
   - Copia indirizzi sulla richiesta; se destinazione nuova e confermata crea `SavedDestination` (UC 1.6 / 8.4).
   - Valida coerenza direzione↔orari (UC 1.3); salva tipo viaggio e direzione; salva accompagnatori (UC 1.5).
-  - `IKmCalculator` → `KmPrevisti`.
-  - Crea `TransportRequest` `InAttesa` con doppio riferimento richiedente/beneficiario; calcola `TransportRequestRecipient` per area (PA-05).
+  - Crea `TransportRequest` in stato `Pending` con doppio riferimento richiedente/beneficiario; calcola `TransportRequestCandidate` per area (PA-05: associazioni accreditate con `CoveredProvinces` che contiene `StartAddress.Province`).
   - `INotificationDispatcher` → notifica "nuova richiesta" alle associazioni (UC 4.7).
 
 ### UC 2 – Modifica trasporto — `TransportsController` + `TransportModificationsController`
 - [ ] `UpdateDestination` — `PATCH /transports/:id/destination` → `TransportService.UpdateDestinationAsync`
 - [ ] `UpdateSchedule` — `PATCH /transports/:id/schedule` → `TransportService.UpdateScheduleAsync`
+  - Entrambe: ramo `Pending` → modifica diretta sulla `TransportRequest`; ramo `Confirmed` → crea `TransportModificationRequest` `PendingApproval` (`Field = EndAddress | ReturnEndAddress` secondo la destinazione che cambia / `Schedule`, `PreviousValue`/`ProposedValue` serializzati) + notifica associazione (UC 4.8). La modifica si applica solo con `Approve`.
 - [ ] `UpdateCompanions` — `PUT /transports/:id/companions` → `TransportService.UpdateCompanionsAsync`
-  - Ramo `InAttesa` → modifica diretta; ramo `Confermata` → crea `TransportModificationRequest` `InAttesaApprovazione` + notifica associazione (UC 4.8). Solo accompagnatori: aggiornamento diretto + notifica informativa se già accettato.
+  - Modifica **sempre diretta**, anche a viaggio `Confirmed` — non genera mai un `TransportModificationRequest` (gli accompagnatori non toccano percorso/orario, niente da approvare).
+  - Semantica replace-all: il body è la lista completa, il Service rimpiazza le righe `Companion` della richiesta.
+  - Se `RequestStatus == Confirmed` → notifica **informativa** all'`AssignedAssociationId` (UC 4.8), nessun gate di approvazione.
+- [ ] `Retract` — `POST /transports/modification-requests/:id/retract` → `TransportModificationService.RetractAsync`
+  - Ritiro lato utente di una modifica ancora `PendingApproval` (UC 2.7 / CG-34): `TransportModificationRequest.Retract(at)` → `Retracted` + `ResolvedAt`.
+  - Il viaggio resta invariato; decrementa il contatore delle modifiche pendenti dell'associazione; nessuna notifica di esito (§12.5).
 - [ ] `Approve` — `POST /transports/modification-requests/:id/approve` → `TransportModificationService.ApproveAsync` (applica la modifica, chiude la richiesta, notifica utente – UC 4.5)
 - [ ] `Reject` — `POST /transports/modification-requests/:id/reject` → `TransportModificationService.RejectAsync` (viaggio invariato, notifica con opzioni "mantieni / annulla" – PA-15)
 - [ ] `ListPendingForAssociation` — `GET /association/modification-requests` → `TransportModificationService.ListPendingAsync` (contatore + filtro – UC 7.3)
 
 ### UC 3 – Annulla trasporto
 - [ ] `CancelByUser` — `POST /transports/:id/cancel` → `TransportService.CancelByUserAsync`
-  - Soft delete (stato `Annullata`, resta nello storico), salva causale; se già preso in carico → notifica associazione (UC 4.9).
+  - Soft delete (stato `Cancelled`, resta nello storico), salva causale; se già preso in carico → notifica associazione (UC 4.9).
 - [ ] `CancelByAssociation` — `POST /association/transports/:id/cancel` → `AcceptedTransportService.CancelAsync`
-  - Causale obbligatoria; il viaggio torna `InAttesa` e rientra fra le pendenti delle altre associazioni ([DA VALIDARE] anticipo minimo); notifica utente (UC 4.6) + "cerca un'alternativa".
+  - Valida: richiesta `Confirmed`, chi chiama è l'`AssignedAssociationId`, causale non vuota (altrimenti 422).
+  - Scrive `TransportRequestRejection` con `Kind = CancelledAfterAcceptance` + `Reason`.
+  - Resetta la richiesta: `AssignedAssociationId = null`, `AcceptedAt = null`, `RequestStatus = Pending`; `ICoverageEvaluator` → se non c'è più tempo utile, `NotCovered` subito.
+  - Notifica utente (tipo `TripCancelledByAssociation`, causale nel corpo, push + e-mail — UC 4.6) + "cerca un'alternativa".
+  - I `TransportRequestCandidate` sono congelati: la richiesta ricompare da sola nelle pendenti delle altre associazioni, nessun ricalcolo.
 
 ### UC 4 – Stato e notifiche — `NotificationsController` / `INotificationService`, `TripStatusController` / `ITripStatusService`, `DevicesController`
 - [ ] `List` — `GET /notifications` → `NotificationService.ListAsync` (paginato, filtro letta/non letta)
@@ -349,7 +366,7 @@ POST /transports
 - [ ] `Counters` — `GET /notifications/counters` → `NotificationService.GetCountersAsync` (badge header §11.4)
 - [ ] `RegisterDevice` / `UnregisterDevice` — `POST /devices` · `DELETE /devices/:id` → `NotificationService.RegisterDeviceAsync` / `UnregisterDeviceAsync`
 - [ ] `Advance` — `POST /association/transports/:id/status` → `TripStatusService.AdvanceAsync`
-  - Valida transizione con `TripStateMachine`; registra `TripStatusTransition`; notifica push al gruppo cura (UC 4.6); su `Concluso` chiude il viaggio e lo sposta negli storici.
+  - Valida transizione con `TripStateMachine`; registra `TripStatusTransition`; notifica push al gruppo cura (UC 4.6); su `Completed` chiude il viaggio e lo sposta negli storici.
 - [ ] `GetTimeline` — `GET /transports/:id/status-timeline` → `TripStatusService.GetTimelineAsync` (UC 5.5)
 - [ ] (Opzionale PA-07) `Suspend` — stato `SospesoImprevisto` + notifica immediata.
 
@@ -359,14 +376,14 @@ POST /transports
 - [ ] `GetAssociationPublicContacts` — `GET /associations/:id/contacts` → `ProfileService.GetPublicContactsAsync` (UC 5.3)
 
 ### UC 6 – Richieste pendenti, associazione — `AssociationRequestsController` / `IAssociationRequestService`
-- [ ] `ListPending` — `GET /association/requests` → `ListPendingAsync` (solo `InAttesa` destinate all'associazione e non accettate; filtri lato server; km precalcolati; **dati minimi assistito** – PA-06)
+- [ ] `ListPending` — `GET /association/requests` → `ListPendingAsync` (solo `Pending` destinate all'associazione e non accettate; esclude le richieste per cui l'associazione ha già una riga `TransportRequestRejection` — `Declined` o `CancelledAfterAcceptance`, non se le rivede comparire; filtri lato server; **dati minimi assistito** – PA-06)
 - [ ] `GetDetail` — `GET /association/requests/:id` → `GetDetailAsync` (verifica disponibilità prima di mostrare le azioni)
-- [ ] `Accept` — `POST /association/requests/:id/accept` → `AcceptAsync` (`InAttesa`→`Confermata`, assegnazione, **prima accettazione vince** con `row_version`, notifica UC 4.2)
-- [ ] `Decline` — `POST /association/requests/:id/decline` → `DeclineAsync` (`TransportRequestRejection`; `ICoverageEvaluator` → se serve `NonCoperta` + UC 4.1)
+- [ ] `Accept` — `POST /association/requests/:id/accept` → `AcceptAsync` (`Pending`→`Confirmed`, assegnazione, **prima accettazione vince** con la shadow property `xmin`, notifica UC 4.2)
+- [ ] `Decline` — `POST /association/requests/:id/decline` → `DeclineAsync` (`TransportRequestRejection` con `Kind = Declined`, senza causale; `ICoverageEvaluator` → se serve `NotCovered` + UC 4.1)
 - [ ] `GetRequesterContacts` — `GET /association/requests/:id/contacts` → `GetRequesterContactsAsync` (recapiti completi **solo dopo accettazione**; scrive `ContactAccessLog`)
 
 ### UC 7 – Trasporti accettati, associazione — `AcceptedTransportsController` / `IAcceptedTransportService`
-- [ ] `List` — `GET /association/transports` → `ListAsync` (assegnati `Confermata`/in corso; filtri data/stato; evidenza modifiche pendenti)
+- [ ] `List` — `GET /association/transports` → `ListAsync` (assegnati in stato `Confirmed`/`InProgress`; filtri data/stato; evidenza modifiche pendenti)
 - [ ] `GetDetail` — `GET /association/transports/:id` → `GetDetailAsync`
 - [ ] `GetHistory` — `GET /association/history` → `GetHistoryAsync` (stati terminali; filtri periodo/esito; riepilogo numerico; dati conservati dopo soft delete)
 
@@ -375,34 +392,48 @@ POST /transports
 - [ ] `UpdateMine` — `PUT /me/profile` → `UpdateMineAsync` (valida telefono/e-mail; snapshot contatti sui viaggi già registrati; cambio e-mail di login delega all'area Auth)
 - [ ] `List` / `Create` / `Update` / `Delete` destinazioni — `GET|POST|PUT|DELETE /me/destinations[/:id]` → `SavedDestinationService.*` (l'eliminazione non tocca i viaggi già registrati)
 - [ ] `GetAssociation` — `GET /association/profile` → `GetAssociationAsync` (sola lettura)
-- [ ] `UpdateAssociation` — `PUT /association/profile` → `UpdateAssociationAsync` (almeno un telefono e una e-mail obbligatori; include `AreaOperativita` – PA-05; si riflette subito sui viaggi in carico)
+- [ ] `UpdateAssociation` — `PUT /association/profile` → `UpdateAssociationAsync` (almeno un telefono e una e-mail obbligatori; include `CoveredProvinces` – PA-05; si riflette subito sui viaggi in carico)
 
 ### UC 9 – Gruppi caregiver-assistiti — `CareGroupsController` / `ICareGroupService`
 - [ ] `Create` — `POST /care-groups` → `CreateAsync` (creatore = amministratore; nome obbligatorio e univoco per utente)
 - [ ] `ListMine` — `GET /care-groups` → `ListMineAsync` (card con n. membri e prossimo viaggio; stato vuoto)
 - [ ] `GetDetail` — `GET /care-groups/:id` → `GetDetailAsync`
-- [ ] `InviteMember` — `POST /care-groups/:id/members` → `InviteMemberAsync` (solo admin; invito con ruolo; stato `InAttesa`; notifica/e-mail; ingresso previa accettazione – PA-08)
-- [ ] `AcceptInvitation` — `POST /care-groups/invitations/:token/accept` → `AcceptInvitationAsync`
-- [ ] `RemoveMember` — `DELETE /care-groups/:id/members/:personId` → `RemoveMemberAsync` (solo admin; blocca/conferma se viaggi futuri confermati)
+- [ ] `InviteMember` — `POST /care-groups/:id/members` → `InviteMemberAsync` (solo admin; `CareGroupMembership.CreateInvitation`; `Role` scelto, `AdminRole = Member`, `Status = Pending`; notifica/e-mail; ingresso previa accettazione – PA-08)
+- [ ] `AcceptInvitation` — `POST /care-groups/invitations/:token/accept` → `AcceptInvitationAsync` (`Accept(at)` → `Accepted` + `RespondedAt`)
+- [ ] `DeclineInvitation` — `POST /care-groups/invitations/:token/decline` → `DeclineInvitationAsync` (UC 9.7 / CG-35; `Decline(at)`; solo invito `Pending` → `Refused` + `RespondedAt`; resta tracciato in lista membri; nessun accesso al gruppo)
+- [ ] `RevokeInvitation` — `POST /care-groups/:id/members/:personId/revoke` → `RevokeInvitationAsync` (UC 9.8 / CG-36; solo admin; `Revoke(at)`; solo invito `Pending` → `Revoked` + `DeletedAt`; il token non è più utilizzabile)
+- [ ] `ChangeMemberRole` — `PATCH /care-groups/:id/members/:personId/role` → `ChangeMemberRoleAsync` (UC 9.9 / CG-37; solo admin; solo membro con invito `Accepted`; `ChangeRole` (ruolo nel gruppo) e/o `ChangeAdminRole` (ruolo amministrativo); non retroagisce sui viaggi già registrati)
+- [ ] `RemoveMember` — `DELETE /care-groups/:id/members/:personId` → `RemoveMemberAsync` (solo admin; `RemoveFromGroup(at)` → `DeletedAt`; blocca/conferma se viaggi futuri confermati)
 - [ ] `Delete` — `DELETE /care-groups/:id` → `DeleteAsync` (solo admin; soft delete; bloccato con viaggi futuri confermati; notifica ai membri)
 - [ ] `ListBookings` — `GET /care-groups/:id/bookings` → `ListBookingsAsync` ("prenotato da X per Y"; separazione prossimi/storico; filtro per assistito; visibilità solo ai membri)
 
 ### PA-11 – Accreditamento — `Admin/AssociationAccreditationController`
-- [ ] `Accredit` — `POST /admin/associations/:id/accredit` → `ProfileProvisioningService.AccreditAssociationAsync` (porta l'`Account` associazione ad `Attivo`, sblocca l'operatività)
+- [ ] `Accredit` — `POST /admin/associations/:id/accredit` → `ProfileProvisioningService.AccreditAssociationAsync` (`Association.Status` → `Accredited`; è questo a sbloccare l'operatività — i Service di dominio filtrano/negano finché `Status != Accredited`; l'`Account` è già `Active` dalla verifica e-mail)
+- [ ] `Reject` — `POST /admin/associations/:id/reject` → `ProfileProvisioningService.RejectAssociationAsync` (`Association.Status` → `Rejected`; l'`Account` non viene toccato — vedi §7 / Project §12.2)
 
 ---
 
 ## 9. Fase 7 – `TripStateMachine` (formalizzazione §12.7)
 
-- [ ] **Stati della richiesta:** `InAttesa` → `Confermata` → `InEsecuzione` → `Conclusa`.
-  Terminali alternativi: `Rifiutata`/`NonCoperta`, `Annullata`.
+- [ ] **Stati della richiesta** (`ETripRequestStatus`): `Pending` (in attesa) → `Confirmed`
+  (confermata) → `InProgress` (in esecuzione) → `Completed` (conclusa).
+  Terminali alternativi: `NotCovered`, `Cancelled`. Il rifiuto di una singola
+  associazione non è uno stato della richiesta: resta registrato in
+  `TransportRequestRejection`; l'esito aggregato negativo (tutte le associazioni
+  competenti hanno rifiutato, o soglia scaduta) è sempre `NotCovered`
+  (`ICoverageEvaluator`).
 - [ ] **Stati di esecuzione** (aggiornati via account associazione): `NonPresoInCarico` → `PresoInCarico` → `InArrivo` → `InVisita` → `InRitorno` → `Concluso`.
+  Enum `ETripTransitionStatus`: `Pending` → `InCharge` → `Arriving` → `OnSite` → `Returning` → `Completed`.
 - [ ] **Regole (in `Services/Internal/TripStateMachine.cs`, testate una per una):**
   - Sequenza obbligata: nessun salto avanti, nessun ritorno indietro.
-  - `SoloAndata` (ricovero, trasferimento) → salta `InRitorno`.
-  - `SoloRitorno` (dimissione) → salta `InVisita`.
+  - `SoloAndata` (ricovero, trasferimento; `ETripDirection.OnlyGo`) → salta `InRitorno`/`Returning`.
+  - `SoloRitorno` (dimissione; `ETripDirection.OnlyReturn`) → salta `InVisita`/`OnSite`.
   - Ogni transizione registra stato + timestamp + operatore (label).
-  - `Concluso` chiude il viaggio, lo rende non modificabile, lo sposta negli storici di utente e associazione.
+  - Accoppiamento dei due assi (§12.7): la prima transizione di esecuzione porta
+    `TransportRequest.RequestStatus` da `Confirmed` a `InProgress`; la transizione a
+    `Completed` porta `RequestStatus` a `Completed`. Lo stato della richiesta e lo stato
+    della richiesta di modifica restano assi indipendenti.
+  - `Completed` chiude il viaggio, lo rende non modificabile, lo sposta negli storici di utente e associazione.
   - Notifiche cambio stato: solo push; e-mail solo per eventi di esito.
 - [ ] (PA-07, opzionale v0) `SospesoImprevisto` durante il viaggio: notifica immediata, viaggio resta in carico all'associazione.
 
@@ -413,7 +444,7 @@ POST /transports
 - [ ] Accettazione informativa privacy in registrazione (UC 10.1) + versione salvata.
 - [ ] Politica esposizione contatti (PA-06): dati minimi in valutazione, recapiti completi post-accettazione, `ContactAccessLog`.
 - [ ] Anonimizzazione post-eliminazione account (PA-14): rimuovere dati personali, mantenere dati di servizio del viaggio nello storico associazione.
-- [ ] Accreditamento associazioni (PA-11): stato `InAttesaAccreditamento`, endpoint admin, gate operatività.
+- [ ] Accreditamento associazioni (PA-11): `Association.Status` (`EAccreditationStatus`, dominio), endpoint admin, gate operatività nei Service di dominio. L'`Account` non porta stato di accreditamento.
 - [ ] Hardening: HTTPS obbligatorio, header di sicurezza, CORS ristretto all'app, secret fuori dal repo, rotazione chiavi JWT, hashing robusto, rate limiting login/forgot-password, lockout progressivo.
 - [ ] Autorizzazione a livello di risorsa in ogni Service (proprietà viaggio, appartenenza gruppo, associazione assegnataria/destinataria).
 
@@ -435,7 +466,7 @@ POST /transports
   - 12.8 Gestione gruppo cura (invito/accettazione, rimozione con viaggi futuri, eliminazione bloccata).
 - [ ] Test dei job (`TripReminderJob`, `CoverageTimeoutJob`, `ProfileReconciliationJob`) con clock controllato.
 - [ ] Test di autorizzazione negativi (accesso a risorse altrui).
-- [ ] Test del provisioning profilo chiamato da `AuthService` (Account creato → Person creata; fallimento della creazione Person → riconciliazione).
+- [ ] Test del provisioning profilo chiamato da `AuthService` (Account creato → profilo creato con lo stesso id; fallimento della creazione profilo → riconciliazione con lo stesso id).
 
 ---
 
@@ -475,7 +506,7 @@ POST /transports
 | Auth | `POST /auth/reset-password` | Pubblico | 10.3 |
 | Auth | `POST /auth/change-email` | Autenticato | 8.2 |
 | Auth | `DELETE /auth/account` | Autenticato | 10.4 |
-| Dominio | `POST /transports` | Caregiver/Assistito | 1.1–1.6 |
+| Dominio | `POST /transports` | Caregiver/Assistito | 1.1–1.8 |
 | Dominio | `GET /transports` | Caregiver/Assistito | 5.1, 5.4 |
 | Dominio | `GET /transports/:id` | Caregiver/Assistito | 2.x, 3.1, 5.2, 5.5 |
 | Dominio | `PATCH /transports/:id/destination` | Caregiver/Assistito | 2.1 |
@@ -483,6 +514,7 @@ POST /transports
 | Dominio | `PUT /transports/:id/companions` | Caregiver/Assistito | 2.3 |
 | Dominio | `POST /transports/:id/cancel` | Caregiver/Assistito | 3.1 |
 | Dominio | `GET /transports/:id/status-timeline` | Caregiver/Assistito | 5.5 |
+| Dominio | `POST /transports/modification-requests/:id/retract` | Caregiver/Assistito | 2.4 |
 | Dominio | `POST /transports/modification-requests/:id/approve` | Associazione | 2.3 |
 | Dominio | `POST /transports/modification-requests/:id/reject` | Associazione | 2.3 |
 | Dominio | `GET /association/modification-requests` | Associazione | 7.3 |
@@ -505,6 +537,9 @@ POST /transports
 | Dominio | `GET /care-groups/:id` | Caregiver/Assistito | 9.5 |
 | Dominio | `POST /care-groups/:id/members` | Amministratore gruppo | 9.2 |
 | Dominio | `POST /care-groups/invitations/:token/accept` | Caregiver/Assistito | 9.2 |
+| Dominio | `POST /care-groups/invitations/:token/decline` | Caregiver/Assistito | 9.7 |
+| Dominio | `POST /care-groups/:id/members/:personId/revoke` | Amministratore gruppo | 9.8 |
+| Dominio | `PATCH /care-groups/:id/members/:personId/role` | Amministratore gruppo | 9.9 |
 | Dominio | `DELETE /care-groups/:id/members/:personId` | Amministratore gruppo | 9.3 |
 | Dominio | `DELETE /care-groups/:id` | Amministratore gruppo | 9.4 |
 | Dominio | `GET /care-groups/:id/bookings` | Membro gruppo | 9.6 |
@@ -513,6 +548,7 @@ POST /transports
 | Dominio | `GET /notifications/counters` | Tutti | §11.4 |
 | Dominio | `POST /devices` / `DELETE /devices/:id` | Tutti | UC 4 |
 | Admin | `POST /admin/associations/:id/accredit` | Admin GoCare | PA-11 |
+| Admin | `POST /admin/associations/:id/reject` | Admin GoCare | PA-11 |
 
 ---
 
@@ -525,22 +561,22 @@ Da chiudere **prima** di implementare i Service indicati (rif. §13 del document
 | PA-01 | Modello a richiesta vs a slot | Strutturale: entità e flusso principale | UC 1, 4, 5, 6 |
 | PA-03 | Chi aggiorna lo stato e come accede | Modello identità operatore | `TripStatusService` |
 | PA-04 | Soglia "non coperta" | Regola di `CoverageEvaluator` + `CoverageTimeoutJob` | UC 4.1, 6.4 |
-| PA-05 | Visibilità richieste per area | `AreaOperativita` + `TransportRequestRecipient` | UC 6, 8.5 |
+| PA-05 | Visibilità richieste per area | `Association.CoveredProvinces` (lista di province) confrontata con `Address.Provincia` di partenza + `TransportRequestCandidate` | UC 6, 8.5 |
 | PA-06 | Esposizione dati contatto assistito | Dati minimi vs completi + audit | UC 6.2, 6.5 |
 | PA-07 | Gestione guasti in corsa | Stato `SospesoImprevisto` | `TripStatusService` |
 | PA-08 | Ruoli/permessi nel gruppo cura | Ruolo admin + invito con accettazione | UC 9 |
-| PA-11 | Accreditamento associazioni | Stato account + gate operatività | Auth, Admin |
+| PA-11 | Accreditamento associazioni | `Association.Status` (dominio); gate operatività nei Service di dominio; aperto: se il rifiuto debba sospendere l'account Auth | Admin, Service di dominio (accept/create) |
 | PA-14 | Retention dati post-eliminazione | Logica di anonimizzazione | `AccountService`, `ProfileProvisioningService` |
 | PA-15 | Esito rifiuto richiesta di modifica | Opzioni nella notifica di esito | UC 2.3, 4.5 |
 
-Fuori scope v0 confermati: trasporti ricorrenti (PA-09), geolocalizzazione mezzo (PA-10), trasporto sociale (PA-13).
+Fuori scope v0 confermati: trasporti ricorrenti (PA-09), geolocalizzazione mezzo (PA-10), trasporto sociale (PA-13), calcolo km previsti (rinviato a V1 — port `IKmCalculator` già previsto nello scaffold, nessun campo `KmPrevisti` sull'entità in v0).
 
 ---
 
 ## 16. Ordine di esecuzione consigliato (milestone)
 
 1. **M0 – Fondamenta**: Fasi 0, 1, 2 (solution, `GoCare.Shared`, i due `DbContext` in `GoCare.Application` + migrazione iniziale ciascuno, docker-compose con i due database).
-2. **M1 – Autenticazione**: Fase 3 + parte della Fase 4 (JWT, e-mail, `GlobalExceptionHandler`, `ValidationFilter`). Deliverable: registrazione → verifica → login → reset password end-to-end, con `Person`/`Association` creata via `ProfileProvisioningService`.
+2. **M1 – Autenticazione**: Fase 3 + parte della Fase 4 (JWT, e-mail, `GlobalExceptionHandler`, `ValidationFilter`). Deliverable: registrazione → verifica → login → reset password end-to-end, con `Person`/`Association` creata via `ProfileProvisioningService` con lo stesso id dell'`Account`.
 3. **M2 – Dominio: Models + helper + profili**: Fasi 5 e 7 (`TripStateMachine`), UC 8, `ProfileProvisioningService`.
 4. **M3 – Gruppi cura**: UC 9 completo (dopo PA-08).
 5. **M4 – Ciclo richiesta trasporto**: UC 1 → UC 6 → UC 7 (dopo PA-01, PA-04, PA-05, PA-06).
