@@ -19,4 +19,8 @@ public sealed class RefreshToken : IExpirable
     public DateTimeOffset ExpiresAt { get; }
     public DateTimeOffset CreatedAt { get; }
     public DateTimeOffset? RevokedAt { get; private set; }
+
+    public void Revoke(DateTimeOffset at) => RevokedAt ??= at;
+
+    public bool IsActive(DateTimeOffset now) => RevokedAt is null && !this.IsExpired(now);
 }
