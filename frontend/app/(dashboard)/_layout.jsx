@@ -30,18 +30,18 @@ const DashboardLayout = () => {
                 )}}
             />
             <Tabs.Screen 
-                name="books" 
-                options={{title:"Books", tabBarIcon: ({ focused }) => (
+                name="listOfTransports" 
+                options={{title:"I Miei Viaggi", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
-                        name={ focused ? 'book' : 'book-outline'} 
+                        name={ focused ? 'car' : 'car-outline'} 
                         color={ focused ?  theme.iconColorFocused :  theme.iconColor }
                     />
                 )}}
             />
             <Tabs.Screen 
                 name="create" 
-                options={{title:"Create", tabBarIcon: ({ focused }) => (
+                options={{title:"Nuovo Viaggio", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
                         name={ focused ? 'create' : 'create-outline'} 
