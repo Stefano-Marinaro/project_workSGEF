@@ -1,14 +1,14 @@
-import { StyleSheet, Text } from 'react-native'
+import { StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Pressable, View, Modal, TouchableOpacity } from 'react-native'
 import { Link, useRouter } from 'expo-router'
+import { useState } from 'react'
+import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
 
 // themed components
-import ThemedView from  '../../components/ThemedView.jsx'
+import ThemedView from '../../components/ThemedView.jsx'
 import Spacer from '../../components/Spacer.jsx'
 import ThemedText from '../../components/ThemedText.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import ThemedTextInput from '../../components/ThemedTextInput.jsx'
-import { useState } from 'react'
-import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
 
 const Register = () => {
 
@@ -16,9 +16,24 @@ const Register = () => {
     const [password, setPassword] = useState('')
     const [role, setRole] = useState('caregiver')
     const router = useRouter()
+    const [dateOfBirth, setDateOfBirth] = useState(new Date())
+    const [placeOfBirth, setPlaceOfBirth] = useState('')
+
+    const [showDatePicker, setShowDatePicker] = useState(false)
+
+    //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
+    //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
+    const onChangeDate = (event, selectedDate) => {
+        if (Platform.OS === 'android') {
+            setShowDatePicker(false)
+        }
+        if (selectedDate) setDateOfBirth(selectedDate)
+        // è un controllo di sicurezza in caso l'utente
+        //"tocca fuori" prima di aver selezionato una data quindi aggiorni lo stato se è arrivato davvero un valore
+    }
 
     const handleSubmit = () => {
-        console.log('Register form submitted', email, password)
+        console.log('Register form submitted', email, password, role, dateOfBirth.toISOString().split('T')[0], placeOfBirth)
         router.replace({ pathname: '/login', params: { role } })
     }
 
@@ -47,6 +62,24 @@ const Register = () => {
                 value={password}
             />
 
+            <ThemedTextInput 
+                style={{ width: '80%', marginBottom: 20}}
+                placeholder="Place of Birth"
+                onChangeText={setPlaceOfBirth}
+                value={placeOfBirth}
+            />
+
+            <ThemedButton
+                onPress={() => setShowDatePicker(true)}
+                style={styles.input}
+            >
+                <Text style={styles.btnText}>
+                    Date of Birth: {dateOfBirth.toLocaleDateString('it-IT')} 
+                </Text>
+            </ThemedButton>
+
+            <Spacer height={20}/>
+
             <ThemedText style={styles.roleLabel}>I am registering as</ThemedText>
             <View style={styles.roleOptions}>
                 <Pressable
@@ -63,6 +96,7 @@ const Register = () => {
                 </Pressable>
             </View>
 
+            <Spacer height={20}/>
 
             <ThemedButton onPress={handleSubmit}>
                 <Text style={{ color: '#f2f2f2'}}>Register</Text>
@@ -75,6 +109,38 @@ const Register = () => {
                     Login instead
                 </ThemedText>
             </Link>
+
+            {/* MODAL DATE PICKER (iOS) / NATIVO (Android) */}
+            {showDatePicker && (
+                Platform.OS === 'ios' ? (
+                    <Modal transparent={true} animationType="slide" visible={showDatePicker}>
+                        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
+                            <View style={styles.modalContent}>
+                                <View style={styles.modalHeader}>
+                                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
+                                        <Text style={styles.doneText}>Conferma</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <DateTimePicker
+                                    value={dateOfBirth}
+                                    mode="date"
+                                    display="spinner"
+                                    onChange={onChangeDate}
+                                    textColor="#000000"
+                                    themeVariant="light"
+                                />
+                            </View>
+                        </TouchableOpacity>
+                    </Modal>
+                ) : (
+                    <DateTimePicker
+                        value={dateOfBirth}
+                        mode="date"
+                        display="default"
+                        onChange={onChangeDate}
+                    />
+                )
+            )}
         </ThemedView>
     </TouchableWithoutFeedback>
   )
@@ -93,6 +159,13 @@ const styles = StyleSheet.create({
         textAlign: "center",
         fontSize: 18,
         marginBottom: 30,
+    },
+    input: {
+        width: '80%',
+        marginBottom: 15,
+    },
+    btnText: {
+        color: '#f2f2f2',
     },
     link: {
         marginVertical: 10,
@@ -121,5 +194,29 @@ const styles = StyleSheet.create({
         borderColor: '#2f80ed',
         backgroundColor: '#dbeafe',
     },
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'flex-end',
+        backgroundColor: 'rgba(0,0,0,0.5)',
+    },
+    modalContent: {
+        backgroundColor: '#ffffff',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+        paddingBottom: 30,
+    },
+    modalHeader: {
+        alignItems: 'flex-end',
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+        backgroundColor: '#f8f8f8',
+        borderTopLeftRadius: 16,
+        borderTopRightRadius: 16,
+    },
+    doneText: {
+        color: '#007AFF',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
 })
-
