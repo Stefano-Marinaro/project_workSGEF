@@ -60,7 +60,3 @@ Oppure apri `GoCare.slnx` in Visual Studio e premi F5.
 Swagger: <https://localhost:7076/swagger> (o <http://localhost:5161/swagger>).
 
 ---
-
-## Problemi comuni
-
-**`dotnet ef` fallisce con "Could not load assembly" / errore di firma / criterio bloccato** — su Windows 11 con **Controllo app intelligente** (Smart App Control) attivo, i comandi EF possono essere bloccati perché caricano una DLL compilata in locale, non firmata. Verifica in Impostazioni → Sicurezza di Windows → Protezione da app e browser. Se è "Attivo", lancia i comandi `dotnet ef` da WSL2 invece che da Windows nativo (build/run restano invariati, non ne risentono).

@@ -1,14 +1,5 @@
 # Guida — `GoCare.Application`
 
-Teoria raccolta mentre si costruisce `GoCare.Application` (area Auth + area
-dominio nello stesso progetto, separate per convenzione di cartelle). Copre la
-**Fase 2 (Persistenza)** lato dominio: PostgreSQL, `BusinessDbContext`, DI,
-enum di dominio (§5), entità di dominio (§7).
-
-Complementare a `guidaGoCare.Shared.md` e `guidaGoCare.Api.md`.
-
----
-
 ## 1. PostgreSQL: due database, due DbContext
 
 Ogni sviluppatore installa PostgreSQL **in locale** e crea entrambi i database
@@ -18,7 +9,7 @@ condivide un server Postgres di team.
 - Si condivide via git il **codice** (i due `DbContext`, le migrazioni EF
   Core), non i dati né il server.
 - Ognuno applica le migrazioni al proprio Postgres (`dotnet ef database
-  update`) e lavora isolato.
+update`) e lavora isolato.
 - Le password vere non vanno in `appsettings.json` (finisce in git): stanno in
   `appsettings.Development.json` (ignorato) o `dotnet user-secrets`.
 
@@ -59,8 +50,8 @@ comando** (`dotnet ef …`), non a runtime né a chi referenzia il progetto:
 
 - `PrivateAssets="all"` — non si propaga a chi referenzia `GoCare.Application`
   (altrimenti "trapelerebbe" a `GoCare.Api`).
-- `IncludeAssets="…"` — cosa serve *qui*: runtime, build, analyzer. È il
-  pattern Microsoft per pacchetti *design-time-only*.
+- `IncludeAssets="…"` — cosa serve _qui_: runtime, build, analyzer. È il
+  pattern Microsoft per pacchetti _design-time-only_.
 
 ---
 
@@ -151,7 +142,7 @@ Cartella `Models/Enums/`. Nome: prefisso `E` + stile `Trip*` (non
 public enum ETripType { Visit, Hospitalization, Discharge, Transfer }
 ```
 
-`Transfer` è in-scope v0 (§5 del PDF; solo *Trasporto sociale* è fuori scope,
+`Transfer` è in-scope v0 (§5 del PDF; solo _Trasporto sociale_ è fuori scope,
 PA-13). Ogni valore è un flusso UC leggermente diverso ma condivide lo stesso
 `TransportRequest`: il tipo è un campo, non entità separate.
 
@@ -175,7 +166,7 @@ public enum ETripRequestStatus
 
 **6 valori, non 7:** niente `Refused`. Il rifiuto di una singola associazione
 (UC 6 `Decline`) non cambia lo stato aggregato — resta su
-`TransportRequestRejection`, che traccia *chi* ha rifiutato. L'unico esito
+`TransportRequestRejection`, che traccia _chi_ ha rifiutato. L'unico esito
 negativo aggregato è `NotCovered`, calcolato da `ICoverageEvaluator` quando
 nessuna associazione ha accettato (o timeout scaduto).
 
@@ -352,8 +343,8 @@ Area Auth (`AccountStatus`, `AccountRole`, …) — a cura del collega.
 ## 6. `[Flags]`: enum come insieme di opzioni combinabili
 
 **Problema.** Un enum normale rappresenta un valore alla volta —
-`ETripType.Visit` *oppure* `ETripType.Hospitalization`. Ma una notifica può
-dover raggiungere l'utente su più canali insieme (push *e* email).
+`ETripType.Visit` _oppure_ `ETripType.Hospitalization`. Ma una notifica può
+dover raggiungere l'utente su più canali insieme (push _e_ email).
 
 **Meccanismo (bit a bit).** Se i valori sono **potenze di 2**, ognuno occupa
 un bit diverso:
@@ -405,7 +396,7 @@ si riferisce sempre e solo all'esperienza in-app.
 `Person` è un'**entità**: identità propria (`Id`), riga a sé — due `Person` coi
 dati identici ma `Id` diversi restano due persone.
 
-`Address` **non ha identità**: due indirizzi coi campi uguali *sono* lo stesso
+`Address` **non ha identità**: due indirizzi coi campi uguali _sono_ lo stesso
 indirizzo. È un **value object** — definito dal valore dei campi, non da un id
 — quindi naturale renderlo **immutabile** (per "cambiare indirizzo" si
 sostituisce l'intero oggetto).
@@ -469,9 +460,9 @@ Costo: 16 byte per riga invece di 4-8 — trascurabile per un v0.
 `CareGroupMembership` e `TransportRequestCandidate` usano una **chiave
 primaria composta**:
 
-| Entità | Chiave |
-|---|---|
-| `CareGroupMembership` | `(CareGroupId, PersonId)` |
+| Entità                      | Chiave                                |
+| --------------------------- | ------------------------------------- |
+| `CareGroupMembership`       | `(CareGroupId, PersonId)`             |
 | `TransportRequestCandidate` | `(TransportRequestId, AssociationId)` |
 
 Criterio: se nessuna route e nessun'altra tabella indirizza mai una riga col
@@ -492,7 +483,7 @@ dati che cambiano:
 - **`TransportRequest.StartAddress` / `EndAddress` / `ReturnEndAddress?` / contatti:**
   `Address` / stringhe copiate nella riga, non FK a `SavedDestination` o
   `Person`. Se la persona poi modifica quella destinazione o cambia telefono,
-  il trasporto registrato conserva i dati validi *quando è stato creato*.
+  il trasporto registrato conserva i dati validi _quando è stato creato_.
 - **`TransportRequestCandidate`:** risultato **già calcolato** del match PA-05.
   Alla creazione, per ogni associazione accreditata la cui `CoveredProvinces`
   contiene la provincia di partenza si scrive una riga. Dopo, "questa
@@ -504,10 +495,10 @@ Congelare la lista dei candidati è un **pro**:
 - denominatore stabile per PA-04 ("non coperta" = N interpellate, M rifiutate,
   timeout scaduto): se l'insieme cambiasse in corsa il conteggio non
   significherebbe più niente;
-- tracciabilità di *quali* associazioni erano state interpellate, allineata a
+- tracciabilità di _quali_ associazioni erano state interpellate, allineata a
   chi ha ricevuto la notifica.
 
-Costo: un'associazione che aggiunge quella provincia *dopo* non vedrà la
+Costo: un'associazione che aggiunge quella provincia _dopo_ non vedrà la
 richiesta. Finestra minima → in v0 non si ricalcola.
 
 ### 7.6 Timestamp e `IClock`: l'entità non legge l'ora
@@ -575,7 +566,7 @@ qualcosa da fuori (un'altra riga, un port, il clock, l'utente corrente, il DB)
   è l'associazione assegnata?"), scelta del ramo (`InAttesa` → diretto vs
   `Confermata` → `TransportModificationRequest`), `_clock.UtcNow`, notifiche.
   Schema: `load → controlli cross-entity → entity.FaiLaCosa(dati, now) →
-  SaveChanges → notifica`.
+SaveChanges → notifica`.
 
 Test rapido: se ha bisogno di `await`, non è un metodo d'entità.
 

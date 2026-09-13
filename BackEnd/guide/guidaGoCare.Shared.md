@@ -22,12 +22,14 @@ tipizzate + gestore globale, filtro di validazione, tipi per la paginazione.
 ## 2. Concetti di base
 
 ### Interfaccia
+
 Un **contratto**: l'elenco dei metodi/proprietà che qualcosa espone, senza il
 codice che li fa funzionare. Una classe la "implementa" scrivendo il codice
-vero. L'interfaccia dice *"so mandare un'email"* (`SendAsync`); una classe
-concreta dice *come* (SMTP, servizio cloud, finta nei test).
+vero. L'interfaccia dice _"so mandare un'email"_ (`SendAsync`); una classe
+concreta dice _come_ (SMTP, servizio cloud, finta nei test).
 
 ### Dependency Injection (DI)
+
 Invece di creare gli oggetti con `new`, li si **chiede nel costruttore**
 (tipizzati come interfacce) e un "contenitore" del framework li fornisce
 pronti. Così puoi **sostituire** l'implementazione (vera in produzione, finta
@@ -55,6 +57,7 @@ In produzione ogni Service riceve un `SystemClock`; nei test gli si passa a
 mano un `FakeClock` con istante fisso.
 
 ### Porta (port)
+
 Un'interfaccia per una **capacità esterna** (email, database, push).
 L'implementazione sta in `Infrastructure/` (host o progetto applicativo),
 **non** in `GoCare.Shared`. Eccezione: un'implementazione banale come
@@ -64,31 +67,31 @@ L'implementazione sta in `Infrastructure/` (host o progetto applicativo),
 
 ## 3. Dettagli di C# incontrati (riferimento rapido)
 
-| Cosa | Significato |
-|---|---|
-| `namespace X;` (con `;`) | *file-scoped*: tutto il file appartiene a `X`. Nome = namespace del progetto + cartella. |
-| **Implicit usings** | `<ImplicitUsings>enable</ImplicitUsings>`: importa in automatico `System`, `System.Linq`, `System.Threading.Tasks`, ecc. I template VS li aggiungono comunque: vanno tolti. **Non** copre `Microsoft.AspNetCore.*` in una class library. |
-| `public` vs `internal` | `internal` = visibile solo dentro il progetto. Nel kernel condiviso i contratti vanno **`public`**. |
-| `sealed` (classe) | vieta l'ereditarietà. |
-| `abstract` (classe) | non istanziabile: esiste solo come base per sottoclassi. |
-| Costruttore primario | `class X(string message)` — i parametri dopo il nome sono catturati e usabili nei membri. |
-| `{ get; }` | sola lettura: assegnabile solo alla creazione. |
-| `{ get; init; }` | assegnabile solo durante la creazione (object initializer), poi immutabile. |
-| `=> espressione` | corpo di espressione (forma breve di `get { return …; }`). |
-| `;` al posto di `{ }` | corpo vuoto: non aggiunge nulla. |
-| `record` | tipo per dati, uguaglianza "per valore", sintassi concisa. |
-| `Task` come ritorno | metodo **asincrono** (I/O): non blocca il thread. Nome in `…Async`. |
-| `CancellationToken ct = default` | parametro opzionale per **annullare** l'operazione. Il nome deve combaciare con quello dell'interfaccia implementata (CA1725). |
-| Nomi parametri | **camelCase**: `htmlBody`, non `htmlbody`. |
-| `Guid` | 128 bit, 32 esadecimali. `Guid.NewGuid()` praticamente mai in collisione. Utile quando l'id serve **prima** di salvare. Chiavi entità: GUID **v7/sequenziali** (`Guid.CreateVersion7()`); id usa-e-getta: `Guid.NewGuid()`. `Guid.Empty` = tutto zeri. |
-| `exception switch { … }` | *switch expression*: pattern matching sul tipo, produce un valore. `_` = default. |
-| `x is Tipo v` | controlla il tipo **e** assegna a `v` se combacia. `is not Tipo v` per il caso opposto. |
-| BOM UTF-8 | i `.cs` da Visual Studio hanno il BOM; quelli scritti a mano spesso no. Non rompe niente; `dotnet format` uniforma. |
-| `_` sui campi privati | `private readonly X _foo;` — distingue il campo da parametri/locali senza `this.`. **Non** su `const` né `static readonly` costanti: quelli `PascalCase`. Parametri e locali: `camelCase` senza `_`. |
-| `cond ? a : b` | ternario: espressione, produce un valore (non è un `if`). |
-| `x is < 1 or > 100` | pattern relazionale: come `x < 1 \|\| x > 100`, ma nomina `x` una volta. |
-| `(double)x` in una divisione | `int / int` è divisione **intera** (`50 / 20 == 2`). Cast a `double` → `50 / 20.0 == 2.5`. |
-| `Math.Ceiling` | arrotonda **verso l'alto** (`2.1 → 3.0`). Restituisce `double`: serve `(int)` davanti. |
+| Cosa                             | Significato                                                                                                                                                                                                                                            |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `namespace X;` (con `;`)         | _file-scoped_: tutto il file appartiene a `X`. Nome = namespace del progetto + cartella.                                                                                                                                                               |
+| **Implicit usings**              | `<ImplicitUsings>enable</ImplicitUsings>`: importa in automatico `System`, `System.Linq`, `System.Threading.Tasks`, ecc. I template VS li aggiungono comunque: vanno tolti. **Non** copre `Microsoft.AspNetCore.*` in una class library.               |
+| `public` vs `internal`           | `internal` = visibile solo dentro il progetto. Nel kernel condiviso i contratti vanno **`public`**.                                                                                                                                                    |
+| `sealed` (classe)                | vieta l'ereditarietà.                                                                                                                                                                                                                                  |
+| `abstract` (classe)              | non istanziabile: esiste solo come base per sottoclassi.                                                                                                                                                                                               |
+| Costruttore primario             | `class X(string message)` — i parametri dopo il nome sono catturati e usabili nei membri.                                                                                                                                                              |
+| `{ get; }`                       | sola lettura: assegnabile solo alla creazione.                                                                                                                                                                                                         |
+| `{ get; init; }`                 | assegnabile solo durante la creazione (object initializer), poi immutabile.                                                                                                                                                                            |
+| `=> espressione`                 | corpo di espressione (forma breve di `get { return …; }`).                                                                                                                                                                                             |
+| `;` al posto di `{ }`            | corpo vuoto: non aggiunge nulla.                                                                                                                                                                                                                       |
+| `record`                         | tipo per dati, uguaglianza "per valore", sintassi concisa.                                                                                                                                                                                             |
+| `Task` come ritorno              | metodo **asincrono** (I/O): non blocca il thread. Nome in `…Async`.                                                                                                                                                                                    |
+| `CancellationToken ct = default` | parametro opzionale per **annullare** l'operazione. Il nome deve combaciare con quello dell'interfaccia implementata (CA1725).                                                                                                                         |
+| Nomi parametri                   | **camelCase**: `htmlBody`, non `htmlbody`.                                                                                                                                                                                                             |
+| `Guid`                           | 128 bit, 32 esadecimali. `Guid.NewGuid()` praticamente mai in collisione. Utile quando l'id serve **prima** di salvare. Chiavi entità: GUID **v7/sequenziali** (`Guid.CreateVersion7()`); id usa-e-getta: `Guid.NewGuid()`. `Guid.Empty` = tutto zeri. |
+| `exception switch { … }`         | _switch expression_: pattern matching sul tipo, produce un valore. `_` = default.                                                                                                                                                                      |
+| `x is Tipo v`                    | controlla il tipo **e** assegna a `v` se combacia. `is not Tipo v` per il caso opposto.                                                                                                                                                                |
+| BOM UTF-8                        | i `.cs` da Visual Studio hanno il BOM; quelli scritti a mano spesso no. Non rompe niente; `dotnet format` uniforma.                                                                                                                                    |
+| `_` sui campi privati            | `private readonly X _foo;` — distingue il campo da parametri/locali senza `this.`. **Non** su `const` né `static readonly` costanti: quelli `PascalCase`. Parametri e locali: `camelCase` senza `_`.                                                   |
+| `cond ? a : b`                   | ternario: espressione, produce un valore (non è un `if`).                                                                                                                                                                                              |
+| `x is < 1 or > 100`              | pattern relazionale: come `x < 1 \|\| x > 100`, ma nomina `x` una volta.                                                                                                                                                                               |
+| `(double)x` in una divisione     | `int / int` è divisione **intera** (`50 / 20 == 2`). Cast a `double` → `50 / 20.0 == 2.5`.                                                                                                                                                             |
+| `Math.Ceiling`                   | arrotonda **verso l'alto** (`2.1 → 3.0`). Restituisce `double`: serve `(int)` davanti.                                                                                                                                                                 |
 
 ---
 
@@ -111,7 +114,7 @@ vero**: i Service dipendono da `IClock`.
 
 ### 4.2 `IEmailSender` (`Abstractions/`)
 
-Una **porta**: *"so mandare un'email"*, senza dire come. Usata da area Auth
+Una **porta**: _"so mandare un'email"_, senza dire come. Usata da area Auth
 (verifica, reset) e area dominio (notifiche di esito). Sta in `Shared` perché
 serve a entrambe; l'implementazione (`SmtpEmailSender`) sta in
 `Infrastructure/` — qui solo il contratto.
@@ -129,7 +132,7 @@ Un'**eccezione** rappresenta un errore: `throw` la lancia, risale la catena
 finché qualcuno la `catch`a. In .NET tutte derivano da `System.Exception`.
 
 **Perché scriverle noi e non usare quelle di EF:** EF è al livello
-*persistenza*, non al significato *applicativo*.
+_persistenza_, non al significato _applicativo_.
 
 - "non trovato" per EF = `null`, non un'eccezione. È il Service a decidere
   "`null` → 404".
@@ -158,7 +161,7 @@ Perché due livelli:
   discendere da `System.Exception`. È il punto d'aggancio.
 - foglie `: DomainException` (non `: Exception`) — per avere **una categoria
   unica**: un solo `catch (DomainException)` prende tutte le nostre, un `catch
-  (Exception)` dopo prende i bug → 500; `ex is DomainException` distingue
+(Exception)` dopo prende i bug → 500; `ex is DomainException` distingue
   "errore di business previsto" da "difetto"; comportamento condiviso futuro si
   aggiunge una volta sulla base.
 - `DomainException` è `abstract` (mai un generico "errore di dominio"); le
@@ -230,7 +233,7 @@ prima sono passi che si eseguono e basta: non mettere `return` davanti a
 
 ### 4.6 `ValidationFilter` (`Validation/`)
 
-Un **action filter** gira *attorno* all'azione di un controller:
+Un **action filter** gira _attorno_ all'azione di un controller:
 
 ```
 OnActionExecutionAsync(context, next)
@@ -291,7 +294,7 @@ test. Solo l'interfaccia sta in `Shared`; `CurrentUser` si scrive con
 
 **Da decidere in Fase 3 (Auth):** quale claim porta l'id (`sub` vs
 `ClaimTypes.NameIdentifier`) e se aggiungere `PersonId` / `AssociationId`
-(`Guid?` — un account è *o* utente *o* associazione).
+(`Guid?` — un account è _o_ utente _o_ associazione).
 
 ### 4.8 `Pagination/` — `PageQuery` e `PagedResult<T>`
 
@@ -389,16 +392,16 @@ L'host scrive `builder.Services.AddSharedKernel();` e ha tutto. Schema di
 **`IServiceCollection`** è un'interfaccia Microsoft (classe concreta
 `ServiceCollection`); l'istanza la crea il framework
 (`WebApplication.CreateBuilder` → `builder.Services`). La ricevi già pronta. È
-il "carrello" della DI (*"quando qualcuno chiede X, dagli Y"*), riempito
+il "carrello" della DI (_"quando qualcuno chiede X, dagli Y"_), riempito
 all'avvio e congelato da `builder.Build()`.
 
 **Lifetime:**
 
-| Metodo | Quante istanze | Quando |
-|---|---|---|
-| `AddSingleton` | **una** per tutta la vita dell'app | oggetti **senza stato** e **thread safe** (`SystemClock`) |
-| `AddScoped` | **una per richiesta HTTP** | roba legata alla richiesta (`DbContext`, `CurrentUser`, un filtro) |
-| `AddTransient` | **una nuova a ogni richiesta** del tipo | oggetti leggeri usa-e-getta |
+| Metodo         | Quante istanze                          | Quando                                                             |
+| -------------- | --------------------------------------- | ------------------------------------------------------------------ |
+| `AddSingleton` | **una** per tutta la vita dell'app      | oggetti **senza stato** e **thread safe** (`SystemClock`)          |
+| `AddScoped`    | **una per richiesta HTTP**              | roba legata alla richiesta (`DbContext`, `CurrentUser`, un filtro) |
+| `AddTransient` | **una nuova a ogni richiesta** del tipo | oggetti leggeri usa-e-getta                                        |
 
 - **Senza stato:** niente campi mutabili ricordati fra chiamate. `SystemClock`
   legge l'orologio e restituisce → una istanza o mille è identico.
@@ -424,7 +427,7 @@ all'avvio e congelato da `builder.Build()`.
 ### `FrameworkReference` vs `PackageReference`
 
 - **`PackageReference`** = un pacchetto singolo da NuGet (`FluentValidation`).
-- **`FrameworkReference`** = un intero *shared framework* già con l'SDK.
+- **`FrameworkReference`** = un intero _shared framework_ già con l'SDK.
   `Microsoft.AspNetCore.App` dà con una riga `HttpContext`, `IExceptionHandler`,
   MVC, DI… senza scaricare nulla.
 
@@ -450,25 +453,3 @@ Vale per tutti i progetti: `net10.0`, `Nullable enable`, `ImplicitUsings
 enable`, **warning non bloccanti** (`TreatWarningsAsErrors=false`), analyzer
 attivi, `NoWarn` per `CA1716` (namespace "Shared") e `CA1848` (`LoggerMessage`
 non serve fuori dai percorsi caldi).
-
----
-
-## 6. Stato di `GoCare.Shared`
-
-**Fatto** — build 0/0, `GoCare.Shared` completo lato codice:
-
-- `Abstractions/`: `IClock.cs`, `SystemClock.cs`, `IEmailSender.cs`,
-  `ICurrentUser.cs`
-- `Errors/`: `DomainException.cs`, `NotFoundException.cs`, `ConflictException.cs`,
-  `ForbiddenException.cs`, `ValidationException.cs`, `GlobalExceptionHandler.cs`
-- `Validation/ValidationFilter.cs`
-- `Pagination/PageQuery.cs`, `PagedResult.cs`
-- `DependencyInjection.cs` — `AddSharedKernel()`
-
-**Da fare (nell'host `GoCare.Api`):** vedi `guidaGoCare.Api.md`.
-
-- `Security/CurrentUser.cs` — implementazione di `ICurrentUser` con
-  `IHttpContextAccessor`; `AddScoped<ICurrentUser, CurrentUser>()`.
-- `Program.cs`: `AddSharedKernel()`, `app.UseExceptionHandler()`,
-  `AddControllers(o => o.Filters.AddService<ValidationFilter>())`, Swagger.
-- `appsettings.json`: connection string `AuthDb` e `BusinessDb`.
