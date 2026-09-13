@@ -384,7 +384,15 @@ dotnet_naming_style.camelcase.word_separator =
 dotnet_naming_style.camelcase.capitalization = camel_case
 
 dotnet_naming_style.s_camelcase.required_prefix = s_
-dotnet_naming_style.s_camelcase.required_suffix = 
-dotnet_naming_style.s_camelcase.word_separator = 
+dotnet_naming_style.s_camelcase.required_suffix =
+dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
+
+#### Codice generato ####
+
+# Migrazioni EF Core: mai modificate a mano, si rigenerano a ogni migrations
+# add/remove. CA1861 (array costante come argomento) è un falso positivo qui:
+# ogni migrazione gira una volta sola, non in un percorso caldo.
+[**/Migrations/**.cs]
+dotnet_diagnostic.CA1861.severity = none
 
