@@ -1,6 +1,6 @@
 # Project GoCare
 
-*Convenzioni di lettura: i punti ancora da decidere sono segnalati in corsivo con l’etichetta [DA VALIDARE] e ripresi tutti nella sezione “Cosa manca / Punti aperti”.*
+_Convenzioni di lettura: i punti ancora da decidere sono segnalati in corsivo con l’etichetta [DA VALIDARE] e ripresi tutti nella sezione “Cosa manca / Punti aperti”._
 
 ---
 
@@ -8,7 +8,7 @@
 
 ## 1.1 Target
 
-Persone fragili che hanno bisogno del supporto di associazioni di volontariato per il trasporto, i loro caregiver (familiari o assistenti che gestiscono la prenotazione per conto dell’assistito) e le associazioni di volontariato e soccorso che erogano il servizio di trasporto.
+Persone che hanno bisogno del supporto di associazioni di volontariato per il trasporto, i loro caregiver (familiari o assistenti che gestiscono la prenotazione per conto dell’assistito) e le associazioni di volontariato e soccorso che erogano il servizio di trasporto.
 
 ## 1.2 Problema
 
@@ -144,164 +144,164 @@ Le user story sono riportate con il riferimento allo Use Case (e alla sotto-voce
 
 ## 3.1 Stories caregiver / assistito
 
-| ID | User story | UC | Note |
-|---|---|---|---|
-| CG-01 | Come caregiver/assistito voglio potermi registrare in GoCare. | 10.1 | Confermata |
-| CG-02 | Come caregiver/assistito voglio poter effettuare il login. | 10.2 | NUOVO – scorporata da CG-01 |
-| CG-03 | Come caregiver/assistito voglio poter modificare i miei dati personali e di contatto. | 8.2, 8.3 | Confermata |
-| CG-04 | Come caregiver/assistito voglio poter recuperare la password in caso di smarrimento. | 10.3 | Confermata |
-| CG-05 | Come caregiver/assistito voglio poter eliminare il mio account. | 10.4 | Confermata |
-| CG-06 | Come caregiver voglio poter avere più assistiti a carico. | 9.1, 9.2 | Confermata |
-| CG-07 | Come caregiver/assistito voglio poter creare un “gruppo cura”. | 9.1 | Confermata |
-| CG-08 | Come caregiver/assistito voglio poter aggiungere un assistito/caregiver al gruppo. | 9.2 | Confermata |
-| CG-09 | Come caregiver/assistito voglio poter rimuovere un assistito/caregiver dal gruppo. | 9.3 | Confermata |
-| CG-10 | Come caregiver/assistito voglio poter eliminare un “gruppo cura”. | 9.4 | Confermata |
-| CG-11 | Come caregiver/assistito voglio poter visualizzare i gruppi a cui appartengo. | 9.5 | Confermata |
-| CG-12 | Come caregiver/assistito voglio poter visualizzare le prenotazioni effettuate nel gruppo. | 9.6 | Confermata |
-| CG-13 | Come assistito voglio poter registrare i miei futuri trasporti. | 1.1 | Confermata |
-| CG-14 | Come caregiver voglio poter registrare il prossimo trasporto del mio assistito. | 1.1, 1.6 | Confermata |
-| CG-15 | Come caregiver/assistito voglio poter scegliere la direzione del viaggio (andata e ritorno, solo andata, solo ritorno). | 1.2 | NUOVA – UC 1.2 era senza story |
-| CG-16 | Come caregiver/assistito voglio poter indicare il tipo di viaggio (visita, ricovero, dimissione, trasferimento). | 1.5 | NUOVA – tipologia presente nel doc ma senza story |
-| CG-17 | Come caregiver/assistito voglio poter scegliere una destinazione diversa dal mio domicilio abituale. | 1.3, 2.1 | Confermata |
-| CG-18 | Come caregiver/assistito voglio poter salvare, modificare ed eliminare le mie destinazioni ricorrenti. | 8.4 | NUOVA – era solo nel dettaglio SPRINT (voce 2.2) |
-| CG-19 | Come caregiver/assistito voglio poter indicare un accompagnatore per il viaggio. | 1.4 | Confermata |
-| CG-20 | Come caregiver/assistito voglio poter aggiungere/modificare/rimuovere l’accompagnatore anche dopo aver creato la richiesta. | 2.2 | Confermata |
-| CG-21 | Come caregiver/assistito voglio poter modificare la data del mio viaggio in caso di imprevisto. | 2.1 | Confermata |
-| CG-22 | Come caregiver/assistito voglio sapere se la mia richiesta di modifica è stata accettata o rifiutata. | 4.5, 5.2 | Confermata |
-| CG-23 | Come caregiver/assistito voglio poter annullare il viaggio. | 3.1 | Confermata |
-| CG-24 | Come caregiver/assistito voglio poter indicare il motivo dell’annullamento. | 3.3 | NUOVA – UC 3 prevedeva la causale solo lato associazione |
-| CG-25 | Come caregiver/assistito voglio sapere se il viaggio non può essere coperto. | 4.4 | Confermata |
-| CG-26 | Come caregiver/assistito voglio ricevere notifica quando il viaggio è preso in carico dall’associazione. | 4.4 | Confermata |
-| CG-27 | Come caregiver/assistito voglio essere avvisato tempestivamente se un viaggio già preso in carico viene annullato dall’associazione, così da poter cercare un’alternativa. | 4.6 | Confermata |
-| CG-28 | Come caregiver/assistito voglio poter ricevere notifica dei prossimi trasporti programmati. | 4.3 | Confermata |
-| CG-29 | Come caregiver voglio poter vedere lo stato in tempo reale del viaggio dell’assistito preso in carico. | 4.1, 4.2, 5.5 | Confermata – la posizione GPS è esclusa: vedi Punti aperti |
-| CG-30 | Come caregiver/assistito voglio poter vedere lo stato della mia richiesta (in attesa, confermata, in esecuzione, conclusa, non coperta, annullata). | 5.2 | NUOVA – UC 5.2 era senza story dedicata |
-| CG-31 | Come caregiver/assistito voglio poter vedere i contatti dell’associazione che ha preso in carico il mio viaggio, per poterla contattare in caso di necessità. | 5.3 | Confermata |
-| CG-32 | Come caregiver/assistito voglio poter avere uno storico delle visite fatte. | 5.4 | Confermata |
-| CG-33 | Come caregiver/assistito voglio poter registrare un trasporto ricorrente (es. dialisi ogni martedì), così da non dover ripetere la richiesta ogni volta. | 1.1 | RINVIATA a v1 – vedi Punti aperti |
-| CG-34 | Come caregiver/assistito voglio poter ritirare una richiesta di modifica ancora in attesa di approvazione. | 2.4 | NUOVA – UC 2.4 era senza story |
-| CG-35 | Come caregiver/assistito voglio poter rifiutare un invito a un gruppo cura. | 9.7 | NUOVA – l’invito prevedeva solo l’accettazione |
-| CG-36 | Come amministratore del gruppo voglio poter revocare un invito che non è ancora stato accettato. | 9.8 | NUOVA – UC 9.8 era senza story |
-| CG-37 | Come amministratore del gruppo voglio poter cambiare il ruolo di un membro, anche promuoverlo ad amministratore. | 9.9 | NUOVA – UC 9.9 era senza story |
-| CG-38 | Come caregiver/assistito voglio poter indicare per il ritorno una destinazione diversa da quella da cui sono partito. | 1.7 | NUOVA – UC 1.7 era senza story |
+| ID    | User story                                                                                                                                                                 | UC            | Note                                                       |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- | ---------------------------------------------------------- |
+| CG-01 | Come caregiver/assistito voglio potermi registrare in GoCare.                                                                                                              | 10.1          | Confermata                                                 |
+| CG-02 | Come caregiver/assistito voglio poter effettuare il login.                                                                                                                 | 10.2          | NUOVO – scorporata da CG-01                                |
+| CG-03 | Come caregiver/assistito voglio poter modificare i miei dati personali e di contatto.                                                                                      | 8.2, 8.3      | Confermata                                                 |
+| CG-04 | Come caregiver/assistito voglio poter recuperare la password in caso di smarrimento.                                                                                       | 10.3          | Confermata                                                 |
+| CG-05 | Come caregiver/assistito voglio poter eliminare il mio account.                                                                                                            | 10.4          | Confermata                                                 |
+| CG-06 | Come caregiver voglio poter avere più assistiti a carico.                                                                                                                  | 9.1, 9.2      | Confermata                                                 |
+| CG-07 | Come caregiver/assistito voglio poter creare un “gruppo cura”.                                                                                                             | 9.1           | Confermata                                                 |
+| CG-08 | Come caregiver/assistito voglio poter aggiungere un assistito/caregiver al gruppo.                                                                                         | 9.2           | Confermata                                                 |
+| CG-09 | Come caregiver/assistito voglio poter rimuovere un assistito/caregiver dal gruppo.                                                                                         | 9.3           | Confermata                                                 |
+| CG-10 | Come caregiver/assistito voglio poter eliminare un “gruppo cura”.                                                                                                          | 9.4           | Confermata                                                 |
+| CG-11 | Come caregiver/assistito voglio poter visualizzare i gruppi a cui appartengo.                                                                                              | 9.5           | Confermata                                                 |
+| CG-12 | Come caregiver/assistito voglio poter visualizzare le prenotazioni effettuate nel gruppo.                                                                                  | 9.6           | Confermata                                                 |
+| CG-13 | Come assistito voglio poter registrare i miei futuri trasporti.                                                                                                            | 1.1           | Confermata                                                 |
+| CG-14 | Come caregiver voglio poter registrare il prossimo trasporto del mio assistito.                                                                                            | 1.1, 1.6      | Confermata                                                 |
+| CG-15 | Come caregiver/assistito voglio poter scegliere la direzione del viaggio (andata e ritorno, solo andata, solo ritorno).                                                    | 1.2           | NUOVA – UC 1.2 era senza story                             |
+| CG-16 | Come caregiver/assistito voglio poter indicare il tipo di viaggio (visita, ricovero, dimissione, trasferimento).                                                           | 1.5           | NUOVA – tipologia presente nel doc ma senza story          |
+| CG-17 | Come caregiver/assistito voglio poter scegliere una destinazione diversa dal mio domicilio abituale.                                                                       | 1.3, 2.1      | Confermata                                                 |
+| CG-18 | Come caregiver/assistito voglio poter salvare, modificare ed eliminare le mie destinazioni ricorrenti.                                                                     | 8.4           | NUOVA – era solo nel dettaglio SPRINT (voce 2.2)           |
+| CG-19 | Come caregiver/assistito voglio poter indicare un accompagnatore per il viaggio.                                                                                           | 1.4           | Confermata                                                 |
+| CG-20 | Come caregiver/assistito voglio poter aggiungere/modificare/rimuovere l’accompagnatore anche dopo aver creato la richiesta.                                                | 2.2           | Confermata                                                 |
+| CG-21 | Come caregiver/assistito voglio poter modificare la data del mio viaggio in caso di imprevisto.                                                                            | 2.1           | Confermata                                                 |
+| CG-22 | Come caregiver/assistito voglio sapere se la mia richiesta di modifica è stata accettata o rifiutata.                                                                      | 4.5, 5.2      | Confermata                                                 |
+| CG-23 | Come caregiver/assistito voglio poter annullare il viaggio.                                                                                                                | 3.1           | Confermata                                                 |
+| CG-24 | Come caregiver/assistito voglio poter indicare il motivo dell’annullamento.                                                                                                | 3.3           | NUOVA – UC 3 prevedeva la causale solo lato associazione   |
+| CG-25 | Come caregiver/assistito voglio sapere se il viaggio non può essere coperto.                                                                                               | 4.4           | Confermata                                                 |
+| CG-26 | Come caregiver/assistito voglio ricevere notifica quando il viaggio è preso in carico dall’associazione.                                                                   | 4.4           | Confermata                                                 |
+| CG-27 | Come caregiver/assistito voglio essere avvisato tempestivamente se un viaggio già preso in carico viene annullato dall’associazione, così da poter cercare un’alternativa. | 4.6           | Confermata                                                 |
+| CG-28 | Come caregiver/assistito voglio poter ricevere notifica dei prossimi trasporti programmati.                                                                                | 4.3           | Confermata                                                 |
+| CG-29 | Come caregiver voglio poter vedere lo stato in tempo reale del viaggio dell’assistito preso in carico.                                                                     | 4.1, 4.2, 5.5 | Confermata – la posizione GPS è esclusa: vedi Punti aperti |
+| CG-30 | Come caregiver/assistito voglio poter vedere lo stato della mia richiesta (in attesa, confermata, in esecuzione, conclusa, non coperta, annullata).                        | 5.2           | NUOVA – UC 5.2 era senza story dedicata                    |
+| CG-31 | Come caregiver/assistito voglio poter vedere i contatti dell’associazione che ha preso in carico il mio viaggio, per poterla contattare in caso di necessità.              | 5.3           | Confermata                                                 |
+| CG-32 | Come caregiver/assistito voglio poter avere uno storico delle visite fatte.                                                                                                | 5.4           | Confermata                                                 |
+| CG-33 | Come caregiver/assistito voglio poter registrare un trasporto ricorrente (es. dialisi ogni martedì), così da non dover ripetere la richiesta ogni volta.                   | 1.1           | RINVIATA a v1 – vedi Punti aperti                          |
+| CG-34 | Come caregiver/assistito voglio poter ritirare una richiesta di modifica ancora in attesa di approvazione.                                                                 | 2.4           | NUOVA – UC 2.4 era senza story                             |
+| CG-35 | Come caregiver/assistito voglio poter rifiutare un invito a un gruppo cura.                                                                                                | 9.7           | NUOVA – l’invito prevedeva solo l’accettazione             |
+| CG-36 | Come amministratore del gruppo voglio poter revocare un invito che non è ancora stato accettato.                                                                           | 9.8           | NUOVA – UC 9.8 era senza story                             |
+| CG-37 | Come amministratore del gruppo voglio poter cambiare il ruolo di un membro, anche promuoverlo ad amministratore.                                                           | 9.9           | NUOVA – UC 9.9 era senza story                             |
+| CG-38 | Come caregiver/assistito voglio poter indicare per il ritorno una destinazione diversa da quella da cui sono partito.                                                      | 1.7           | NUOVA – UC 1.7 era senza story                             |
 
 ## 3.2 Stories associazione
 
-| ID | User story | UC | Note |
-|---|---|---|---|
-| AS-01 | Come associazione voglio potermi registrare in GoCare. | 10.1 | Confermata |
-| AS-02 | Come associazione voglio poter effettuare il login. | 10.2 | NUOVA – scorporata da AS-01 |
-| AS-03 | Come associazione voglio poter recuperare la password in caso di smarrimento. | 10.3 | Confermata |
-| AS-04 | Come associazione voglio poter eliminare il mio account. | 10.4 | Confermata |
-| AS-05 | Come associazione voglio poter visualizzare e modificare i dati, i contatti e le province coperte dalla mia associazione. | 8.5, 8.6 | Confermata |
-| AS-06 | Come associazione voglio ricevere notifica quando un utente invia una richiesta di trasporto. | 4.7 | Confermata |
-| AS-07 | Come associazione voglio poter vedere tutte le richieste di trasporto pendenti a me destinate nella mia dashboard, con filtri (data, orario, destinazione, tipo di viaggio). | 6.1, 6.2 | Confermata |
-| AS-08 | Come associazione voglio poter accettare una richiesta di trasporto pendente. | 6.3 | Confermata |
-| AS-09 | Come associazione voglio poter rifiutare/declinare una richiesta di trasporto pendente. | 6.4 | Confermata |
-| AS-10 | Come associazione voglio poter contattare la persona che ha prenotato un trasporto (contatto visibile). | 6.5 | Confermata – trattamento dati sensibili: vedi Punti aperti |
-| AS-11 | Come associazione voglio poter vedere tutti i trasporti in carico nella mia dashboard. | 7.1 | Confermata |
-| AS-12 | Come associazione voglio poter vedere uno storico dei trasporti effettuati. | 7.2 | Confermata |
-| AS-13 | Come associazione voglio ricevere notifica quando viene richiesta la modifica di un trasporto. | 4.8 | Confermata |
-| AS-14 | Come associazione voglio poter approvare o rifiutare una modifica alla destinazione di un trasporto. | 2.3 | Confermata |
-| AS-15 | Come associazione voglio poter approvare o rifiutare una modifica alla data/orario di un trasporto. | 2.3 | Confermata |
-| AS-16 | Come associazione voglio poter individuare rapidamente i trasporti con richieste di modifica pendenti. | 7.3 | NUOVA – era solo nel dettaglio SPRINT |
-| AS-17 | Come associazione voglio poter disdire un trasporto specificando la causa. | 3.2, 3.3 | Confermata |
-| AS-18 | Come associazione voglio ricevere notifica quando un trasporto viene annullato dall’utente. | 4.9 | Confermata |
-| AS-19 | Come operatore dell’associazione voglio poter aggiornare lo stato del viaggio (preso in carico, in arrivo, in visita, in ritorno, concluso). | 4.10 | NUOVA – lacuna critica dell’originale: nessuno alimentava lo stato |
-| AS-20 | Come associazione voglio ricevere notifica quando cambiano gli accompagnatori di un trasporto che ho già accettato. | 4.11 | NUOVA – era solo nel dettaglio SPRINT (voce 2.3) |
+| ID    | User story                                                                                                                                                                   | UC       | Note                                                               |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------ |
+| AS-01 | Come associazione voglio potermi registrare in GoCare.                                                                                                                       | 10.1     | Confermata                                                         |
+| AS-02 | Come associazione voglio poter effettuare il login.                                                                                                                          | 10.2     | NUOVA – scorporata da AS-01                                        |
+| AS-03 | Come associazione voglio poter recuperare la password in caso di smarrimento.                                                                                                | 10.3     | Confermata                                                         |
+| AS-04 | Come associazione voglio poter eliminare il mio account.                                                                                                                     | 10.4     | Confermata                                                         |
+| AS-05 | Come associazione voglio poter visualizzare e modificare i dati, i contatti e le province coperte dalla mia associazione.                                                    | 8.5, 8.6 | Confermata                                                         |
+| AS-06 | Come associazione voglio ricevere notifica quando un utente invia una richiesta di trasporto.                                                                                | 4.7      | Confermata                                                         |
+| AS-07 | Come associazione voglio poter vedere tutte le richieste di trasporto pendenti a me destinate nella mia dashboard, con filtri (data, orario, destinazione, tipo di viaggio). | 6.1, 6.2 | Confermata                                                         |
+| AS-08 | Come associazione voglio poter accettare una richiesta di trasporto pendente.                                                                                                | 6.3      | Confermata                                                         |
+| AS-09 | Come associazione voglio poter rifiutare/declinare una richiesta di trasporto pendente.                                                                                      | 6.4      | Confermata                                                         |
+| AS-10 | Come associazione voglio poter contattare la persona che ha prenotato un trasporto (contatto visibile).                                                                      | 6.5      | Confermata – trattamento dati sensibili: vedi Punti aperti         |
+| AS-11 | Come associazione voglio poter vedere tutti i trasporti in carico nella mia dashboard.                                                                                       | 7.1      | Confermata                                                         |
+| AS-12 | Come associazione voglio poter vedere uno storico dei trasporti effettuati.                                                                                                  | 7.2      | Confermata                                                         |
+| AS-13 | Come associazione voglio ricevere notifica quando viene richiesta la modifica di un trasporto.                                                                               | 4.8      | Confermata                                                         |
+| AS-14 | Come associazione voglio poter approvare o rifiutare una modifica alla destinazione di un trasporto.                                                                         | 2.3      | Confermata                                                         |
+| AS-15 | Come associazione voglio poter approvare o rifiutare una modifica alla data/orario di un trasporto.                                                                          | 2.3      | Confermata                                                         |
+| AS-16 | Come associazione voglio poter individuare rapidamente i trasporti con richieste di modifica pendenti.                                                                       | 7.3      | NUOVA – era solo nel dettaglio SPRINT                              |
+| AS-17 | Come associazione voglio poter disdire un trasporto specificando la causa.                                                                                                   | 3.2, 3.3 | Confermata                                                         |
+| AS-18 | Come associazione voglio ricevere notifica quando un trasporto viene annullato dall’utente.                                                                                  | 4.9      | Confermata                                                         |
+| AS-19 | Come operatore dell’associazione voglio poter aggiornare lo stato del viaggio (preso in carico, in arrivo, in visita, in ritorno, concluso).                                 | 4.10     | NUOVA – lacuna critica dell’originale: nessuno alimentava lo stato |
+| AS-20 | Come associazione voglio ricevere notifica quando cambiano gli accompagnatori di un trasporto che ho già accettato.                                                          | 4.11     | NUOVA – era solo nel dettaglio SPRINT (voce 2.3)                   |
 
 ## 3.3 Stories amministratore GoCare
 
-| ID | User story | UC | Note |
-|---|---|---|---|
+| ID    | User story                                                                                                                                                     | UC   | Note                            |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- | ------------------------------- |
 | AD-01 | Come amministratore GoCare voglio poter accreditare o rifiutare un’associazione registrata, così che solo gli enti verificati possano operare sulle richieste. | 10.5 | NUOVA – UC 10.5 era senza story |
 
 ## 3.4 Matrice di copertura Use Case → User Stories
 
 Verifica che ogni sotto-voce di Use Case abbia almeno una user story associata.
 
-| Use Case | User stories | Esito |
-|---|---|---|
-| 1.1 | CG-13, CG-14, CG-33 | Coperto |
-| 1.2 | CG-15 | Coperto con story nuova |
-| 1.3 | CG-17 | Coperto |
-| 1.4 | CG-19 | Coperto |
-| 1.5 | CG-16 | Coperto con story nuova |
-| 1.6 | CG-14 | Coperto |
-| 1.7 | CG-38 | Coperto con story nuova |
-| 2.1 | CG-17, CG-21 | Coperto |
-| 2.2 | CG-20 | Coperto |
-| 2.3 | AS-14, AS-15 | Coperto |
-| 2.4 | CG-34 | Coperto con story nuova |
-| 3.1 | CG-23 | Coperto |
-| 3.2 | AS-17 | Coperto |
-| 3.3 | CG-24, AS-17 | Coperto con story nuova lato utente |
-| 4.1 | CG-29 | Coperto |
-| 4.2 | CG-29 | Coperto |
-| 4.3 | CG-28 | Coperto |
-| 4.4 | CG-25, CG-26 | Coperto |
-| 4.5 | CG-22 | Coperto |
-| 4.6 | CG-27 | Coperto |
-| 4.7 | AS-06 | Coperto |
-| 4.8 | AS-13 | Coperto |
-| 4.9 | AS-18 | Coperto |
-| 4.10 | AS-19 | Coperto con story nuova |
-| 4.11 | AS-20 | Coperto con story nuova |
-| 5.1 | CG-13, CG-32 | Coperto |
-| 5.2 | CG-22, CG-30 | Coperto con story nuova |
-| 5.3 | CG-31 | Coperto |
-| 5.4 | CG-32 | Coperto |
-| 5.5 | CG-29 | Coperto |
-| 6.1 | AS-07 | Coperto |
-| 6.2 | AS-07 | Coperto |
-| 6.3 | AS-08 | Coperto |
-| 6.4 | AS-09 | Coperto |
-| 6.5 | AS-10 | Coperto |
-| 7.1 | AS-11 | Coperto |
-| 7.2 | AS-12 | Coperto |
-| 7.3 | AS-16 | Coperto con story nuova |
-| 8.1 / 8.2 / 8.3 | CG-03 | Coperto |
-| 8.4 | CG-18 | Coperto con story nuova |
-| 8.5 / 8.6 | AS-05 | Coperto |
-| 9.1 | CG-06, CG-07 | Coperto |
-| 9.2 | CG-06, CG-08 | Coperto |
-| 9.3 | CG-09 | Coperto |
-| 9.4 | CG-10 | Coperto |
-| 9.5 | CG-11 | Coperto |
-| 9.6 | CG-12 | Coperto |
-| 9.7 | CG-35 | Coperto con story nuova |
-| 9.8 | CG-36 | Coperto con story nuova |
-| 9.9 | CG-37 | Coperto con story nuova |
-| 10.1 | CG-01, AS-01 | Coperto |
-| 10.2 | CG-02, AS-02 | Coperto con story nuove |
-| 10.3 | CG-04, AS-03 | Coperto |
-| 10.4 | CG-05, AS-04 | Coperto |
-| 10.5 | AD-01 | Coperto con story nuova |
+| Use Case        | User stories        | Esito                               |
+| --------------- | ------------------- | ----------------------------------- |
+| 1.1             | CG-13, CG-14, CG-33 | Coperto                             |
+| 1.2             | CG-15               | Coperto con story nuova             |
+| 1.3             | CG-17               | Coperto                             |
+| 1.4             | CG-19               | Coperto                             |
+| 1.5             | CG-16               | Coperto con story nuova             |
+| 1.6             | CG-14               | Coperto                             |
+| 1.7             | CG-38               | Coperto con story nuova             |
+| 2.1             | CG-17, CG-21        | Coperto                             |
+| 2.2             | CG-20               | Coperto                             |
+| 2.3             | AS-14, AS-15        | Coperto                             |
+| 2.4             | CG-34               | Coperto con story nuova             |
+| 3.1             | CG-23               | Coperto                             |
+| 3.2             | AS-17               | Coperto                             |
+| 3.3             | CG-24, AS-17        | Coperto con story nuova lato utente |
+| 4.1             | CG-29               | Coperto                             |
+| 4.2             | CG-29               | Coperto                             |
+| 4.3             | CG-28               | Coperto                             |
+| 4.4             | CG-25, CG-26        | Coperto                             |
+| 4.5             | CG-22               | Coperto                             |
+| 4.6             | CG-27               | Coperto                             |
+| 4.7             | AS-06               | Coperto                             |
+| 4.8             | AS-13               | Coperto                             |
+| 4.9             | AS-18               | Coperto                             |
+| 4.10            | AS-19               | Coperto con story nuova             |
+| 4.11            | AS-20               | Coperto con story nuova             |
+| 5.1             | CG-13, CG-32        | Coperto                             |
+| 5.2             | CG-22, CG-30        | Coperto con story nuova             |
+| 5.3             | CG-31               | Coperto                             |
+| 5.4             | CG-32               | Coperto                             |
+| 5.5             | CG-29               | Coperto                             |
+| 6.1             | AS-07               | Coperto                             |
+| 6.2             | AS-07               | Coperto                             |
+| 6.3             | AS-08               | Coperto                             |
+| 6.4             | AS-09               | Coperto                             |
+| 6.5             | AS-10               | Coperto                             |
+| 7.1             | AS-11               | Coperto                             |
+| 7.2             | AS-12               | Coperto                             |
+| 7.3             | AS-16               | Coperto con story nuova             |
+| 8.1 / 8.2 / 8.3 | CG-03               | Coperto                             |
+| 8.4             | CG-18               | Coperto con story nuova             |
+| 8.5 / 8.6       | AS-05               | Coperto                             |
+| 9.1             | CG-06, CG-07        | Coperto                             |
+| 9.2             | CG-06, CG-08        | Coperto                             |
+| 9.3             | CG-09               | Coperto                             |
+| 9.4             | CG-10               | Coperto                             |
+| 9.5             | CG-11               | Coperto                             |
+| 9.6             | CG-12               | Coperto                             |
+| 9.7             | CG-35               | Coperto con story nuova             |
+| 9.8             | CG-36               | Coperto con story nuova             |
+| 9.9             | CG-37               | Coperto con story nuova             |
+| 10.1            | CG-01, AS-01        | Coperto                             |
+| 10.2            | CG-02, AS-02        | Coperto con story nuove             |
+| 10.3            | CG-04, AS-03        | Coperto                             |
+| 10.4            | CG-05, AS-04        | Coperto                             |
+| 10.5            | AD-01               | Coperto con story nuova             |
 
 ---
 
 # 4. Attori
 
-| Attore | Descrizione | Ruolo nel sistema |
-|---|---|---|
-| Assistito | Persona fragile destinataria del trasporto. | Può registrarsi autonomamente, richiedere trasporti per sé, appartenere a uno o più gruppi cura. Il ruolo di assistito non è una proprietà della persona: esiste solo come ruolo all’interno di uno specifico gruppo cura. |
-| Caregiver | Familiare o assistente che gestisce l’assistito. | Può richiedere trasporti per gli assistiti del proprio gruppo cura, gestire il gruppo, seguire lo stato dei viaggi. Anche il ruolo di caregiver è definito per singolo gruppo cura. |
-| Associazione | Ente di volontariato/soccorso che eroga il trasporto. | Riceve le richieste a sé destinate, accetta o rifiuta, gestisce i trasporti presi in carico e il loro stato. Opera solo se accreditata. |
-| Operatore dell’associazione | Volontario che esegue materialmente il trasporto. | Aggiorna lo stato del viaggio durante l’esecuzione. In v0 non ha un account proprio: opera dall’account dell’associazione e viene registrato come etichetta testuale sulla transizione di stato; il modello di accesso resta da confermare (PA-03). |
-| Amministratore GoCare | Chi gestisce la piattaforma. | Accredita o rifiuta le associazioni registrate prima che possano operare sulle richieste (PA-11). |
-| GoCare (sistema) | La piattaforma. | Instrada le richieste alle associazioni competenti per provincia, genera notifiche push ed e-mail, conserva lo storico. |
+| Attore                      | Descrizione                                           | Ruolo nel sistema                                                                                                                                                                                                                                   |
+| --------------------------- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Assistito                   | Persona fragile destinataria del trasporto.           | Può registrarsi autonomamente, richiedere trasporti per sé, appartenere a uno o più gruppi cura. Il ruolo di assistito non è una proprietà della persona: esiste solo come ruolo all’interno di uno specifico gruppo cura.                          |
+| Caregiver                   | Familiare o assistente che gestisce l’assistito.      | Può richiedere trasporti per gli assistiti del proprio gruppo cura, gestire il gruppo, seguire lo stato dei viaggi. Anche il ruolo di caregiver è definito per singolo gruppo cura.                                                                 |
+| Associazione                | Ente di volontariato/soccorso che eroga il trasporto. | Riceve le richieste a sé destinate, accetta o rifiuta, gestisce i trasporti presi in carico e il loro stato. Opera solo se accreditata.                                                                                                             |
+| Operatore dell’associazione | Volontario che esegue materialmente il trasporto.     | Aggiorna lo stato del viaggio durante l’esecuzione. In v0 non ha un account proprio: opera dall’account dell’associazione e viene registrato come etichetta testuale sulla transizione di stato; il modello di accesso resta da confermare (PA-03). |
+| Amministratore GoCare       | Chi gestisce la piattaforma.                          | Accredita o rifiuta le associazioni registrate prima che possano operare sulle richieste (PA-11).                                                                                                                                                   |
+| GoCare (sistema)            | La piattaforma.                                       | Instrada le richieste alle associazioni competenti per provincia, genera notifiche push ed e-mail, conserva lo storico.                                                                                                                             |
 
 ---
 
 # 5. Tipi di viaggio
 
-| Tipo di viaggio | Direzione tipica | Scope |
-|---|---|---|
-| Visita medica | Andata e ritorno | In scope v0 |
-| Ricovero | Solo andata | In scope v0 |
-| Dimissione | Solo ritorno | In scope v0 |
-| Trasferimento | Solo andata (struttura → struttura) | In scope v0 |
-| Trasporto sociale (spesa, posta, ecc.) | Variabile | Rinviato alla v1 |
+| Tipo di viaggio                        | Direzione tipica                    | Scope            |
+| -------------------------------------- | ----------------------------------- | ---------------- |
+| Visita medica                          | Andata e ritorno                    | In scope v0      |
+| Ricovero                               | Solo andata                         | In scope v0      |
+| Dimissione                             | Solo ritorno                        | In scope v0      |
+| Trasferimento                          | Solo andata (struttura → struttura) | In scope v0      |
+| Trasporto sociale (spesa, posta, ecc.) | Variabile                           | Rinviato alla v1 |
 
 Il tipo di viaggio determina il valore di default della direzione nel form dell’UC 1 (1.2 e 1.5), che resta comunque modificabile dall’utente. Il trasporto sociale è rinviato alla v1 (vedi Punti aperti).
 
@@ -442,7 +442,7 @@ BACKEND:
 - Validazione dati e form.
 - Se l’utente conferma, salvataggio della destinazione nella lista personale (UC 8.4).
 
-**1.7 Come caregiver/assistito voglio poter registrare un trasporto ricorrente. (CG-33)** *[RINVIATA a v1 – vedi Punti aperti]*
+**1.7 Come caregiver/assistito voglio poter registrare un trasporto ricorrente. (CG-33)** _[RINVIATA a v1 – vedi Punti aperti]_
 
 La raccomandazione è escluderla dalla v0: la ricorrenza implica generazione automatica di richieste, gestione delle eccezioni sulle singole occorrenze e annullamento in blocco, con un impatto sul modello dati sproporzionato rispetto al valore in fase di validazione del prodotto.
 
@@ -581,7 +581,7 @@ BACKEND:
 - Il viaggio torna in stato “in attesa” e rientra nella dashboard delle richieste pendenti delle altre associazioni destinatarie, così da consentire una copertura alternativa.
 - Invio della notifica all’utente con il testo della causale (UC 4.6).
 
-*[DA VALIDARE] Il rientro automatico del viaggio fra le richieste pendenti è la risposta al problema n.3 dichiarato in apertura del documento (“deve essere trovata una soluzione per assicurare un’alternativa”). Va confermato che sia il comportamento desiderato e con quale anticipo minimo rispetto alla data del viaggio.*
+_[DA VALIDARE] Il rientro automatico del viaggio fra le richieste pendenti è la risposta al problema n.3 dichiarato in apertura del documento (“deve essere trovata una soluzione per assicurare un’alternativa”). Va confermato che sia il comportamento desiderato e con quale anticipo minimo rispetto alla data del viaggio._
 
 ## UC 4 – STATO E NOTIFICHE
 
@@ -647,7 +647,7 @@ BACKEND:
 - Cambio di stato gestito dall’operatore dall’account dell’associazione (modello di accesso da confermare: vedi Punti aperti).
 - Ogni cambio di stato genera la notifica dell’UC 4.6.
 
-*[DA VALIDARE] La visualizzazione della posizione GPS del mezzo è esclusa dalla v0: richiede tracciamento continuo, consenso esplicito dell’operatore e trattamento di dati di geolocalizzazione. Lo stato testuale copre l’esigenza dichiarata nel problema n.2 (evitare le ripetute chiamate all’associazione).*
+_[DA VALIDARE] La visualizzazione della posizione GPS del mezzo è esclusa dalla v0: richiede tracciamento continuo, consenso esplicito dell’operatore e trattamento di dati di geolocalizzazione. Lo stato testuale copre l’esigenza dichiarata nel problema n.2 (evitare le ripetute chiamate all’associazione)._
 
 **4.6 Come caregiver/assistito voglio ricevere notifica a ogni cambio di stato del viaggio. (CG-29)**
 
@@ -752,7 +752,7 @@ BACKEND:
 - Ordinamento per data crescente sui prossimi viaggi, decrescente sullo storico.
 - Paginazione dello storico.
 
-*[DA VALIDARE] Va deciso se esporre il contatto generico dell’associazione e, durante il viaggio, quello dell’operatore, oppure solo quello generico. Ripreso nella sezione Punti aperti.*
+_[DA VALIDARE] Va deciso se esporre il contatto generico dell’associazione e, durante il viaggio, quello dell’operatore, oppure solo quello generico. Ripreso nella sezione Punti aperti._
 
 **5.2 Come caregiver/assistito voglio sapere se la mia richiesta di modifica è stata accettata o rifiutata. (CG-22)**
 
@@ -847,7 +847,7 @@ BACKEND:
 - Controllo di concorrenza ottimistico sulla richiesta: la prima accettazione vince, le successive ricevono un errore gestito.
 - Notifica di presa in carico all’utente (UC 4.2).
 
-*[DA VALIDARE] Il modello “prima accettazione vince” discende dalla decisione consolidata che le disponibilità non sono gestite dalla piattaforma. Va confermato il criterio con cui si compone l’area di competenza: in v0 la richiesta è visibile alle sole associazioni che coprono la provincia di partenza.*
+_[DA VALIDARE] Il modello “prima accettazione vince” discende dalla decisione consolidata che le disponibilità non sono gestite dalla piattaforma. Va confermato il criterio con cui si compone l’area di competenza: in v0 la richiesta è visibile alle sole associazioni che coprono la provincia di partenza._
 
 **6.4 Come associazione voglio poter rifiutare o declinare una richiesta pendente. (AS-09)**
 
@@ -873,7 +873,7 @@ BACKEND:
 - Esposizione dei dati di contatto solo alle associazioni destinatarie della richiesta.
 - Tracciamento degli accessi ai dati di contatto, distinguendo i recapiti del richiedente da quelli del beneficiario: ogni accesso registra richiesta, associazione, tipo di dato e istante.
 
-*[DA VALIDARE] Il recapito della persona che ha prenotato è un dato sensibile. Raccomandazione: mostrare il recapito completo solo dopo l’accettazione, e limitarsi al nome e alla fascia oraria nella fase di valutazione della richiesta. Punto ripreso in “Cosa manca / Punti aperti”.*
+_[DA VALIDARE] Il recapito della persona che ha prenotato è un dato sensibile. Raccomandazione: mostrare il recapito completo solo dopo l’accettazione, e limitarsi al nome e alla fascia oraria nella fase di valutazione della richiesta. Punto ripreso in “Cosa manca / Punti aperti”._
 
 ## UC 7 – TRASPORTI ACCETTATI (associazione)
 
@@ -949,7 +949,7 @@ BACKEND:
 - Se cambia l’e-mail di login: invio dell’e-mail di verifica al nuovo indirizzo e conferma del cambio solo dopo la validazione. L’e-mail di accesso vive nell’area autenticazione, l’e-mail di contatto nel profilo di dominio: le due modifiche sono distinte.
 - I viaggi già registrati mantengono i contatti indicati al momento della richiesta.
 
-*[DA VALIDARE] Se un contatto cambia mentre un viaggio è in corso, va deciso se l’associazione debba vedere il contatto aggiornato o quello registrato con la richiesta.*
+_[DA VALIDARE] Se un contatto cambia mentre un viaggio è in corso, va deciso se l’associazione debba vedere il contatto aggiornato o quello registrato con la richiesta._
 
 **8.3 Come caregiver/assistito voglio gestire le mie destinazioni salvate. (CG-18)**
 
@@ -999,7 +999,7 @@ BACKEND:
 - Creazione del gruppo con il creatore come primo membro, con ruolo amministrativo di amministratore, ruolo nel gruppo di caregiver e invito già accettato.
 - Validazione del nome (obbligatorio, univoco per utente).
 
-*[DA VALIDARE] È necessario stabilire se il gruppo abbia un amministratore con poteri esclusivi (aggiunta/rimozione membri, eliminazione gruppo) o se tutti i membri abbiano gli stessi diritti. Raccomandazione: introdurre il ruolo di amministratore, altrimenti qualunque membro potrebbe rimuovere gli altri o eliminare il gruppo.*
+_[DA VALIDARE] È necessario stabilire se il gruppo abbia un amministratore con poteri esclusivi (aggiunta/rimozione membri, eliminazione gruppo) o se tutti i membri abbiano gli stessi diritti. Raccomandazione: introdurre il ruolo di amministratore, altrimenti qualunque membro potrebbe rimuovere gli altri o eliminare il gruppo._
 
 **9.2 Come caregiver/assistito voglio poter aggiungere un assistito o un caregiver al gruppo. (CG-06, CG-08)**
 
@@ -1019,7 +1019,7 @@ BACKEND:
 - Verifica che chi invita abbia i permessi necessari.
 - L’appartenenza al gruppo con invito accettato abilita la prenotazione per conto terzi (UC 1.2).
 
-*[DA VALIDARE] Va definito come si aggiunge un membro. L’invito con accettazione è la raccomandazione: aggiungere una persona al gruppo senza il suo consenso significherebbe consentire a terzi di prenotare trasporti a suo nome e di vederne i dati.*
+_[DA VALIDARE] Va definito come si aggiunge un membro. L’invito con accettazione è la raccomandazione: aggiungere una persona al gruppo senza il suo consenso significherebbe consentire a terzi di prenotare trasporti a suo nome e di vederne i dati._
 
 **9.3 Come caregiver/assistito voglio poter rimuovere un assistito o un caregiver dal gruppo. (CG-09)**
 
@@ -1136,7 +1136,7 @@ BACKEND:
 - Attivazione dell’account al click sul link di verifica.
 - Per le associazioni, dopo l’attivazione l’account è a tutti gli effetti attivo; è il profilo associazione a restare in stato “in attesa di accreditamento” finché non interviene l’UC 10.5, e l’operatività sulle richieste è subordinata all’accreditamento del profilo.
 
-*[DA VALIDARE] Va deciso se la registrazione di un’associazione richieda una validazione manuale da parte di GoCare prima dell’abilitazione operativa. Raccomandazione: sì, perché un’associazione accreditata accede a dati personali di persone fragili.*
+_[DA VALIDARE] Va deciso se la registrazione di un’associazione richieda una validazione manuale da parte di GoCare prima dell’abilitazione operativa. Raccomandazione: sì, perché un’associazione accreditata accede a dati personali di persone fragili._
 
 **10.2 Come utente voglio poter effettuare il login. (CG-02, AS-02)**
 
@@ -1186,7 +1186,7 @@ BACKEND:
 - Rimozione dell’utente dai gruppi cura; se era l’unico amministratore, il ruolo passa a un altro membro o il gruppo viene chiuso.
 - Invalidazione di tutte le sessioni e invio dell’e-mail di conferma.
 
-*[DA VALIDARE] Va definita la politica di conservazione dei dati dopo l’eliminazione dell’account: i viaggi conclusi restano nello storico dell’associazione anche dopo l’anonimizzazione dell’utente?*
+_[DA VALIDARE] Va definita la politica di conservazione dei dati dopo l’eliminazione dell’account: i viaggi conclusi restano nello storico dell’associazione anche dopo l’anonimizzazione dell’utente?_
 
 **10.5 Come amministratore GoCare voglio poter accreditare o rifiutare un’associazione. (AD-01)**
 
@@ -1210,33 +1210,33 @@ BACKEND:
 
 Elenco completo delle pagine dell’applicazione, con path proposto, ruoli abilitati e presenza dell’header. Le pagine di autenticazione sono le uniche prive di header.
 
-| Pagina | Route | Ruoli | Header | UC |
-|---|---|---|---|---|
-| Registrazione | /register | Pubblico | NO | 10.1 |
-| Login | /login | Pubblico | NO | 10.2 |
-| Recupero password | /forgot-password | Pubblico | NO | 10.3 |
-| Reimposta password | /reset-password/:token | Pubblico | NO | 10.3 |
-| Verifica e-mail | /verify-email/:token | Pubblico | NO | 10.1 |
-| Pagina principale associazione (dashboard nuove richieste + filtri) | /associazione/richieste | Associazione | SÌ | 6.1, 6.2 |
-| Dettaglio richiesta pendente | /associazione/richieste/:id | Associazione | SÌ | 6.2, 6.3, 6.4, 6.5 |
-| Pagina privata associazione (richieste accettate, info associazione, richieste di modifica pendenti) | /associazione/trasporti | Associazione | SÌ | 7.1, 7.2, 7.3 |
-| Dettaglio trasporto accettato | /associazione/trasporti/:id | Associazione | SÌ | 7.1, 2.3 |
-| Gestione stato viaggio (operatore) | /associazione/trasporti/:id/stato | Associazione / Operatore | SÌ | 4.10 |
-| Storico trasporti associazione | /associazione/storico | Associazione | SÌ | 7.2 |
-| Pagina di modifica informazioni associazione | /associazione/profilo/modifica | Associazione | SÌ | 8.5, 8.6 |
-| Profilo associazione (sola lettura) | /associazione/profilo | Associazione | SÌ | 8.5 |
-| Pagina principale caregiver/assistito (card dei gruppi cura) | /gruppi | Caregiver / Assistito | SÌ | 9.5 |
-| Pagina gruppo cura (assistiti, caregiver, prossimi viaggi, chi ha prenotato per chi) | /gruppi/:id | Caregiver / Assistito | SÌ | 9.5, 9.6 |
-| Gestione membri del gruppo | /gruppi/:id/membri | Caregiver / Assistito (amministratore) | SÌ | 9.2, 9.3, 9.4, 9.8, 9.9 |
-| Accettazione invito al gruppo cura | /gruppi/inviti/:token | Caregiver / Assistito | SÌ | 9.2, 9.7 |
-| Form nuovo trasporto (per chi, data, destinazione, tipo viaggio, accompagnatori, contatti) | /viaggi/nuovo | Caregiver / Assistito | SÌ | 1.1 – 1.7 |
-| Dettaglio / modifica viaggio | /viaggi/:id | Caregiver / Assistito | SÌ | 2.1, 2.2, 2.4, 3.1, 5.2, 5.5 |
-| Pagina “I miei viaggi” (prossimi viaggi + storico) | /viaggi | Caregiver / Assistito | SÌ | 5.1, 5.2, 5.4 |
-| Storico viaggi | /viaggi/storico | Caregiver / Assistito | SÌ | 5.4 |
-| Pagina gestione dati personali account | /profilo | Caregiver / Assistito | SÌ | 8.1, 8.2, 8.3, 10.4 |
-| Gestione destinazioni salvate | /profilo/destinazioni | Caregiver / Assistito | SÌ | 8.4 |
-| Pagina pubblica associazione (contatti) | /associazioni/:id | Caregiver / Assistito | SÌ | 5.3 |
-| Centro notifiche | /notifiche | Caregiver / Assistito / Associazione | SÌ | UC 4 |
+| Pagina                                                                                               | Route                             | Ruoli                                  | Header | UC                           |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------- | -------------------------------------- | ------ | ---------------------------- |
+| Registrazione                                                                                        | /register                         | Pubblico                               | NO     | 10.1                         |
+| Login                                                                                                | /login                            | Pubblico                               | NO     | 10.2                         |
+| Recupero password                                                                                    | /forgot-password                  | Pubblico                               | NO     | 10.3                         |
+| Reimposta password                                                                                   | /reset-password/:token            | Pubblico                               | NO     | 10.3                         |
+| Verifica e-mail                                                                                      | /verify-email/:token              | Pubblico                               | NO     | 10.1                         |
+| Pagina principale associazione (dashboard nuove richieste + filtri)                                  | /associazione/richieste           | Associazione                           | SÌ     | 6.1, 6.2                     |
+| Dettaglio richiesta pendente                                                                         | /associazione/richieste/:id       | Associazione                           | SÌ     | 6.2, 6.3, 6.4, 6.5           |
+| Pagina privata associazione (richieste accettate, info associazione, richieste di modifica pendenti) | /associazione/trasporti           | Associazione                           | SÌ     | 7.1, 7.2, 7.3                |
+| Dettaglio trasporto accettato                                                                        | /associazione/trasporti/:id       | Associazione                           | SÌ     | 7.1, 2.3                     |
+| Gestione stato viaggio (operatore)                                                                   | /associazione/trasporti/:id/stato | Associazione / Operatore               | SÌ     | 4.10                         |
+| Storico trasporti associazione                                                                       | /associazione/storico             | Associazione                           | SÌ     | 7.2                          |
+| Pagina di modifica informazioni associazione                                                         | /associazione/profilo/modifica    | Associazione                           | SÌ     | 8.5, 8.6                     |
+| Profilo associazione (sola lettura)                                                                  | /associazione/profilo             | Associazione                           | SÌ     | 8.5                          |
+| Pagina principale caregiver/assistito (card dei gruppi cura)                                         | /gruppi                           | Caregiver / Assistito                  | SÌ     | 9.5                          |
+| Pagina gruppo cura (assistiti, caregiver, prossimi viaggi, chi ha prenotato per chi)                 | /gruppi/:id                       | Caregiver / Assistito                  | SÌ     | 9.5, 9.6                     |
+| Gestione membri del gruppo                                                                           | /gruppi/:id/membri                | Caregiver / Assistito (amministratore) | SÌ     | 9.2, 9.3, 9.4, 9.8, 9.9      |
+| Accettazione invito al gruppo cura                                                                   | /gruppi/inviti/:token             | Caregiver / Assistito                  | SÌ     | 9.2, 9.7                     |
+| Form nuovo trasporto (per chi, data, destinazione, tipo viaggio, accompagnatori, contatti)           | /viaggi/nuovo                     | Caregiver / Assistito                  | SÌ     | 1.1 – 1.7                    |
+| Dettaglio / modifica viaggio                                                                         | /viaggi/:id                       | Caregiver / Assistito                  | SÌ     | 2.1, 2.2, 2.4, 3.1, 5.2, 5.5 |
+| Pagina “I miei viaggi” (prossimi viaggi + storico)                                                   | /viaggi                           | Caregiver / Assistito                  | SÌ     | 5.1, 5.2, 5.4                |
+| Storico viaggi                                                                                       | /viaggi/storico                   | Caregiver / Assistito                  | SÌ     | 5.4                          |
+| Pagina gestione dati personali account                                                               | /profilo                          | Caregiver / Assistito                  | SÌ     | 8.1, 8.2, 8.3, 10.4          |
+| Gestione destinazioni salvate                                                                        | /profilo/destinazioni             | Caregiver / Assistito                  | SÌ     | 8.4                          |
+| Pagina pubblica associazione (contatti)                                                              | /associazioni/:id                 | Caregiver / Assistito                  | SÌ     | 5.3                          |
+| Centro notifiche                                                                                     | /notifiche                        | Caregiver / Assistito / Associazione   | SÌ     | UC 4                         |
 
 Note sulle scelte: (a) “Reimposta password” e “Verifica e-mail” sono pagine pubbliche raggiunte da link e-mail, necessarie perché i flussi di registrazione e recupero credenziali si concludano; (b) la pagina di gestione stato è separata dal dettaglio trasporto perché è l’unica schermata usata sul campo dall’operatore durante il viaggio; (c) “Storico viaggi” e “Storico trasporti” possono essere realizzate come tab della pagina principale corrispondente anziché come route autonome: la scelta è indifferente sul piano funzionale; (d) il centro notifiche raccoglie lo storico delle notifiche dell’UC 4, che altrimenti sarebbero consultabili solo al momento della ricezione; (e) la pagina di accettazione invito è raggiunta dal link e-mail dell’UC 9.2 e ospita anche il rifiuto (UC 9.7).
 
@@ -1244,62 +1244,62 @@ Note sulle scelte: (a) “Reimposta password” e “Verifica e-mail” sono pag
 
 Elenco degli endpoint che servono le pagine della tabella precedente, con il ruolo abilitato e lo Use Case di riferimento. Gli endpoint dell’area autenticazione lavorano sul database degli account, quelli dell’area dominio sul database di dominio.
 
-| Area | Metodo e path | Ruoli | UC |
-|---|---|---|---|
-| Auth | `POST /auth/register/user` | Pubblico | 10.1 |
-| Auth | `POST /auth/register/association` | Pubblico | 10.1 |
-| Auth | `GET /auth/verify-email/:token` | Pubblico | 10.1 |
-| Auth | `POST /auth/verify-email/resend` | Pubblico | 10.1 |
-| Auth | `POST /auth/login` | Pubblico | 10.2 |
-| Auth | `POST /auth/refresh` | Pubblico | 10.2 |
-| Auth | `POST /auth/logout` | Autenticato | 10.2 |
-| Auth | `POST /auth/forgot-password` | Pubblico | 10.3 |
-| Auth | `POST /auth/reset-password` | Pubblico | 10.3 |
-| Auth | `POST /auth/change-email` | Autenticato | 8.2 |
-| Auth | `DELETE /auth/account` | Autenticato | 10.4 |
-| Dominio | `POST /transports` | Caregiver / Assistito | 1.1 – 1.7 |
-| Dominio | `GET /transports` | Caregiver / Assistito | 5.1, 5.4 |
-| Dominio | `GET /transports/:id` | Caregiver / Assistito | 2.x, 3.1, 5.2, 5.5 |
-| Dominio | `PATCH /transports/:id/destination` | Caregiver / Assistito | 2.1 |
-| Dominio | `PATCH /transports/:id/schedule` | Caregiver / Assistito | 2.2 |
-| Dominio | `PUT /transports/:id/companions` | Caregiver / Assistito | 2.3 |
-| Dominio | `POST /transports/:id/cancel` | Caregiver / Assistito | 3.1 |
-| Dominio | `GET /transports/:id/status-timeline` | Caregiver / Assistito | 5.5 |
-| Dominio | `POST /transports/modification-requests/:id/retract` | Caregiver / Assistito | 2.4 |
-| Dominio | `POST /transports/modification-requests/:id/approve` | Associazione | 2.3 |
-| Dominio | `POST /transports/modification-requests/:id/reject` | Associazione | 2.3 |
-| Dominio | `GET /association/modification-requests` | Associazione | 7.3 |
-| Dominio | `GET /association/requests` | Associazione | 6.1, 6.2 |
-| Dominio | `GET /association/requests/:id` | Associazione | 6.2 |
-| Dominio | `POST /association/requests/:id/accept` | Associazione | 6.3 |
-| Dominio | `POST /association/requests/:id/decline` | Associazione | 6.4 |
-| Dominio | `GET /association/requests/:id/contacts` | Associazione | 6.5 |
-| Dominio | `GET /association/transports` | Associazione | 7.1, 7.3 |
-| Dominio | `GET /association/transports/:id` | Associazione | 7.1, 2.3 |
-| Dominio | `POST /association/transports/:id/status` | Associazione / Operatore | 4.10 |
-| Dominio | `POST /association/transports/:id/cancel` | Associazione | 3.2 |
-| Dominio | `GET /association/history` | Associazione | 7.2 |
-| Dominio | `GET /association/profile` · `PUT /association/profile` | Associazione | 8.5, 8.6 |
-| Dominio | `GET /me/profile` · `PUT /me/profile` | Caregiver / Assistito | 8.1 – 8.3 |
-| Dominio | `GET · POST · PUT · DELETE /me/destinations[/:id]` | Caregiver / Assistito | 8.4 |
-| Dominio | `GET /associations/:id/contacts` | Caregiver / Assistito | 5.3 |
-| Dominio | `POST /care-groups` | Caregiver / Assistito | 9.1 |
-| Dominio | `GET /care-groups` | Caregiver / Assistito | 9.5 |
-| Dominio | `GET /care-groups/:id` | Caregiver / Assistito | 9.5 |
-| Dominio | `POST /care-groups/:id/members` | Amministratore gruppo | 9.2 |
-| Dominio | `POST /care-groups/invitations/:token/accept` | Caregiver / Assistito | 9.2 |
-| Dominio | `POST /care-groups/invitations/:token/decline` | Caregiver / Assistito | 9.7 |
-| Dominio | `POST /care-groups/:id/members/:personId/revoke` | Amministratore gruppo | 9.8 |
-| Dominio | `PATCH /care-groups/:id/members/:personId/role` | Amministratore gruppo | 9.9 |
-| Dominio | `DELETE /care-groups/:id/members/:personId` | Amministratore gruppo | 9.3 |
-| Dominio | `DELETE /care-groups/:id` | Amministratore gruppo | 9.4 |
-| Dominio | `GET /care-groups/:id/bookings` | Membro gruppo | 9.6 |
-| Dominio | `GET /notifications` | Tutti | UC 4 |
-| Dominio | `POST /notifications/:id/read` · `POST /notifications/read-all` | Tutti | UC 4 |
-| Dominio | `GET /notifications/counters` | Tutti | 11.4 |
-| Dominio | `POST /devices` · `DELETE /devices/:id` | Tutti | UC 4 |
-| Admin | `POST /admin/associations/:id/accredit` | Amministratore GoCare | 10.5 |
-| Admin | `POST /admin/associations/:id/reject` | Amministratore GoCare | 10.5 |
+| Area    | Metodo e path                                                   | Ruoli                    | UC                 |
+| ------- | --------------------------------------------------------------- | ------------------------ | ------------------ |
+| Auth    | `POST /auth/register/user`                                      | Pubblico                 | 10.1               |
+| Auth    | `POST /auth/register/association`                               | Pubblico                 | 10.1               |
+| Auth    | `GET /auth/verify-email/:token`                                 | Pubblico                 | 10.1               |
+| Auth    | `POST /auth/verify-email/resend`                                | Pubblico                 | 10.1               |
+| Auth    | `POST /auth/login`                                              | Pubblico                 | 10.2               |
+| Auth    | `POST /auth/refresh`                                            | Pubblico                 | 10.2               |
+| Auth    | `POST /auth/logout`                                             | Autenticato              | 10.2               |
+| Auth    | `POST /auth/forgot-password`                                    | Pubblico                 | 10.3               |
+| Auth    | `POST /auth/reset-password`                                     | Pubblico                 | 10.3               |
+| Auth    | `POST /auth/change-email`                                       | Autenticato              | 8.2                |
+| Auth    | `DELETE /auth/account`                                          | Autenticato              | 10.4               |
+| Dominio | `POST /transports`                                              | Caregiver / Assistito    | 1.1 – 1.7          |
+| Dominio | `GET /transports`                                               | Caregiver / Assistito    | 5.1, 5.4           |
+| Dominio | `GET /transports/:id`                                           | Caregiver / Assistito    | 2.x, 3.1, 5.2, 5.5 |
+| Dominio | `PATCH /transports/:id/destination`                             | Caregiver / Assistito    | 2.1                |
+| Dominio | `PATCH /transports/:id/schedule`                                | Caregiver / Assistito    | 2.2                |
+| Dominio | `PUT /transports/:id/companions`                                | Caregiver / Assistito    | 2.3                |
+| Dominio | `POST /transports/:id/cancel`                                   | Caregiver / Assistito    | 3.1                |
+| Dominio | `GET /transports/:id/status-timeline`                           | Caregiver / Assistito    | 5.5                |
+| Dominio | `POST /transports/modification-requests/:id/retract`            | Caregiver / Assistito    | 2.4                |
+| Dominio | `POST /transports/modification-requests/:id/approve`            | Associazione             | 2.3                |
+| Dominio | `POST /transports/modification-requests/:id/reject`             | Associazione             | 2.3                |
+| Dominio | `GET /association/modification-requests`                        | Associazione             | 7.3                |
+| Dominio | `GET /association/requests`                                     | Associazione             | 6.1, 6.2           |
+| Dominio | `GET /association/requests/:id`                                 | Associazione             | 6.2                |
+| Dominio | `POST /association/requests/:id/accept`                         | Associazione             | 6.3                |
+| Dominio | `POST /association/requests/:id/decline`                        | Associazione             | 6.4                |
+| Dominio | `GET /association/requests/:id/contacts`                        | Associazione             | 6.5                |
+| Dominio | `GET /association/transports`                                   | Associazione             | 7.1, 7.3           |
+| Dominio | `GET /association/transports/:id`                               | Associazione             | 7.1, 2.3           |
+| Dominio | `POST /association/transports/:id/status`                       | Associazione / Operatore | 4.10               |
+| Dominio | `POST /association/transports/:id/cancel`                       | Associazione             | 3.2                |
+| Dominio | `GET /association/history`                                      | Associazione             | 7.2                |
+| Dominio | `GET /association/profile` · `PUT /association/profile`         | Associazione             | 8.5, 8.6           |
+| Dominio | `GET /me/profile` · `PUT /me/profile`                           | Caregiver / Assistito    | 8.1 – 8.3          |
+| Dominio | `GET · POST · PUT · DELETE /me/destinations[/:id]`              | Caregiver / Assistito    | 8.4                |
+| Dominio | `GET /associations/:id/contacts`                                | Caregiver / Assistito    | 5.3                |
+| Dominio | `POST /care-groups`                                             | Caregiver / Assistito    | 9.1                |
+| Dominio | `GET /care-groups`                                              | Caregiver / Assistito    | 9.5                |
+| Dominio | `GET /care-groups/:id`                                          | Caregiver / Assistito    | 9.5                |
+| Dominio | `POST /care-groups/:id/members`                                 | Amministratore gruppo    | 9.2                |
+| Dominio | `POST /care-groups/invitations/:token/accept`                   | Caregiver / Assistito    | 9.2                |
+| Dominio | `POST /care-groups/invitations/:token/decline`                  | Caregiver / Assistito    | 9.7                |
+| Dominio | `POST /care-groups/:id/members/:personId/revoke`                | Amministratore gruppo    | 9.8                |
+| Dominio | `PATCH /care-groups/:id/members/:personId/role`                 | Amministratore gruppo    | 9.9                |
+| Dominio | `DELETE /care-groups/:id/members/:personId`                     | Amministratore gruppo    | 9.3                |
+| Dominio | `DELETE /care-groups/:id`                                       | Amministratore gruppo    | 9.4                |
+| Dominio | `GET /care-groups/:id/bookings`                                 | Membro gruppo            | 9.6                |
+| Dominio | `GET /notifications`                                            | Tutti                    | UC 4               |
+| Dominio | `POST /notifications/:id/read` · `POST /notifications/read-all` | Tutti                    | UC 4               |
+| Dominio | `GET /notifications/counters`                                   | Tutti                    | 11.4               |
+| Dominio | `POST /devices` · `DELETE /devices/:id`                         | Tutti                    | UC 4               |
+| Admin   | `POST /admin/associations/:id/accredit`                         | Amministratore GoCare    | 10.5               |
+| Admin   | `POST /admin/associations/:id/reject`                           | Amministratore GoCare    | 10.5               |
 
 ---
 
@@ -1309,43 +1309,43 @@ L’header è presente su tutte le pagine successive all’autenticazione. La st
 
 ## 11.1 Struttura comune
 
-| Posizione | Elemento | Comportamento |
-|---|---|---|
-| Sinistra | Logo “GoCare” | Riporta alla pagina principale del ruolo. |
-| Centro | Voci di navigazione | Variabili per ruolo (vedi 11.2 e 11.3). |
-| Destra | Icona notifiche con badge numerico | Apre il centro notifiche. Il badge conta le notifiche non lette (UC 4). |
-| Destra | Avatar / menu utente | Menu a tendina: Profilo, Impostazioni, Logout. |
+| Posizione | Elemento                           | Comportamento                                                           |
+| --------- | ---------------------------------- | ----------------------------------------------------------------------- |
+| Sinistra  | Logo “GoCare”                      | Riporta alla pagina principale del ruolo.                               |
+| Centro    | Voci di navigazione                | Variabili per ruolo (vedi 11.2 e 11.3).                                 |
+| Destra    | Icona notifiche con badge numerico | Apre il centro notifiche. Il badge conta le notifiche non lette (UC 4). |
+| Destra    | Avatar / menu utente               | Menu a tendina: Profilo, Impostazioni, Logout.                          |
 
 ## 11.2 Voci di navigazione – Caregiver / Assistito
 
-| Voce | Route | UC che la giustifica | Motivazione |
-|---|---|---|---|
-| I miei gruppi | /gruppi | 9.5 | Pagina principale del ruolo: le card dei gruppi cura. |
-| I miei viaggi | /viaggi | 5.1, 5.4 | Prossimi viaggi e storico. Voce già richiesta come minimo indispensabile. |
-| Nuovo trasporto | /viaggi/nuovo | 1.1 | Azione principale del prodotto: resa raggiungibile da ogni pagina. |
-| Profilo | /profilo | 8.1 – 8.4 | Dati personali, contatti, destinazioni salvate, eliminazione account. Voce già richiesta come minimo indispensabile. |
+| Voce            | Route         | UC che la giustifica | Motivazione                                                                                                          |
+| --------------- | ------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| I miei gruppi   | /gruppi       | 9.5                  | Pagina principale del ruolo: le card dei gruppi cura.                                                                |
+| I miei viaggi   | /viaggi       | 5.1, 5.4             | Prossimi viaggi e storico. Voce già richiesta come minimo indispensabile.                                            |
+| Nuovo trasporto | /viaggi/nuovo | 1.1                  | Azione principale del prodotto: resa raggiungibile da ogni pagina.                                                   |
+| Profilo         | /profilo      | 8.1 – 8.4            | Dati personali, contatti, destinazioni salvate, eliminazione account. Voce già richiesta come minimo indispensabile. |
 
 “Nuovo trasporto” può essere realizzata come pulsante di azione in evidenza anziché come voce di navigazione: è la funzione più frequente e sarebbe penalizzata se raggiungibile solo dalla pagina “I miei viaggi”.
 
 ## 11.3 Voci di navigazione – Associazione
 
-| Voce | Route | UC che la giustifica | Motivazione |
-|---|---|---|---|
-| Richieste | /associazione/richieste | 6.1, 6.2 | Dashboard delle richieste pendenti con filtri. È la pagina operativa principale dell’associazione; porta un badge con il numero di richieste non ancora valutate (UC 4.7). |
-| Trasporti accettati | /associazione/trasporti | 7.1, 7.3 | Vista dei trasporti presi in carico, con evidenza delle richieste di modifica pendenti; da qui si accede alla gestione dello stato del viaggio (UC 4.10). |
-| Storico | /associazione/storico | 7.2 | Viaggi conclusi, annullati e rifiutati. Separato dai trasporti attivi per non appesantire la vista operativa. |
-| Profilo associazione | /associazione/profilo | 8.5, 8.6 | Informazioni, contatti e province coperte dell’associazione. I contatti sono esposti agli utenti (UC 5.3) e le province determinano quali richieste arrivano, quindi devono essere aggiornabili facilmente. |
+| Voce                 | Route                   | UC che la giustifica | Motivazione                                                                                                                                                                                                 |
+| -------------------- | ----------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Richieste            | /associazione/richieste | 6.1, 6.2             | Dashboard delle richieste pendenti con filtri. È la pagina operativa principale dell’associazione; porta un badge con il numero di richieste non ancora valutate (UC 4.7).                                  |
+| Trasporti accettati  | /associazione/trasporti | 7.1, 7.3             | Vista dei trasporti presi in carico, con evidenza delle richieste di modifica pendenti; da qui si accede alla gestione dello stato del viaggio (UC 4.10).                                                   |
+| Storico              | /associazione/storico   | 7.2                  | Viaggi conclusi, annullati e rifiutati. Separato dai trasporti attivi per non appesantire la vista operativa.                                                                                               |
+| Profilo associazione | /associazione/profilo   | 8.5, 8.6             | Informazioni, contatti e province coperte dell’associazione. I contatti sono esposti agli utenti (UC 5.3) e le province determinano quali richieste arrivano, quindi devono essere aggiornabili facilmente. |
 
 L’originale specificava le voci di header solo per caregiver/assistito (“I miei viaggi” e “Profilo”). Le quattro voci del ruolo Associazione sono derivate dagli Use Case 6, 7 e 8: senza “Richieste” e “Trasporti accettati” le due dashboard previste dagli UC 6 e 7 non sarebbero raggiungibili.
 
 ## 11.4 Badge e contatori
 
-| Elemento | Ruolo | Cosa conta | UC |
-|---|---|---|---|
-| Icona notifiche | Tutti | Notifiche non lette | 4.2 – 4.9 |
-| Voce “Richieste” | Associazione | Richieste pendenti non ancora valutate | 4.7, 6.1 |
-| Voce “Trasporti accettati” | Associazione | Richieste di modifica in attesa di approvazione | 4.8, 7.3 |
-| Voce “I miei viaggi” | Caregiver / Assistito | Viaggi con esito o cambio di stato non ancora visualizzato | 4.4, 4.5 |
+| Elemento                   | Ruolo                 | Cosa conta                                                 | UC        |
+| -------------------------- | --------------------- | ---------------------------------------------------------- | --------- |
+| Icona notifiche            | Tutti                 | Notifiche non lette                                        | 4.2 – 4.9 |
+| Voce “Richieste”           | Associazione          | Richieste pendenti non ancora valutate                     | 4.7, 6.1  |
+| Voce “Trasporti accettati” | Associazione          | Richieste di modifica in attesa di approvazione            | 4.8, 7.3  |
+| Voce “I miei viaggi”       | Caregiver / Assistito | Viaggi con esito o cambio di stato non ancora visualizzato | 4.4, 4.5  |
 
 ---
 
@@ -1413,7 +1413,7 @@ Casi alternativi:
 
 - Un’associazione rifiuta: il rifiuto viene registrato per quella sola associazione, la richiesta resta “in attesa” e continua a essere visibile alle altre destinatarie.
 - Due associazioni accettano contemporaneamente: vince la prima, la seconda riceve un messaggio di errore gestito dal controllo di concorrenza sulla richiesta.
-- Nessuna associazione accetta entro la soglia definita *[DA VALIDARE]*: la richiesta passa in stato “non coperta” e l’utente riceve la notifica di esito negativo (UC 4.1).
+- Nessuna associazione accetta entro la soglia definita _[DA VALIDARE]_: la richiesta passa in stato “non coperta” e l’utente riceve la notifica di esito negativo (UC 4.1).
 - Nessuna associazione accreditata copre la provincia di partenza: la richiesta nasce senza destinatari e viene dichiarata “non coperta”.
 
 ## 12.5 Modifica di un trasporto già richiesto
@@ -1432,7 +1432,7 @@ Caso alternativo:
 
 - Finché la richiesta è “in attesa di approvazione”, l’utente può ritirarla: la richiesta passa in stato “ritirata”, il viaggio resta invariato e il contatore dell’associazione viene decrementato. Dopo l’approvazione o il rifiuto il ritiro non è più possibile.
 
-*[DA VALIDARE] Se la richiesta di modifica viene rifiutata, il viaggio resta valido alle condizioni originali. Va confermato che sia il comportamento atteso, o se l’utente debba poter annullare il viaggio contestualmente al rifiuto.*
+_[DA VALIDARE] Se la richiesta di modifica viene rifiutata, il viaggio resta valido alle condizioni originali. Va confermato che sia il comportamento atteso, o se l’utente debba poter annullare il viaggio contestualmente al rifiuto._
 
 ## 12.6 Annullamento del trasporto
 
@@ -1449,7 +1449,7 @@ Annullamento da parte dell’associazione (disdetta):
 1. L’associazione apre il trasporto accettato e preme “disdici”.
 2. Compila la causale, obbligatoria, e conferma nel pop-up.
 3. Il sistema registra la disdetta come rifiuto post-accettazione di quella associazione e il viaggio viene rimosso dai trasporti in carico.
-4. Il viaggio torna in stato “in attesa” e rientra nella dashboard delle richieste pendenti delle altre associazioni destinatarie, per consentire una copertura alternativa *[DA VALIDARE]*.
+4. Il viaggio torna in stato “in attesa” e rientra nella dashboard delle richieste pendenti delle altre associazioni destinatarie, per consentire una copertura alternativa _[DA VALIDARE]_.
 5. Il sistema notifica l’utente con il testo della causale (UC 4.3) e gli propone l’azione “cerca un’alternativa”.
 6. Se nessun’altra associazione accetta entro la soglia, il viaggio passa in stato “non coperto” e l’utente riceve la notifica di esito negativo.
 
@@ -1465,14 +1465,14 @@ Il rifiuto di una singola associazione non è uno stato della richiesta: viene r
 
 Stati di esecuzione del viaggio (UC 4.1), aggiornati dall’operatore (UC 4.10):
 
-| Stato | Chi lo imposta | Significato | Notifiche |
-|---|---|---|---|
-| Non preso in carico | — | Il viaggio è confermato ma l’operatore non ha ancora iniziato. | Nessuna notifica (stato iniziale). |
-| Preso in carico | Operatore | L’operatore ha preso in carico l’assistito. | Notifica push al gruppo cura: “L’assistito è stato preso in carico”. |
-| In arrivo | Operatore | Il mezzo è in viaggio verso la destinazione. | Notifica push al gruppo cura. |
-| In visita | Operatore | L’assistito è alla destinazione (visita, ricovero, esame). | Notifica push al gruppo cura. |
-| In ritorno | Operatore | Viaggio di rientro in corso. Stato non attraversato dai viaggi di sola andata. | Notifica push al gruppo cura. |
-| Concluso | Operatore | Il viaggio è terminato. Stato terminale. | Notifica push al gruppo cura; il viaggio passa nello storico di utente e associazione. |
+| Stato               | Chi lo imposta | Significato                                                                    | Notifiche                                                                              |
+| ------------------- | -------------- | ------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------- |
+| Non preso in carico | —              | Il viaggio è confermato ma l’operatore non ha ancora iniziato.                 | Nessuna notifica (stato iniziale).                                                     |
+| Preso in carico     | Operatore      | L’operatore ha preso in carico l’assistito.                                    | Notifica push al gruppo cura: “L’assistito è stato preso in carico”.                   |
+| In arrivo           | Operatore      | Il mezzo è in viaggio verso la destinazione.                                   | Notifica push al gruppo cura.                                                          |
+| In visita           | Operatore      | L’assistito è alla destinazione (visita, ricovero, esame).                     | Notifica push al gruppo cura.                                                          |
+| In ritorno          | Operatore      | Viaggio di rientro in corso. Stato non attraversato dai viaggi di sola andata. | Notifica push al gruppo cura.                                                          |
+| Concluso            | Operatore      | Il viaggio è terminato. Stato terminale.                                       | Notifica push al gruppo cura; il viaggio passa nello storico di utente e associazione. |
 
 Regole di transizione:
 
@@ -1534,23 +1534,23 @@ Sezione che riprende ed espande i “PUNTI DA CHIARIRE” dell’originale, con 
 
 Riepilogo:
 
-| ID | Punto aperto | Impatto | Stato | Origine |
-|---|---|---|---|---|
-| PA-01 | Modello di prenotazione: richiesta utente o slot offerti | Alto | Aperto | Punto da chiarire n.3 dell’originale |
-| PA-02 | Gestione dei contatti durante il trasporto | Alto | Chiuso: solo recapito generico dell’associazione | Punto da chiarire n.2 dell’originale |
-| PA-03 | Chi aggiorna lo stato del viaggio e come vi accede | Alto | Aperto | Emerso in revisione (UC 4.10) |
-| PA-04 | Soglia oltre la quale una richiesta è “non coperta” | Alto | Aperto | Emerso in revisione (UC 4.1, 6.4) |
-| PA-05 | Visibilità delle richieste: tutte le associazioni o per area | Alto | Aperto | Emerso in revisione (UC 6.3) |
-| PA-06 | Esposizione dei dati di contatto dell’assistito all’associazione | Alto | Aperto | Story AS-10 (“dati sensibili”) |
-| PA-07 | Gestione dei guasti e degli imprevisti lato associazione | Medio | Aperto | Riunione Discord 03/08/26 |
-| PA-08 | Ruoli e permessi all’interno del gruppo cura | Medio | Aperto | Emerso in revisione (UC 9) |
-| PA-09 | Trasporti ricorrenti in v0 o in v1 | Medio | Chiuso: fuori scope v0 | Story CG-33 (“forse meglio nella v1?”) |
-| PA-10 | Visualizzazione della posizione GPS del mezzo | Medio | Chiuso: fuori scope v0 | Story CG-29 (“stato e posizione?”) |
-| PA-11 | Accreditamento delle associazioni | Medio | Aperto | Emerso in revisione (UC 10.1) |
-| PA-12 | Conferma della prenotazione via e-mail e slot viaggi | Medio | Chiuso: conferma alla presa in carico, nessun calendario di disponibilità | Riunione Discord 03/08/26 |
-| PA-13 | Trasporto sociale dentro o fuori dallo scope della v0 | Basso | Chiuso: rinviato alla v1 | Tipi di viaggio dell’originale |
-| PA-14 | Politica di conservazione dei dati dopo l’eliminazione account | Basso | Aperto | Emerso in revisione (UC 10.4) |
-| PA-15 | Esito del rifiuto di una richiesta di modifica | Basso | Aperto | Emerso in revisione (flusso 12.5) |
+| ID    | Punto aperto                                                     | Impatto | Stato                                                                     | Origine                                |
+| ----- | ---------------------------------------------------------------- | ------- | ------------------------------------------------------------------------- | -------------------------------------- |
+| PA-01 | Modello di prenotazione: richiesta utente o slot offerti         | Alto    | Aperto                                                                    | Punto da chiarire n.3 dell’originale   |
+| PA-02 | Gestione dei contatti durante il trasporto                       | Alto    | Chiuso: solo recapito generico dell’associazione                          | Punto da chiarire n.2 dell’originale   |
+| PA-03 | Chi aggiorna lo stato del viaggio e come vi accede               | Alto    | Aperto                                                                    | Emerso in revisione (UC 4.10)          |
+| PA-04 | Soglia oltre la quale una richiesta è “non coperta”              | Alto    | Aperto                                                                    | Emerso in revisione (UC 4.1, 6.4)      |
+| PA-05 | Visibilità delle richieste: tutte le associazioni o per area     | Alto    | Aperto                                                                    | Emerso in revisione (UC 6.3)           |
+| PA-06 | Esposizione dei dati di contatto dell’assistito all’associazione | Alto    | Aperto                                                                    | Story AS-10 (“dati sensibili”)         |
+| PA-07 | Gestione dei guasti e degli imprevisti lato associazione         | Medio   | Aperto                                                                    | Riunione Discord 03/08/26              |
+| PA-08 | Ruoli e permessi all’interno del gruppo cura                     | Medio   | Aperto                                                                    | Emerso in revisione (UC 9)             |
+| PA-09 | Trasporti ricorrenti in v0 o in v1                               | Medio   | Chiuso: fuori scope v0                                                    | Story CG-33 (“forse meglio nella v1?”) |
+| PA-10 | Visualizzazione della posizione GPS del mezzo                    | Medio   | Chiuso: fuori scope v0                                                    | Story CG-29 (“stato e posizione?”)     |
+| PA-11 | Accreditamento delle associazioni                                | Medio   | Aperto                                                                    | Emerso in revisione (UC 10.1)          |
+| PA-12 | Conferma della prenotazione via e-mail e slot viaggi             | Medio   | Chiuso: conferma alla presa in carico, nessun calendario di disponibilità | Riunione Discord 03/08/26              |
+| PA-13 | Trasporto sociale dentro o fuori dallo scope della v0            | Basso   | Chiuso: rinviato alla v1                                                  | Tipi di viaggio dell’originale         |
+| PA-14 | Politica di conservazione dei dati dopo l’eliminazione account   | Basso   | Aperto                                                                    | Emerso in revisione (UC 10.4)          |
+| PA-15 | Esito del rifiuto di una richiesta di modifica                   | Basso   | Aperto                                                                    | Emerso in revisione (flusso 12.5)      |
 
 ## PA-01 Modello di prenotazione: richiesta dell’utente o slot offerti dalle associazioni
 

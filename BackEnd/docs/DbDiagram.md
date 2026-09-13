@@ -1,10 +1,10 @@
 # GoCare — schema logico (DBML per dbdiagram.io)
 
-Incolla il blocco sotto su https://dbdiagram.io (nuovo progetto → cancella il placeholder →
-incolla). Allineato allo schema reale generato dalle migrazioni EF applicate
+Allineato allo schema reale generato dalle migrazioni EF applicate
 (`Initial` su `gocare_business`, `InitialAuth` su `gocare_auth`), non a una bozza.
 
 Convenzioni riportate qui:
+
 - Tipi enum come `text` nel DB reale (conversione EF enum→string); qui uso il tipo
   `enum` di DBML solo per leggibilità del diagramma — non cambia lo schema.
 - `notifications.subject_id`, `device_tokens.subject_id`, `transport_requests.deleted_by`

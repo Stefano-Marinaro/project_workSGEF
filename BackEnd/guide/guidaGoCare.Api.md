@@ -1,13 +1,5 @@
 # Guida — `GoCare.Api` (host)
 
-Teoria vista costruendo l'host `GoCare.Api`: il progetto eseguibile che avvia
-il web server, monta la pipeline HTTP e collega i pezzi che le librerie
-(`GoCare.Shared`, `GoCare.Application`) lasciano "da collegare".
-
-Complementare a `guidaGoCare.Shared.md`.
-
----
-
 ## 1. Cos'è `GoCare.Api` e cosa fa la Fase 1
 
 `GoCare.Api` è l'unico progetto **eseguibile** (`Sdk.Web`, `Program.cs` con
@@ -21,11 +13,11 @@ Complementare a `guidaGoCare.Shared.md`.
 
 **Fase 1** = agganciare `GoCare.Shared` all'host:
 
-| # | Cosa | Perché |
-|---|------|--------|
-| 1 | `CurrentUser : ICurrentUser` | `Shared` ha solo l'interfaccia; l'implementazione legge lo `HttpContext` → vive nell'host. |
-| 2 | `Program.cs`: `AddSharedKernel()`, `UseExceptionHandler()`, `ValidationFilter` globale, Swagger | attivare e agganciare alla pipeline ciò che `AddSharedKernel()` registra. |
-| 3 | `appsettings.json`: connection string `AuthDb` e `BusinessDb` | placeholder ora; il DB vero è Fase 2. |
+| #   | Cosa                                                                                            | Perché                                                                                     |
+| --- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1   | `CurrentUser : ICurrentUser`                                                                    | `Shared` ha solo l'interfaccia; l'implementazione legge lo `HttpContext` → vive nell'host. |
+| 2   | `Program.cs`: `AddSharedKernel()`, `UseExceptionHandler()`, `ValidationFilter` globale, Swagger | attivare e agganciare alla pipeline ciò che `AddSharedKernel()` registra.                  |
+| 3   | `appsettings.json`: connection string `AuthDb` e `BusinessDb`                                   | placeholder ora; il DB vero è Fase 2.                                                      |
 
 ---
 
@@ -36,12 +28,12 @@ Complementare a `guidaGoCare.Shared.md`.
 Un'affermazione su un soggetto nella forma **`(tipo, valore)`**, rilasciata da
 un'autorità che ne garantisce la veridicità.
 
-| tipo | valore | traduzione |
-|------|--------|-----------|
-| `sub` (NameIdentifier) | `a3f1…-9c2e` | "l'id di questo utente è a3f1…" |
-| `email` | `mario@rossi.it` | "la sua email è …" |
-| `role` | `admin` | "ha il ruolo admin" |
-| `association_id` | `77b2…` | "appartiene all'associazione 77b2…" (claim nostro) |
+| tipo                   | valore           | traduzione                                         |
+| ---------------------- | ---------------- | -------------------------------------------------- |
+| `sub` (NameIdentifier) | `a3f1…-9c2e`     | "l'id di questo utente è a3f1…"                    |
+| `email`                | `mario@rossi.it` | "la sua email è …"                                 |
+| `role`                 | `admin`          | "ha il ruolo admin"                                |
+| `association_id`       | `77b2…`          | "appartiene all'associazione 77b2…" (claim nostro) |
 
 Il punto: **non è l'utente a dichiararle, è il server** a certificarle al login
 e a firmarle. Chi le riceve dopo si fida perché la firma è valida.
@@ -101,7 +93,7 @@ standard OpenID Connect / OAuth2.
 
 - **Un JWT valido non si revoca prima della scadenza.** Se banni un utente il
   token resta buono fino a scadenza. Mitigazione: scadenza breve (~15 min) +
-  *refresh token* revocabile (entità `RefreshToken`).
+  _refresh token_ revocabile (entità `RefreshToken`).
 - **I claim sono leggibili da chiunque abbia il token** — la firma garantisce
   integrità, non segretezza. Dentro solo id e attributi di autorizzazione, mai
   password o dati sensibili.
@@ -151,8 +143,8 @@ public sealed class CurrentUser(IHttpContextAccessor accessor) : ICurrentUser
 
 `HttpContext` è diverso per ogni richiesta e non esiste fuori da una richiesta;
 `CurrentUser` è un oggetto solo. L'`accessor` è un livello di indirezione:
-sempre lo stesso oggetto, ma `.HttpContext` restituisce *lo `HttpContext` della
-richiesta che sta girando adesso su questo thread* (o `null` fuori da una
+sempre lo stesso oggetto, ma `.HttpContext` restituisce _lo `HttpContext` della
+richiesta che sta girando adesso su questo thread_ (o `null` fuori da una
 richiesta: avvio, job in background).
 
 `AddHttpContextAccessor()` lo registra (già in `AddSharedKernel()`). Il
@@ -246,32 +238,3 @@ root `/` dà 404.
 
 Nota di versione: dai template .NET 9/10 Microsoft non mette più Swashbuckle di
 default. In GoCare `Swashbuckle.AspNetCore` 10.2.3 è aggiunto a mano.
-
----
-
-## 5. Stato di `GoCare.Api`
-
-**Fatto (Fase 1):**
-
-- `Security/CurrentUser.cs` — `ICurrentUser`, registrata
-  `AddScoped<ICurrentUser, CurrentUser>()` in `Program.cs`.
-- `Program.cs`: `AddSharedKernel()`, `AddScoped<ICurrentUser, CurrentUser>()`,
-  `AddControllers(o => o.Filters.AddService<ValidationFilter>())`,
-  `AddEndpointsApiExplorer()` + `AddSwaggerGen()`; pipeline:
-  `UseExceptionHandler()` per primo, Swagger solo in Development,
-  `UseHttpsRedirection()`, `MapControllers()`.
-- `appsettings.json`: connection string `AuthDb` (`gocare_auth`) e `BusinessDb`
-  (`gocare_business`), placeholder `postgres/postgres` — la password vera
-  passerà a user-secrets in Fase 2.
-- `Swashbuckle.AspNetCore` 10.2.3 in `GoCare.Api.csproj`.
-- `launchSettings.json`: profili `http`/`https` con `launchBrowser: true` e
-  `launchUrl: "swagger"`.
-- Verifica: `dotnet build` 0/0 sull'intera solution; `dotnet run` avvia l'host,
-  `/swagger` e `/swagger/v1/swagger.json` rispondono 200.
-
-**Fatto (Fase 2, lato dominio):** `AddApplication(builder.Configuration)` in
-`Program.cs` — registra `BusinessDbContext`. Dettagli in
-`guidaGoCare.Application.md`.
-
-**Da fare:** `AuthDbContext` (a cura del collega) e la sua registrazione in
-`AddApplication`; prime migrazioni EF Core.
