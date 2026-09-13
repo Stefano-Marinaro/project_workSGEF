@@ -14,8 +14,8 @@
 | Database | PostgreSQL |
 | ORM | EF Core + provider Npgsql |
 | Architettura | **A livelli (layered / N-tier) organizzata come modular monolith** |
-| Separazione moduli | **Un solo progetto applicativo `GoCare.Application`**; aree autenticazione e dominio come sottocartelle (confine per convenzione, non imposto dal compilatore). **Due database** distinti e due `DbContext`. |
-| Livelli | `Controllers/` → `Services/` → `Data/`; `Dtos/` (contratti verso il client) e `Models/` (entità EF/dominio) separati |
+| Separazione moduli | **`GoCare.Api`** (host: Controller, Dtos/Validator delle Request, `Program.cs`, middleware) + **`GoCare.Application`** (Service, Model, `DbContext` — **zero dipendenze da ASP.NET Core MVC**) + **`GoCare.Shared`** (cross-cutting). Aree autenticazione e dominio come sottocartelle in entrambi i progetti. **Due database** distinti e due `DbContext`. |
+| Livelli | `Controllers/` (in `GoCare.Api`) → `Services/` (in `GoCare.Application`) → `Data/`; `Dtos/` (in `GoCare.Api`, contratti verso il client) e `Models/` (in `GoCare.Application`, entità EF/dominio) separati per progetto, non solo per cartella |
 | Comunicazione Auth ↔ dominio | **Chiamata diretta in-process**. L'area dominio legge lo stato account tramite `IAccountReader` interno; non tocca mai `AuthDbContext`. |
 | Notifiche | Push applicative (es. Firebase Cloud Messaging) + e-mail transazionali |
 | Real-time stato viaggio | Push per aggiornamento immediato + polling alla riapertura schermata (SignalR opzionale, non richiesto in v0) |
@@ -34,17 +34,21 @@
 
 ---
 
-## 0.1 Struttura interna di `GoCare.Application`
+## 0.1 Struttura interna dei progetti
 
-Organizzazione per livello tecnico:
-- `Controllers/` – classi `[ApiController]`, una per area funzionale. Fanno solo: bind del DTO, chiamata a **un** metodo di Service, mapping del risultato in `ActionResult`. Nessuna logica, nessun `DbContext`.
-- `Dtos/` – record `…Request` / `…Response`, contratti verso il client. I `Models` non escono mai verso il client.
+**`GoCare.Api`** — host HTTP, unico progetto con dipendenza da ASP.NET Core MVC:
+- `Controllers/` – classi `[ApiController]`, una per area funzionale. Fanno solo: bind del DTO, chiamata a **un** metodo di Service (da `GoCare.Application`), mapping del risultato in `ActionResult`. Nessuna logica, nessun `DbContext`.
+- `Dtos/` – record `…Request` / `…Response`, con il relativo Validator FluentValidation accanto alla Request (stesso file/cartella), contratti verso il client. I `Models` di dominio non escono mai verso il client.
+- `Program.cs` – DI, pipeline (autenticazione/autorizzazione JWT, `GlobalExceptionHandler`, `ValidationFilter`), Swagger.
+
+**`GoCare.Application`** — logica applicativa pura, **zero dipendenze da ASP.NET Core MVC** (niente `ControllerBase`, `[ApiController]`, `ActionResult<T>`, DTO HTTP, `IValidator<TDto>` sulle Request):
 - `Models/` – entità EF; in v0 fanno anche da modello di dominio.
-- `Services/` – logica applicativa: validazione di dominio, `SaveChangesAsync`, orchestrazione, chiamate agli helper interni e alle Port. `I…Service` + implementazione per area.
+- `Services/` – logica applicativa: validazione di dominio, `SaveChangesAsync`, orchestrazione, chiamate agli helper interni e alle Port. `I…Service` + implementazione per area. I metodi pubblici accettano parametri primitivi o tipi di dominio, **mai** un DTO HTTP di `GoCare.Api` (es. `AuthService.LoginAsync(string email, string password, CancellationToken ct)`, non `LoginAsync(LoginRequest request)`).
 - `Data/` – `DbContext`, `IEntityTypeConfiguration`, migrazioni. Repository opzionali (in v0 il Service usa `DbContext` direttamente).
 - `Infrastructure/` – implementazioni delle Port (push, e-mail, lettura account tra aree).
+- `DependencyInjection.cs` – `AddApplication(IServiceCollection, IConfiguration)`: registra `DbContext`, Service, `IOptions<T>`. **Non** registra i Validator delle Request né i Controller: quelli sono responsabilità di `GoCare.Api`.
 
-**Un solo progetto, due database.** Area auth e area dominio come cartelle (`Controllers/Auth/`, `Services/Auth/`, `Data/AuthDbContext.cs` …). Due `DbContext` verso due database PostgreSQL (`gocare_auth`, `gocare_business`), due set di migrazioni. Nessuna transazione atomica `Account` ↔ `Person`: alla registrazione si genera **un** `Guid`, usato come chiave primaria sia dell'`Account` sia del profilo di dominio (`Person` o `Association`); si crea il profilo nello stesso request; se fallisce, `ProfileReconciliationJob` lo ricrea con lo stesso id. `Account` e profilo sono entità distinte su database distinti, **senza foreign key** tra i due: il legame è l'uguaglianza dell'id, il `Role` discrimina la tabella. Assunzione v0: ogni profilo di dominio ha esattamente un account (non si opera su persone non registrate).
+**Due database.** Area auth e area dominio come cartelle in entrambi i progetti (`Controllers/Auth/` in `Api`, `Services/Auth/` in `Application`, `Data/AuthDbContext.cs` …). Due `DbContext` verso due database PostgreSQL (`gocare_auth`, `gocare_business`), due set di migrazioni. Nessuna transazione atomica `Account` ↔ `Person`: alla registrazione si genera **un** `Guid`, usato come chiave primaria sia dell'`Account` sia del profilo di dominio (`Person` o `Association`); si crea il profilo nello stesso request tramite `IProfileProvisioningService` (chiamata diretta in-process, non un evento) con un metodo dedicato per tipo di profilo (`CreatePersonAsync` / `CreateAssociationAsync`); se fallisce, `ProfileReconciliationJob` lo ricrea con lo stesso id. `Account` e profilo sono entità distinte su database distinti, **senza foreign key** tra i due: il legame è l'uguaglianza dell'id, il `Role` discrimina la tabella. Assunzione v0: ogni profilo di dominio ha esattamente un account (non si opera su persone non registrate).
 
 Comunicazione auth ↔ dominio: chiamata diretta in-process; l'area dominio legge lo stato account via `IAccountReader`, non tocca `AuthDbContext`.
 
@@ -57,35 +61,38 @@ Non si introducono: MediatR/CQRS, `Result<T>`, livello `Manager` separato, event
 ```
 BackEnd/
 ├─ src/
-│  ├─ GoCare.Api/                          # Host: Program.cs, DI, middleware, JWT, Swagger, ApplicationPart
-│  │  ├─ Program.cs
-│  │  └─ appsettings*.json
-│  │
-│  ├─ GoCare.Application/                  # ── MODULO APPLICATIVO UNICO (auth + dominio) ──
+│  ├─ GoCare.Api/                          # Host: Controller, Dtos, Program.cs, DI, middleware, JWT, Swagger
 │  │  ├─ Controllers/
 │  │  │  ├─ Auth/
 │  │  │  │  ├─ AuthController.cs               # register (user/association), login, refresh, logout
 │  │  │  │  ├─ EmailVerificationController.cs  # verify-email, resend
 │  │  │  │  ├─ PasswordController.cs           # forgot-password, reset-password
 │  │  │  │  └─ AccountController.cs            # change-email, delete account
-│  │  │  ├─ TransportsController.cs             # UC 1, 2 (utente), 3.1, 5
-│  │  │  ├─ TransportModificationsController.cs # UC 2.3
-│  │  │  ├─ AssociationRequestsController.cs    # UC 6
-│  │  │  ├─ AcceptedTransportsController.cs     # UC 7, 3.2
-│  │  │  ├─ TripStatusController.cs             # UC 4.10 / 4.11
-│  │  │  ├─ CareGroupsController.cs             # UC 9
-│  │  │  ├─ ProfilesController.cs               # UC 8.1–8.3, 8.5–8.6
-│  │  │  ├─ SavedDestinationsController.cs      # UC 8.4
-│  │  │  ├─ NotificationsController.cs          # UC 4 (centro notifiche, counters)
-│  │  │  ├─ DevicesController.cs                # registrazione push token
-│  │  │  └─ Admin/AssociationAccreditationController.cs   # PA-11
+│  │  │  └─ Domain/
+│  │  │     ├─ TransportsController.cs             # UC 1, 2 (utente), 3.1, 5
+│  │  │     ├─ TransportModificationsController.cs # UC 2.3
+│  │  │     ├─ AssociationRequestsController.cs    # UC 6
+│  │  │     ├─ AcceptedTransportsController.cs     # UC 7, 3.2
+│  │  │     ├─ TripStatusController.cs             # UC 4.10 / 4.11
+│  │  │     ├─ CareGroupsController.cs             # UC 9
+│  │  │     ├─ ProfilesController.cs               # UC 8.1–8.3, 8.5–8.6
+│  │  │     ├─ SavedDestinationsController.cs      # UC 8.4
+│  │  │     ├─ NotificationsController.cs          # UC 4 (centro notifiche, counters)
+│  │  │     ├─ DevicesController.cs                # registrazione push token
+│  │  │     └─ Admin/AssociationAccreditationController.cs   # PA-11 (accreditamento è dominio, non Auth)
 │  │  ├─ Dtos/
-│  │  │  ├─ Auth/{Requests,Responses}      # RegisterUserRequest, LoginRequest, …, AuthTokensResponse
-│  │  │  ├─ Requests/                      # CreateTransportRequest, UpdateScheduleRequest, …
-│  │  │  └─ Responses/                     # TransportDetailResponse, PendingRequestResponse, …
+│  │  │  ├─ Auth/{Requests,Responses}      # LoginRequest+LoginRequestValidator (fatti), AuthTokenResponse (fatto);
+│  │  │  │                                 # RegisterUserRequest, …, AuthTokensResponse per le altre action (da fare)
+│  │  │  └─ Domain/{Requests,Responses}    # CreateTransportRequest+Validator, UpdateScheduleRequest, …,
+│  │  │                                    # TransportDetailResponse, PendingRequestResponse, … (da fare)
+│  │  ├─ Program.cs
+│  │  └─ appsettings*.json
+│  │
+│  ├─ GoCare.Application/                  # ── LOGICA APPLICATIVA (auth + dominio), zero dipendenze ASP.NET Core MVC ──
 │  │  ├─ Models/
-│  │  │  ├─ (area Auth)  Account, EmailVerificationToken, PasswordResetToken,
-│  │  │  │               RefreshToken, FailedLoginAttempt
+│  │  │  ├─ Auth/        Account, EmailVerificationToken, PasswordResetToken,
+│  │  │  │               RefreshToken, FailedLoginAttempt (da fare),
+│  │  │  │               IExpirable + ExpirableExtensions (estensione `IsExpired(now)`)
 │  │  │  ├─ Domain/         (area dominio) Person, Association, Address,
 │  │  │  │               CareGroup, CareGroupMembership,
 │  │  │  │               SavedDestination, TransportRequest, TransportRequestCandidate,
@@ -95,7 +102,7 @@ BackEnd/
 │  │  │  │               (Address = value object / owned type EF Core: Via, Numero,
 │  │  │  │               Cap, Citta, Provincia; usato da Person, SavedDestination,
 │  │  │  │               Association, TransportRequest)
-│  │  │  └─ Enums/                         # Auth (da scrivere): EAccountStatus, EAccountRole
+│  │  │  └─ Enums/                         # Auth (scritti): EAccountStatus, EAccountRole
 │  │  │                                    # dominio: ETripType, ETripDirection, ETripRequestStatus,
 │  │  │                                    # ETripTransitionStatus, EModificationField,
 │  │  │                                    # EModificationRequestStatus, EGroupRole, EGroupAdminRole,
@@ -105,23 +112,27 @@ BackEnd/
 │  │  │                                    # EContactDataKind, EDevicePlatform
 │  │  ├─ Services/
 │  │  │  ├─ Auth/
-│  │  │  │  ├─ IAuthService.cs     / AuthService.cs        # registrazione, login, refresh, logout
-│  │  │  │  ├─ IPasswordService.cs / PasswordService.cs    # forgot/reset, hashing
-│  │  │  │  ├─ ITokenService.cs    / TokenService.cs       # emissione/rotazione JWT
-│  │  │  │  ├─ IAccountService.cs  / AccountService.cs     # verify-email, change-email, delete
-│  │  │  │  └─ IAccountReader.cs                           # stato/ruolo/email_verified per l'area dominio
-│  │  │  ├─ ITransportService.cs             / TransportService.cs
-│  │  │  ├─ ITransportModificationService.cs / TransportModificationService.cs
-│  │  │  ├─ IAssociationRequestService.cs    / AssociationRequestService.cs
-│  │  │  ├─ IAcceptedTransportService.cs     / AcceptedTransportService.cs
-│  │  │  ├─ ITripStatusService.cs            / TripStatusService.cs      # usa TripStateMachine
-│  │  │  ├─ ICareGroupService.cs             / CareGroupService.cs
-│  │  │  ├─ IProfileService.cs               / ProfileService.cs
-│  │  │  ├─ ISavedDestinationService.cs      / SavedDestinationService.cs
-│  │  │  ├─ INotificationService.cs          / NotificationService.cs
-│  │  │  ├─ IProfileProvisioningService.cs   / ProfileProvisioningService.cs
-│  │  │  │        # crea Person/Association per un Account, accredita, anonimizza.
-│  │  │  │        # Chiamato direttamente da AuthService / AccountService.
+│  │  │  │  ├─ IAuthService.cs     / AuthService.cs        # login (fatto); registrazione, refresh, logout (da fare)
+│  │  │  │  ├─ IPasswordService.cs / PasswordService.cs    # hashing (fatto, `PasswordHasher<T>`); forgot/reset (da fare)
+│  │  │  │  ├─ ITokenService.cs    / TokenService.cs       # emissione JWT access + refresh opaco (fatto); rotazione (da fare)
+│  │  │  │  ├─ IAccountService.cs  / AccountService.cs     # verify-email, change-email, delete (da fare)
+│  │  │  │  └─ IAccountReader.cs                           # stato/ruolo/email_verified per l'area dominio (da fare)
+│  │  │  ├─ Provisioning/
+│  │  │  │  ├─ IProfileProvisioningService.cs / ProfileProvisioningService.cs
+│  │  │  │  │        # CreatePersonAsync / CreateAssociationAsync (fatti, due metodi distinti, non uno polimorfico);
+│  │  │  │  │        # AccreditAssociationAsync, RejectAssociationAsync, AnonymizeForDeletedAccountAsync (da fare)
+│  │  │  │  ├─ PersonProvisioningData.cs        # record: rispecchia 1:1 il costruttore di Person
+│  │  │  │  └─ AssociationProvisioningData.cs   # record: rispecchia 1:1 il costruttore di Association
+│  │  │  ├─ Domain/
+│  │  │  │  ├─ ITransportService.cs             / TransportService.cs
+│  │  │  │  ├─ ITransportModificationService.cs / TransportModificationService.cs
+│  │  │  │  ├─ IAssociationRequestService.cs    / AssociationRequestService.cs
+│  │  │  │  ├─ IAcceptedTransportService.cs     / AcceptedTransportService.cs
+│  │  │  │  ├─ ITripStatusService.cs            / TripStatusService.cs      # usa TripStateMachine
+│  │  │  │  ├─ ICareGroupService.cs             / CareGroupService.cs
+│  │  │  │  ├─ IProfileService.cs               / ProfileService.cs
+│  │  │  │  ├─ ISavedDestinationService.cs      / SavedDestinationService.cs
+│  │  │  │  └─ INotificationService.cs          / NotificationService.cs
 │  │  │  └─ Internal/                        # helper di dominio, non esposti ai controller
 │  │  │     ├─ TripStateMachine.cs           # transizioni ammesse (§9 / §12.7)
 │  │  │     ├─ INotificationDispatcher.cs / NotificationDispatcher.cs   # crea Notification + push/email
@@ -129,10 +140,10 @@ BackEnd/
 │  │  │     ├─ IKmCalculator.cs              # port
 │  │  │     └─ IPushSender.cs                # port
 │  │  ├─ Data/
-│  │  │  ├─ AuthDbContext.cs               # database gocare_auth
-│  │  │  ├─ BusinessDbContext.cs           # database gocare_business
-│  │  │  ├─ Auth/{Configurations,Migrations}
-│  │  │  └─ Business/{Configurations,Migrations}
+│  │  │  ├─ AuthDbContext.cs               # database gocare_auth — configurazione EF inline in OnModelCreating (fatto)
+│  │  │  ├─ BusinessDbContext.cs           # database gocare_business — idem (fatto)
+│  │  │  ├─ Auth/Migrations                # InitialAuth (fatta)
+│  │  │  └─ Business/Migrations            # Initial (fatta)
 │  │  ├─ Infrastructure/                   # implementazioni delle port
 │  │  │  ├─ KmCalculator.cs
 │  │  │  ├─ PushSender.cs                  # FCM/APNs
@@ -164,7 +175,7 @@ BackEnd/
 ```
 
 **Riferimenti fra progetti:**
-`GoCare.Api` → `GoCare.Application`, `GoCare.Shared`. `GoCare.Application` → `GoCare.Shared`. I controller stanno in class library: l'host li registra con `AddControllers().AddApplicationPart(typeof(...).Assembly)` (un solo `ApplicationPart`).
+`GoCare.Api` → `GoCare.Application`, `GoCare.Shared`. `GoCare.Application` → `GoCare.Shared`. Controller e Dtos/Validator delle Request vivono in `GoCare.Api`: nessun `ApplicationPart` da registrare, `AddControllers()` li trova da solo nell'assembly host.
 
 ---
 
@@ -220,12 +231,12 @@ POST /transports
 ## 4. Fase 2 – Persistenza e database
 
 - [x] Aggiungere Npgsql EF Core Provider al progetto `GoCare.Application`.
-- [ ] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`). *(fatto: `gocare_auth`/`gocare_business` creati, `BusinessDbContext` scritto e registrato; manca `AuthDbContext` — a cura del collega — e nessuna migrazione ancora generata)*
+- [x] **Due database**: `AuthDbContext` → DB `gocare_auth`, `BusinessDbContext` → DB `gocare_business`. Entrambi i `DbContext` in `GoCare.Application/Data/`, migrazioni separate (`Data/Auth/Migrations`, `Data/Business/Migrations`). Entrambi scritti, configurati e registrati in `AddApplication`; prima migrazione generata per ciascuno (`20260911102131_InitialAuth`, `20260906213758_Initial`).
 - [ ] Comandi EF: ogni `dotnet ef migrations|database …` richiede `--context AuthDbContext|BusinessDbContext`, `--startup-project src/GoCare.Api` e `--project src/GoCare.Application`.
-- [ ] Entità in `Models/`; configurazioni `IEntityTypeConfiguration` in `Data/Auth/Configurations` e `Data/Business/Configurations`.
-- [ ] Convenzioni comuni: chiavi `Guid` (v7/sequenziali), `created_at` dove rilevante (nessun `updated_at` globale), naming snake_case, **enum con prefisso `E`** (dominio e Auth: `ETripType`, `EAccountStatus`, …). Concorrenza ottimistica dove serve tramite la colonna di sistema Postgres `xmin` (shadow property configurata in `BusinessDbContext`); nessun `row_version` CLR.
-- [ ] **Soft delete**: colonna `deleted_at` + query filter globale; gli storici restano leggibili.
-- [ ] Migrazioni: `dotnet ef migrations` per contesto, auto-apply in Development, script SQL versionati per ambienti superiori.
+- [x] Entità in `Models/`; configurazione EF **inline in `OnModelCreating`** di ciascun `DbContext` — **nessuna classe `IEntityTypeConfiguration` separata**, decisione presa esplicitamente (niente cartella `Configurations/`). Tutte le entità Auth e dominio configurate: chiavi, FK con `Restrict`/`Cascade`, owned type `Address`, indici univoci (`Account.Email`, i tre `Token`, `CareGroupMembership.InvitationToken`), indici di supporto (`TransportRequest.RequestStatus`, `StartAddress.Province`, ecc.).
+- [x] Convenzioni comuni: naming snake_case (`UseSnakeCaseNamingConvention`), **enum con prefisso `E`** salvati come stringa (`ConfigureConventions` → `Properties<Enum>().HaveConversion<string>()`, override a `int` solo per `Notification.Channels` perché `[Flags]`). Concorrenza ottimistica tramite la colonna di sistema Postgres `xmin` (shadow property su `TransportRequest`, configurata in `BusinessDbContext`); nessun `row_version` CLR.
+- [ ] **Soft delete**: colonna `deleted_at` presente sulle entità che la richiedono (`Person`, `Association`, `CareGroup`, `TransportRequest`, …); **query filter globale ancora da configurare**.
+- [ ] Migrazioni *(fatto: prima migrazione per contesto — `InitialAuth`, `Initial`; da fare: auto-apply in Development, script SQL versionati per ambienti superiori)*.
 - [ ] Seed minimo (enum se non gestiti come `enum` C#, associazione demo).
 - [ ] Health check DB (entrambi i database).
 - [ ] Repository: **opzionali** in v0. Se adottati, uno per aggregato (`IAccountRepository`, `ITransportRequestRepository`, `ICareGroupRepository`) in `Data/…/Repositories/`; altrimenti il Service usa `DbContext` direttamente.
@@ -233,11 +244,12 @@ POST /transports
 ### Entità (in `Models/`)
 
 **Area Auth (DB `gocare_auth`):**
-- `Account` — `Id`, `Email` (univoca), `PasswordHash`, `Role` (`EAccountRole`: Person | Association), `Status` (`EAccountStatus`: Unverified | Active | Suspended | Deleted), `CreatedAt`, `EmailVerifiedAt?`, `SuspendedAt?`, `DeletedAt?`. **Nessuna colonna di riferimento al profilo**: `Account.Id` è lo **stesso `Guid`** di `Person.Id` / `Association.Id` (PK condivisa, discriminata da `Role`); nessuna FK tra i due database. `EmailVerifiedAt is not null` = e-mail confermata (claim `email_verified`); `Status` è il ciclo di vita dell'account. **L'accreditamento non è uno stato dell'account**: è `Association.Status` (`EAccreditationStatus`, dominio). Un'associazione registrata e verificata ha account `Active` come un utente qualsiasi.
-- `EmailVerificationToken` — Id, AccountId, Token, ScadenzaAt, UsatoAt?.
-- `PasswordResetToken` — Id, AccountId, Token, ScadenzaAt, UsatoAt? (monouso).
-- `RefreshToken` — Id, AccountId, Token, ScadenzaAt, RevocatoAt?, UserAgent/IP (facoltativo).
-- `FailedLoginAttempt` — contatore per rate limiting e blocco temporaneo.
+- `Account` — `Id`, `Email` (univoca), `PasswordHash`, `Role` (`EAccountRole`: Person | Association), `Status` (`EAccountStatus`: Unverified | Active | Suspended | Deleted), `CanLogIn` (computata: `Status == Active`), `CreatedAt`, `EmailVerifiedAt?`, `SuspendedAt?`, `DeletedAt?`. **Nessuna colonna di riferimento al profilo**: `Account.Id` è lo **stesso `Guid`** di `Person.Id` / `Association.Id` (PK condivisa, discriminata da `Role`); nessuna FK tra i due database. `EmailVerifiedAt is not null` = e-mail confermata (claim `email_verified`); `Status` è il ciclo di vita dell'account. **L'accreditamento non è uno stato dell'account**: è `Association.Status` (`EAccreditationStatus`, dominio). Un'associazione registrata e verificata ha account `Active` come un utente qualsiasi.
+- `EmailVerificationToken` — `Id`, `AccountId`, `Token`, `ExpiresAt`, `ConsumedAt?`.
+- `PasswordResetToken` — `Id`, `AccountId`, `Token`, `ExpiresAt`, `ConsumedAt?` (monouso).
+- `RefreshToken` — `Id`, `AccountId`, `Token`, `ExpiresAt`, `CreatedAt`, `RevokedAt?` (nessun `UserAgent`/IP in v0).
+- `EmailVerificationToken` / `PasswordResetToken` / `RefreshToken` implementano `IExpirable` (proprietà `ExpiresAt`); la scadenza si controlla con l'estensione condivisa `IsExpired(now)`, non ripetendo il confronto in ognuna.
+- `FailedLoginAttempt` — `Id`, `Email`, `AttemptedAt`, `IpAddress?` (entità e tabella fatte, configurata in `AuthDbContext`; **non ancora usata** da `AuthService.LoginAsync` — la logica di conteggio/blocco è da scrivere).
 
 **Area dominio (DB `gocare_business`):**
 - `Person` — `Id` (= `Account.Id` del titolare, PK condivisa), `Name`, `Surname`, `BirthDate` (`DateOnly`), `Email`, `Phone`, `HomeAddress` (`Address?`, owned type), `DeletedAt`, `AnonymizedAt`. Nessun flag di ruolo.
@@ -262,18 +274,18 @@ POST /transports
 > Cartelle `Controllers/Auth/`, `Services/Auth/`, `Data/AuthDbContext.cs`. Espone endpoint pubblici (senza header) e genera l'identità che l'area dominio consuma.
 
 ### 5.1 Fondamenta dell'area
-- [ ] `AuthDbContext`, configurazioni EF, prima migrazione (`--context AuthDbContext`).
-- [ ] `PasswordService` con algoritmo di hashing moderno (Argon2/PBKDF2).
-- [ ] `TokenService`: access token breve con claim `sub` (= `Account.Id`, che è anche l'id del profilo di dominio), `role`, `email_verified`; refresh token persistito e revocabile.
-- [ ] Configurazione autenticazione JWT nell'host + policy di autorizzazione per ruolo (`Ruolo=Utente`, `Ruolo=Associazione`). Il requirement `AssociazioneAccreditata` **non** deriva da un claim di Auth: si risolve lato dominio leggendo `Association.Status` (`BusinessDbContext`), perché l'accreditamento può cambiare dopo l'emissione del token.
+- [x] `AuthDbContext`, configurazione EF inline (`Account`, `EmailVerificationToken`, `PasswordResetToken`, `RefreshToken`, `FailedLoginAttempt`: chiavi, FK verso `Account` con `Cascade`, indici univoci sui `Token`), prima migrazione (`InitialAuth`).
+- [x] `PasswordService` — `PasswordHasher<T>` (`Microsoft.AspNetCore.Identity`, PBKDF2-HMACSHA256); arriva gratis via `FrameworkReference Include="Microsoft.AspNetCore.App"`, nessun package NuGet aggiuntivo.
+- [x] `TokenService`: access token JWT breve con claim `sub` (= `Account.Id`, che è anche l'id del profilo di dominio), `role`, `email_verified`; refresh token **opaco** (`RandomNumberGenerator`, non un JWT) persistito in `RefreshToken` e revocabile — deve poter essere revocato davvero lato server, cosa che un JWT auto-descrittivo non permetterebbe senza una blacklist separata.
+- [ ] Configurazione autenticazione JWT nell'host *(fatto: `AddAuthentication().AddJwtBearer(...)` con `TokenValidationParameters` da `JwtOptions`, `UseAuthentication`/`UseAuthorization` in `Program.cs`)* + policy di autorizzazione per ruolo (`Ruolo=Utente`, `Ruolo=Associazione`) *(da fare)*. Il requirement `AssociazioneAccreditata` **non** deriva da un claim di Auth: si risolve lato dominio leggendo `Association.Status` (`BusinessDbContext`), perché l'accreditamento può cambiare dopo l'emissione del token.
 - [ ] Rate limiting su login e forgot-password.
-- [ ] Registrazione servizi dell'area dentro `DependencyInjection.AddApplication` (DbContext, Service, validator, `ApplicationPart` dei controller).
+- [ ] Registrazione servizi dell'area dentro `DependencyInjection.AddApplication` *(fatto: `IPasswordService`, `ITokenService`, `IAuthService`, `IProfileProvisioningService`, `JwtOptions`; mancano `IAccountService`, `IAccountReader`, `FailedLoginAttempt`/rate limiting)*. Il Validator delle Request e il Controller **non** si registrano più qui: vivono in `GoCare.Api` (nessun `ApplicationPart`).
 
 ### 5.2 Controller e metodi di Service
 
 | Controller · action | Route | Service · metodo | UC |
 |---|---|---|---|
-| `AuthController.RegisterUser` | `POST /auth/register/user` | `AuthService.RegisterUserAsync` – valida, unicità e-mail, hash password, genera **un** `Guid` (id condiviso), crea `Account` `Unverified`, chiama `IProfileProvisioningService.CreateForAccountAsync` (crea `Person` con lo stesso id), genera token, invia e-mail | 10.1 / CG-01 |
+| `AuthController.RegisterUser` | `POST /auth/register/user` | `AuthService.RegisterUserAsync` – valida, unicità e-mail, hash password, genera **un** `Guid` (id condiviso), crea `Account` `Unverified`, chiama `IProfileProvisioningService.CreatePersonAsync` (crea `Person` con lo stesso id), genera token, invia e-mail | 10.1 / CG-01 |
 | `AuthController.RegisterAssociation` | `POST /auth/register/association` | `AuthService.RegisterAssociationAsync` – come sopra (crea `Association` con lo stesso id e `Status = Pending`, dominio); l'account segue lo stesso ciclo di un utente (PA-11) | 10.1 / AS-01 |
 | `EmailVerificationController.Verify` | `GET /auth/verify-email/:token` | `AccountService.VerifyEmailAsync` – valida token, `Account.Verify(at)` → `EmailVerifiedAt` valorizzato e `Status = Active` (per utenti e associazioni) | 10.1 |
 | `EmailVerificationController.Resend` | `POST /auth/verify-email/resend` | `AccountService.ResendVerificationAsync` | 10.1 |
@@ -285,15 +297,17 @@ POST /transports
 | `AccountController.ChangeEmail` | `POST /auth/change-email` | `AccountService.ChangeEmailAsync` – aggiorna e-mail di login solo dopo verifica del nuovo indirizzo | 8.2 |
 | `AccountController.Delete` | `DELETE /auth/account` | `AccountService.DeleteAsync` – re-inserimento password; chiama il servizio dominio che verifica viaggi/trasporti futuri attivi (veto); soft delete + `IProfileProvisioningService.AnonymizeForDeletedAccountAsync`; invalida sessioni; e-mail di conferma | 10.4 / CG-05, AS-04 |
 
+> **Stato attuale**: implementato solo `AuthService.LoginAsync`, con `AuthController.Login` + `LoginRequest`/`LoginRequestValidator` + `AuthTokenResponse` (questi tre in `GoCare.Api/Dtos/Auth/`, non in `GoCare.Application`). Tutte le altre righe della tabella sono ancora da scrivere.
+
 ### 5.3 `IAccountReader` (interno)
 - [ ] `IAccountReader` in `Services/Auth/` – espone stato/ruolo/email_verified di un account per i controlli dell'area dominio, senza che questa tocchi `AuthDbContext`. Implementato in `Infrastructure/AccountReader.cs` (legge `AuthDbContext`), registrato in `AddApplication`.
-- [ ] Provisioning del profilo: `IProfileProvisioningService` (in `Services/`) con `CreateForAccountAsync(accountId, datiAnagrafici)` (il profilo nasce con `Id == accountId`), `AccreditAssociationAsync(associationId)`, `RejectAssociationAsync(associationId, motivazione?)`, `AnonymizeForDeletedAccountAsync(accountId)`. `AccreditAssociationAsync` / `RejectAssociationAsync` scrivono **solo** `Association.Status` su `BusinessDbContext`, non toccano l'`Account`. Chiamato **direttamente** dai Service dell'area Auth (per `CreateForAccountAsync` / `AnonymizeForDeletedAccountAsync`) e dal controller admin (per accredit/reject). Nessun evento. `datiAnagrafici` non include più un `ruolo` caregiver/assistito: quel ruolo si assegna solo dentro un `CareGroupMembership`, non alla registrazione.
+- [x] Provisioning del profilo: `IProfileProvisioningService` (in `Services/Provisioning/`) con **due metodi distinti** — `CreatePersonAsync(accountId, PersonProvisioningData)` e `CreateAssociationAsync(accountId, AssociationProvisioningData)` — non un unico metodo polimorfico `CreateForAccountAsync`: il profilo nasce con `Id == accountId`. I record `PersonProvisioningData`/`AssociationProvisioningData` rispecchiano 1:1 i parametri dei costruttori di `Person`/`Association` (niente `HomeAddress`/`AvailabilityHours`: non sono nei costruttori attuali, solo `{ get; private set; }` senza metodo pubblico per impostarli). Ancora da fare: `AccreditAssociationAsync(associationId)`, `RejectAssociationAsync(associationId, motivazione?)`, `AnonymizeForDeletedAccountAsync(accountId)`. `AccreditAssociationAsync` / `RejectAssociationAsync` scriveranno **solo** `Association.Status` su `BusinessDbContext`, non toccano l'`Account`. Chiamato **direttamente** dai Service dell'area Auth (per `CreatePersonAsync`/`CreateAssociationAsync`/`AnonymizeForDeletedAccountAsync`) e dal controller admin (per accredit/reject). Nessun evento. I dati anagrafici non includono un `ruolo` caregiver/assistito: quel ruolo si assegna solo dentro un `CareGroupMembership`, non alla registrazione.
 
 ---
 
 ## 6. Fase 4 – Concerns trasversali nell'host (`GoCare.Api`)
 
-- [ ] **Composizione**: `Program.cs` chiama `AddApplication`, registra l'`ApplicationPart` di `GoCare.Application`, la pipeline JWT, `GlobalExceptionHandler`, `ValidationFilter` globale, Swagger.
+- [ ] **Composizione**: `Program.cs` chiama `AddApplication`, la pipeline JWT *(fatto: `AddAuthentication().AddJwtBearer(...)`, `UseAuthentication`/`UseAuthorization`)*, `GlobalExceptionHandler`, `ValidationFilter` globale, Swagger. Nessun `ApplicationPart`: Controller e Dtos vivono già in `GoCare.Api`.
 - [ ] **Autorizzazione**: policy per ruolo (dai claim JWT). Il requirement `AssociazioneAccreditata` e i controlli a livello di risorsa ("è l'associazione assegnataria", "è amministratore del gruppo", "il richiedente può prenotare per l'assistito") stanno **nei Service di dominio** e leggono `BusinessDbContext` (per l'accreditamento: `Association.Status == Accredited`).
 - [ ] **Validazione**: FluentValidation, un validator per DTO di Request; regole ricorrenti (data non nel passato, coerenza direzione↔orari, campi obbligatori).
 - [ ] **Logging/telemetria**: Serilog strutturato, correlation id, OpenTelemetry opzionale.
@@ -318,8 +332,8 @@ POST /transports
 - [ ] **`Services/Internal/CoverageEvaluator.cs`** (`ICoverageEvaluator`) – decide se una richiesta è `NotCovered` (tutte le associazioni hanno rifiutato **oppure** < soglia ore alla data). Usato da `DeclineAsync` e da `CoverageTimeoutJob`.
 - [ ] **Port** (`Services/Internal/`): `IPushSender`. `IEmailSender` viene da `GoCare.Shared`. `IKmCalculator` predisposto ma non usato in v0 (calcolo km rinviato a V1 — §15).
 - [ ] **`Infrastructure/`**: implementazioni `PushSender`, `SmtpEmailSender`, `AccountReader` (implementa `IAccountReader` leggendo `AuthDbContext`). `KmCalculator`: implementazione stub/no-op in v0.
-- [ ] **`Services/ProfileProvisioningService.cs`**: `CreateForAccountAsync` (crea `Person`/`Association` sul DB dominio **con `Id == accountId`**; `Association.Status = Pending`), `AccreditAssociationAsync` (`Association.Status` → `Accredited`), `RejectAssociationAsync` (`Association.Status` → `Rejected`; **non tocca l'`Account`** — un'associazione rifiutata mantiene l'account `Active` e può fare login con app ristretta, cfr. Project §12.2; se il team decidesse di bloccarne il login, la sospensione dell'account è un'azione Auth separata e deliberata — PA-11 aperto), `AnonymizeForDeletedAccountAsync` (anonimizza il profilo con lo stesso id ed esce dai gruppi, con veto se ci sono viaggi futuri attivi). `CreateForAccountAsync` / `AnonymizeForDeletedAccountAsync` chiamati direttamente da `AuthService`/`AccountService`; `AccreditAssociationAsync` / `RejectAssociationAsync` dal controller admin.
-- [ ] `DependencyInjection.AddApplication`: registra i due `DbContext`, tutti i Service + helper interni, i validator, i job, l'`ApplicationPart` dei controller.
+- [x] (parziale) **`Services/Provisioning/ProfileProvisioningService.cs`**: `CreatePersonAsync` / `CreateAssociationAsync` (crea `Person`/`Association` sul DB dominio **con `Id == accountId`**; `Association.Status = Pending` di default) — **fatti**. Da fare: `AccreditAssociationAsync` (`Association.Status` → `Accredited`), `RejectAssociationAsync` (`Association.Status` → `Rejected`; **non tocca l'`Account`** — un'associazione rifiutata mantiene l'account `Active` e può fare login con app ristretta, cfr. Project §12.2; se il team decidesse di bloccarne il login, la sospensione dell'account è un'azione Auth separata e deliberata — PA-11 aperto), `AnonymizeForDeletedAccountAsync` (anonimizza il profilo con lo stesso id ed esce dai gruppi, con veto se ci sono viaggi futuri attivi). `CreatePersonAsync`/`CreateAssociationAsync`/`AnonymizeForDeletedAccountAsync` chiamati direttamente da `AuthService`/`AccountService`; `AccreditAssociationAsync` / `RejectAssociationAsync` dal controller admin.
+- [ ] `DependencyInjection.AddApplication`: registra i due `DbContext`, tutti i Service + helper interni, i job. Validator delle Request e Controller **non** qui: vivono in `GoCare.Api`.
 
 ---
 
@@ -575,8 +589,8 @@ Fuori scope v0 confermati: trasporti ricorrenti (PA-09), geolocalizzazione mezzo
 
 ## 16. Ordine di esecuzione consigliato (milestone)
 
-1. **M0 – Fondamenta**: Fasi 0, 1, 2 (solution, `GoCare.Shared`, i due `DbContext` in `GoCare.Application` + migrazione iniziale ciascuno, docker-compose con i due database).
-2. **M1 – Autenticazione**: Fase 3 + parte della Fase 4 (JWT, e-mail, `GlobalExceptionHandler`, `ValidationFilter`). Deliverable: registrazione → verifica → login → reset password end-to-end, con `Person`/`Association` creata via `ProfileProvisioningService` con lo stesso id dell'`Account`.
+1. **M0 – Fondamenta**: Fasi 0, 1, 2 (solution, `GoCare.Shared`, i due `DbContext` in `GoCare.Application` + migrazione iniziale ciascuno *(fatto)*, docker-compose con i due database *(da fare)*).
+2. **M1 – Autenticazione**: Fase 3 + parte della Fase 4 (JWT, e-mail, `GlobalExceptionHandler`, `ValidationFilter`). Deliverable: registrazione → verifica → login → reset password end-to-end, con `Person`/`Association` creata via `ProfileProvisioningService` con lo stesso id dell'`Account`. *(Login end-to-end fatto; registrazione/verifica/reset ancora da scrivere.)*
 3. **M2 – Dominio: Models + helper + profili**: Fasi 5 e 7 (`TripStateMachine`), UC 8, `ProfileProvisioningService`.
 4. **M3 – Gruppi cura**: UC 9 completo (dopo PA-08).
 5. **M4 – Ciclo richiesta trasporto**: UC 1 → UC 6 → UC 7 (dopo PA-01, PA-04, PA-05, PA-06).

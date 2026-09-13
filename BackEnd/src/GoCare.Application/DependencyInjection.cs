@@ -4,6 +4,7 @@ using GoCare.Application.Services.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using GoCare.Application.Services.Provisioning;
 
 namespace GoCare.Application;
 
@@ -18,6 +19,8 @@ public static class DependencyInjection
 
         services.AddScoped<IPasswordService, PasswordService>();
         services.AddScoped<ITokenService, TokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<IProfileProvisioningService, ProfileProvisioningService>();
 
         var businessCs = configuration.GetConnectionString("BusinessDb")
             ?? throw new InvalidOperationException("Connection string 'BusinessDb' mancante.");
