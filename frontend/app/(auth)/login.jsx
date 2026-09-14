@@ -9,6 +9,7 @@ import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import { useState } from 'react'
 import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
+import { API_BASE_URL } from '../../config/api.js'
 
 const Login = () => {
 
@@ -18,9 +19,33 @@ const Login = () => {
     const router = useRouter()
     const [role, setRole] = useState(params.role === 'association' ? 'association' : 'caregiver')
 
-    const handleSubmit = () => {
-        console.log('login form submitted', email, password)
-        router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
+    const [errorMessage, setErrorMessage] = useState('')
+
+    const handleSubmit = async () => {
+        console.log('BUTTON PRESSED')
+        setErrorMessage('')
+        try {
+            const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password }),
+            })
+
+            if (!response.ok) {
+                const errorData = await response.json()
+                setErrorMessage(errorData.detail || 'Login failed')
+                return
+            }
+
+            const data = await response.json()
+            console.log('Access token received:', data.accessToken)
+            // TODO: store data.accessToken (e.g. with expo-secure-store)
+
+            router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
+        } catch (error) {
+            console.log('Network error:', error)
+            setErrorMessage('Unable to reach the server')
+        }
     }
 
   return (
@@ -67,6 +92,10 @@ const Login = () => {
             <ThemedButton onPress={handleSubmit}>
                 <Text style={{ color: '#f2f2f2'}}>Login</Text>
             </ThemedButton>
+
+            {errorMessage ? <ThemedText style={{ color: 'red' }}>{errorMessage}</ThemedText> : null}
+
+            <Spacer height={20}/>
 
             <Link href='/forgot_password' style={styles.forgotLink}>
                 <ThemedText style={styles.forgotLinkText}>
