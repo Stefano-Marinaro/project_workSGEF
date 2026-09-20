@@ -1,11 +1,5 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/GoCare.Api/GoCare.Api.csproj" />
-    <Project Path="src/GoCare.Application/GoCare.Application.csproj" />
-    <Project Path="src/GoCare.Shared/GoCare.Shared.csproj" />
-  </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/GoCare.Api.IntegrationTests/GoCare.Api.IntegrationTests.csproj" />
-    <Project Path="tests/GoCare.Application.Tests/GoCare.Application.Tests.csproj" />
+    <Project Path="src/GoCare/GoCare.csproj" />
   </Folder>
 </Solution>
