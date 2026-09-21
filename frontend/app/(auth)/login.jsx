@@ -1,5 +1,7 @@
 import { StyleSheet, Text, Keyboard } from 'react-native'
 import { Link, useLocalSearchParams, useRouter } from 'expo-router'
+import * as SecureStore from 'expo-secure-store'
+import api from '../../config/httpClient.js'
 
 // themed components
 import ThemedView from  '../../components/ThemedView.jsx'
@@ -9,7 +11,7 @@ import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import { useState } from 'react'
 import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
-import { API_BASE_URL } from '../../config/api.js'
+
 
 const Login = () => {
 
@@ -25,27 +27,27 @@ const Login = () => {
         console.log('BUTTON PRESSED')
         setErrorMessage('')
         try {
-            const response = await fetch(`${API_BASE_URL}/auth/login`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password }),
-            })
+            const response = await api.post('/auth/login', { email, password });
+ 
+     
+            console.log('Access token received:', response.data.accessToken)
 
-            if (!response.ok) {
-                const errorData = await response.json()
-                setErrorMessage(errorData.detail || 'Login failed')
-                return
-            }
-
-            const data = await response.json()
-            console.log('Access token received:', data.accessToken)
-            // TODO: store data.accessToken (e.g. with expo-secure-store)
-
+            await SecureStore.setItemAsync('accessToken', response.data.accessToken)
+            await SecureStore.setItemAsync('refreshToken', response.data.refreshToken)
+ 
             router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
         } catch (error) {
-            console.log('Network error:', error)
-            setErrorMessage('Unable to reach the server')
+            if (error.response) {
+       
+                setErrorMessage(error.response.data.detail || 'Login failed')  
+                console.log('LOGIN ERROR:', error.response?.status, error.response?.data)
+           
+            } else {
+               
+                setErrorMessage('Unable to reach the server')
+            }
         }
+ 
     }
 
   return (

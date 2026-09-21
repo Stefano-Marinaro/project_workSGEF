@@ -1,7 +1,8 @@
 import { StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Pressable, View, Modal, TouchableOpacity } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
-import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
+import api from '../../config/httpClient.js'
+
 
 // themed components
 import ThemedView from '../../components/ThemedView.jsx'
@@ -16,26 +17,32 @@ const Register = () => {
     const [password, setPassword] = useState('')
     const [role, setRole] = useState('caregiver')
     const router = useRouter()
-    const [dateOfBirth, setDateOfBirth] = useState(new Date())
-    const [placeOfBirth, setPlaceOfBirth] = useState('')
-
-    const [showDatePicker, setShowDatePicker] = useState(false)
+    
 
     //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
     //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
-    const onChangeDate = (event, selectedDate) => {
-        if (Platform.OS === 'android') {
-            setShowDatePicker(false)
-        }
-        if (selectedDate) setDateOfBirth(selectedDate)
-        // è un controllo di sicurezza in caso l'utente
-        //"tocca fuori" prima di aver selezionato una data quindi aggiorni lo stato se è arrivato davvero un valore
-    }
 
-    const handleSubmit = () => {
-        console.log('Register form submitted', email, role, dateOfBirth.toISOString().split('T')[0], placeOfBirth)
+    const [errorMessage, setErrorMessage] = useState('')   // manca anche questo state, aggiungilo
+
+const handleSubmit = async () => {
+    setErrorMessage('')
+    console.log('REGISTER BUTTON PRESSED');
+    try {
+        const endpoint = role === 'association' ? 'auth/register/association' : 'auth/register/user'  
+        const response = await api.post(endpoint, { email, password })        
+
+        console.log('Account created:', response.data.accountId)          
+
         router.replace({ pathname: '/login', params: { role } })
+    } catch (error) {
+        if (error.response) {
+            setErrorMessage(error.response.data.detail || 'Registration failed')
+            console.log('REGISTER ERROR:', error.response?.status, error.response?.data)
+        } else {
+            setErrorMessage('Unable to reach the server')
+        }
     }
+}
 
   return (
     <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
@@ -62,21 +69,6 @@ const Register = () => {
                 value={password}
             />
 
-            <ThemedTextInput 
-                style={{ width: '80%', marginBottom: 20}}
-                placeholder="Place of Birth"
-                onChangeText={setPlaceOfBirth}
-                value={placeOfBirth}
-            />
-
-            <ThemedButton
-                onPress={() => setShowDatePicker(true)}
-                style={styles.input}
-            >
-                <Text style={styles.btnText}>
-                    Date of Birth: {dateOfBirth.toLocaleDateString('it-IT')} 
-                </Text>
-            </ThemedButton>
 
             <Spacer height={20}/>
 
@@ -102,45 +94,15 @@ const Register = () => {
                 <Text style={{ color: '#f2f2f2'}}>Register</Text>
             </ThemedButton>
 
-            <Spacer height={100}/>
+            {errorMessage ? <ThemedText style={{ color: 'red' }}>{errorMessage}</ThemedText> : null}
+
+            <Spacer height={50}/>
 
             <Link href='/login' style={styles.link}>
                 <ThemedText style={{ textAlign: 'center' }}>
                     Login instead
                 </ThemedText>
             </Link>
-
-            {/* MODAL DATE PICKER (iOS) / NATIVO (Android) */}
-            {showDatePicker && (
-                Platform.OS === 'ios' ? (
-                    <Modal transparent={true} animationType="slide" visible={showDatePicker}>
-                        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
-                            <View style={styles.modalContent}>
-                                <View style={styles.modalHeader}>
-                                    <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                        <Text style={styles.doneText}>Conferma</Text>
-                                    </TouchableOpacity>
-                                </View>
-                                <DateTimePicker
-                                    value={dateOfBirth}
-                                    mode="date"
-                                    display="spinner"
-                                    onChange={onChangeDate}
-                                    textColor="#000000"
-                                    themeVariant="light"
-                                />
-                            </View>
-                        </TouchableOpacity>
-                    </Modal>
-                ) : (
-                    <DateTimePicker
-                        value={dateOfBirth}
-                        mode="date"
-                        display="default"
-                        onChange={onChangeDate}
-                    />
-                )
-            )}
         </ThemedView>
     </TouchableWithoutFeedback>
   )
