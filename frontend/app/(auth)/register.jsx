@@ -33,7 +33,7 @@ const Register = () => {
     }
 
     const handleSubmit = () => {
-        console.log('Register form submitted', email, password, role, dateOfBirth.toISOString().split('T')[0], placeOfBirth)
+        console.log('Register form submitted', email, role, dateOfBirth.toISOString().split('T')[0], placeOfBirth)
         router.replace({ pathname: '/login', params: { role } })
     }
 
