@@ -1,4 +1,4 @@
-import { StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Pressable, View, Modal, TouchableOpacity } from 'react-native'
+import { StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Pressable, View } from 'react-native'
 import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
 import api from '../../config/httpClient.js'
@@ -18,6 +18,8 @@ const Register = () => {
     const [role, setRole] = useState('caregiver')
     const router = useRouter()
     
+    const Wrapper = Platform.OS == 'web' ? View : TouchableWithoutFeedback
+    const WrapperProps = Platform.OS == 'web' ? {} : {onPress : () => {Keyboard.dismiss()}}
 
     //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
     //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
@@ -45,7 +47,7 @@ const handleSubmit = async () => {
 }
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+    <Wrapper {...WrapperProps}>
         <ThemedView style={styles.container}>
 
             <Spacer/>
@@ -104,7 +106,7 @@ const handleSubmit = async () => {
                 </ThemedText>
             </Link>
         </ThemedView>
-    </TouchableWithoutFeedback>
+    </Wrapper>
   )
 }
 

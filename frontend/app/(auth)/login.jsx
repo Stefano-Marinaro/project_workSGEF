@@ -1,6 +1,6 @@
 import { StyleSheet, Text, Keyboard } from 'react-native'
 import { Link, useLocalSearchParams, useRouter } from 'expo-router'
-import * as SecureStore from 'expo-secure-store'
+import { setItem } from '../../config/storage.js'
 import api from '../../config/httpClient.js'
 
 // themed components
@@ -10,7 +10,7 @@ import ThemedText from '../../components/ThemedText.jsx'
 import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import ThemedButton from '../../components/ThemedButton.jsx'
 import { useState } from 'react'
-import { TouchableWithoutFeedback, Pressable, View } from 'react-native'
+import { TouchableWithoutFeedback, Pressable, View, Platform } from 'react-native'
 
 
 const Login = () => {
@@ -23,6 +23,9 @@ const Login = () => {
 
     const [errorMessage, setErrorMessage] = useState('')
 
+    const Wrapper = Platform.OS == 'web' ? View : TouchableWithoutFeedback
+    const WrapperProps = Platform.OS == 'web' ? {} : {onPress : () => {Keyboard.dismiss()}}
+
     const handleSubmit = async () => {
         console.log('BUTTON PRESSED')
         setErrorMessage('')
@@ -32,8 +35,9 @@ const Login = () => {
      
             console.log('Access token received:', response.data.accessToken)
 
-            await SecureStore.setItemAsync('accessToken', response.data.accessToken)
-            await SecureStore.setItemAsync('refreshToken', response.data.refreshToken)
+            
+            await setItem('accessToken', response.data.accessToken)
+            await setItem('refreshToken', response.data.refreshToken)
  
             router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
         } catch (error) {
@@ -51,7 +55,7 @@ const Login = () => {
     }
 
   return (
-    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+    <Wrapper {...WrapperProps}>
         <ThemedView style={styles.container}>
 
             <Spacer/>
@@ -114,7 +118,7 @@ const Login = () => {
             </Link>
             
         </ThemedView>
-    </TouchableWithoutFeedback>
+    </Wrapper>
   )
 }
 
