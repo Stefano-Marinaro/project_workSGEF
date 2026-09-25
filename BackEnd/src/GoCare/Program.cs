@@ -1,5 +1,8 @@
 using GoCare;                   // AddGoCare()
 using GoCare.Dtos.Auth.Requests; // LoginRequest, LoginRequestValidator
+using GoCare.Dtos.Auth.Validators;
+using GoCare.Dtos.Transport.Requests;
+using GoCare.Dtos.Transport.Validators;
 using GoCare.Services.Auth;
 using GoCare.Validation;     // ValidationFilter
 using FluentValidation;
@@ -36,13 +39,14 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
         };
     });
-builder.Services.AddScoped<IValidator<RegisterUserRequest>, RegisterUserRequestValidator>();
+builder.Services.AddScoped<IValidator<RegisterUserRequest>, RegisterUserValidator>();
 builder.Services.AddScoped<IValidator<RegisterAssociationRequest>, RegisterAssociationValidator>();
 builder.Services.AddScoped<IValidator<VerifyEmailRequest>, VerifyEmailValidator>();
 builder.Services.AddScoped<IValidator<ForgotPasswordRequest>, ForgotPasswordValidator>();
 builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
 builder.Services.AddScoped<IValidator<LogoutRequest>, LogoutValidator>();
 builder.Services.AddScoped<IValidator<RefreshRequest>, RefreshValidator>();
+builder.Services.AddScoped<IValidator<NewTransportRequest>, NewTransportValidator>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();         // raccoglie i metadati degli endpoint per OpenAPI

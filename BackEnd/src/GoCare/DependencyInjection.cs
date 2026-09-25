@@ -32,7 +32,15 @@ public static class DependencyInjection
 
         services.AddScoped<PasswordService>();
         services.AddScoped<TokenService>();
-        services.AddScoped<AuthService>();
+        services.AddScoped<TokenIssuer>();
+        services.AddScoped<LoginService>();
+        services.AddScoped<RefreshService>();
+        services.AddScoped<RegisterUserService>();
+        services.AddScoped<RegisterAssociationService>();
+        services.AddScoped<VerifyEmailService>();
+        services.AddScoped<LogoutService>();
+        services.AddScoped<ForgotPasswordService>();
+        services.AddScoped<ResetPasswordService>();
         services.AddScoped<ProfileProvisioningService>();
         services.AddScoped<IEmailSender, ConsoleEmailSender>();
 

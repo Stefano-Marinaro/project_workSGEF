@@ -34,7 +34,6 @@ public sealed class TransportRequest
     public Guid RequestedById { get; }     // Person.Id del caregiver che ha richiesto il trasporto
     public Guid BeneficiaryId { get; }     // AssistedPerson.Id del beneficiario
     public DateTimeOffset CreatedAt { get; }
-
     public ETripType TripType { get; private set; }
     public ETripDirection TripDirection { get; private set; }
     public DateTimeOffset DepartureDateHour { get; private set; }
