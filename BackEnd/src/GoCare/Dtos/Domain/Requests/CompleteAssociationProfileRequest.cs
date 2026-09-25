@@ -1,3 +1,5 @@
+using GoCare.Dtos.Transport.Requests;
+
 namespace GoCare.Dtos.Domain.Requests;
 
 public sealed record CompleteAssociationProfileRequest(
@@ -5,10 +7,3 @@ public sealed record CompleteAssociationProfileRequest(
     AddressRequest Headquarter,
     List<string> Phones,
     List<string> CoveredProvinces);
-
-public sealed record AddressRequest(
-    string Street,
-    string Number,
-    string PostalCode,
-    string City,
-    string Province);

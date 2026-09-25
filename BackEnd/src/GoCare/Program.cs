@@ -1,27 +1,65 @@
-using GoCare;                   // AddGoCare()
-using GoCare.Dtos.Auth.Requests; // LoginRequest, LoginRequestValidator
-using GoCare.Dtos.Auth.Validators;
-using GoCare.Dtos.Transport.Requests;
-using GoCare.Dtos.Transport.Validators;
-using GoCare.Dtos.Domain.Requests;
-using GoCare.Services.Auth;
-using GoCare.Validation;     // ValidationFilter
 using FluentValidation;
+using GoCare.Abstractions;
+using GoCare.Data;
+using GoCare.Errors;
+using GoCare.Infrastructure;
+using GoCare.Services.Auth;
+using GoCare.Services.Provisioning;
+using GoCare.Validation;     // ValidationFilter
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);   // crea il builder: config, logging, contenitore DI
+var builder = WebApplication.CreateBuilder(args);   
 
-builder.Services.AddGoCare(builder.Configuration);  // registra kernel trasversale + servizi applicativi + i due DbContext
+// --- Infrastruttura trasversale
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+builder.Services.AddProblemDetails();
+builder.Services.AddScoped<ValidationFilter>();
 
-builder.Services.AddScoped<IValidator<LoginRequest>, LoginRequestValidator>();
+// --- Configurazione tipizzata
+builder.Services.Configure<JwtOptions>(
+    builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<FrontendOptions>(
+    builder.Configuration.GetSection(FrontendOptions.SectionName));
+
+// --- Database
+var connectionString = builder.Configuration.GetConnectionString("GoCareDb")
+    ?? throw new InvalidOperationException("Connection string 'GoCareDb' mancante.");
+
+builder.Services.AddDbContext<GoCareDbContext>(options =>
+    options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
+
+// --- Servizi applicativi
+builder.Services.AddScoped<PasswordService>();
+builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<TokenIssuer>();
+builder.Services.AddScoped<LoginService>();
+builder.Services.AddScoped<RefreshService>();
+builder.Services.AddScoped<RegisterUserService>();
+builder.Services.AddScoped<RegisterAssociationService>();
+builder.Services.AddScoped<VerifyEmailService>();
+builder.Services.AddScoped<LogoutService>();
+builder.Services.AddScoped<ForgotPasswordService>();
+builder.Services.AddScoped<ResetPasswordService>();
+builder.Services.AddScoped<ResendVerificationEmailService>();
+builder.Services.AddScoped<ChangeEmailService>();
+builder.Services.AddScoped<ConfirmEmailChangeService>();
+builder.Services.AddScoped<ProfileProvisioningService>();
+builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
+
+// --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
+// (il ValidationFilter salta i tipi di request senza un validator)
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddControllers(options =>          // abilita i controller MVC
 {
     options.Filters.AddService<ValidationFilter>(); // esegue ValidationFilter (preso dalla DI) su OGNI azione, globalmente
 });
 
+// --- Autenticazione JWT
 var jwtOptions = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
     ?? throw new InvalidOperationException("Sezione 'Jwt' mancante in configurazione");
 
@@ -44,19 +82,6 @@ builder.Services
             RoleClaimType = "role",
         };
     });
-builder.Services.AddScoped<IValidator<RegisterUserRequest>, RegisterUserValidator>();
-builder.Services.AddScoped<IValidator<RegisterAssociationRequest>, RegisterAssociationValidator>();
-builder.Services.AddScoped<IValidator<VerifyEmailRequest>, VerifyEmailValidator>();
-builder.Services.AddScoped<IValidator<ForgotPasswordRequest>, ForgotPasswordValidator>();
-builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValidator>();
-builder.Services.AddScoped<IValidator<LogoutRequest>, LogoutValidator>();
-builder.Services.AddScoped<IValidator<RefreshRequest>, RefreshValidator>();
-builder.Services.AddScoped<IValidator<NewTransportRequest>, NewTransportValidator>();
-builder.Services.AddScoped<IValidator<ResendVerificationEmailRequest>, ResendVerificationEmailRequestValidator>();
-builder.Services.AddScoped<IValidator<ChangeEmailRequest>, ChangeEmailRequestValidator>();
-builder.Services.AddScoped<IValidator<ConfirmEmailChangeRequest>, ConfirmEmailChangeRequestValidator>();
-builder.Services.AddScoped<IValidator<CompletePersonProfileRequest>, CompletePersonProfileRequestValidator>();
-builder.Services.AddScoped<IValidator<CompleteAssociationProfileRequest>, CompleteAssociationProfileRequestValidator>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();         // raccoglie i metadati degli endpoint per OpenAPI
@@ -75,7 +100,7 @@ if (app.Environment.IsDevelopment())               // solo in ambiente Developme
 app.UseHttpsRedirection();                          // redirige le richieste http:// verso https://
 
 app.UseAuthentication();                            // popola HttpContext.User dal token
-app.UseAuthorization();                             // valuta i tag [Authorize] 
+app.UseAuthorization();                             // valuta i tag [Authorize]
 
 app.MapControllers();                               // collega le route agli endpoint dei controller
 

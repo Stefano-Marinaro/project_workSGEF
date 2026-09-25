@@ -1,11 +1,12 @@
 using FluentValidation;
+using GoCare.Dtos.Domain.Requests;
 
-namespace GoCare.Dtos.Domain.Requests;
+namespace GoCare.Dtos.Domain.Validators;
 
-public sealed class CompletePersonProfileRequestValidator
+public sealed class CompletePersonProfileValidator
     : AbstractValidator<CompletePersonProfileRequest>
 {
-    public CompletePersonProfileRequestValidator()
+    public CompletePersonProfileValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty()

@@ -3,9 +3,9 @@ using GoCare.Dtos.Auth.Requests;
 
 namespace GoCare.Dtos.Auth.Validators;
 
-public sealed class LoginRequestValidator : AbstractValidator<LoginRequest>
+public sealed class LoginValidator : AbstractValidator<LoginRequest>
 {
-    public LoginRequestValidator()
+    public LoginValidator()
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 

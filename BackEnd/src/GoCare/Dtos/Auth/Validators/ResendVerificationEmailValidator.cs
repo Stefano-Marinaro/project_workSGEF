@@ -1,11 +1,12 @@
 using FluentValidation;
+using GoCare.Dtos.Auth.Requests;
 
-namespace GoCare.Dtos.Auth.Requests;
+namespace GoCare.Dtos.Auth.Validators;
 
-public sealed class ResendVerificationEmailRequestValidator
+public sealed class ResendVerificationEmailValidator
     : AbstractValidator<ResendVerificationEmailRequest>
 {
-    public ResendVerificationEmailRequestValidator()
+    public ResendVerificationEmailValidator()
     {
         RuleFor(x => x.Email)
             .NotEmpty()

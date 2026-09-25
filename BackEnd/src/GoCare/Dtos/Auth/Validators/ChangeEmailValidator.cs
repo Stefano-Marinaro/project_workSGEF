@@ -1,10 +1,11 @@
 using FluentValidation;
+using GoCare.Dtos.Auth.Requests;
 
-namespace GoCare.Dtos.Auth.Requests;
+namespace GoCare.Dtos.Auth.Validators;
 
-public sealed class ChangeEmailRequestValidator : AbstractValidator<ChangeEmailRequest>
+public sealed class ChangeEmailValidator : AbstractValidator<ChangeEmailRequest>
 {
-    public ChangeEmailRequestValidator()
+    public ChangeEmailValidator()
     {
         RuleFor(x => x.NewEmail)
             .NotEmpty()

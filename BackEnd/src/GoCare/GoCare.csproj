@@ -8,6 +8,7 @@
        ancora su disco, intatti, in attesa di conferma per l'eliminazione. -->
 
   <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="10.2.3" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4">

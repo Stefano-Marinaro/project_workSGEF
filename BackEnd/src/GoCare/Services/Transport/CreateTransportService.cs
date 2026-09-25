@@ -7,7 +7,7 @@ using GoCare.Errors;
 
 namespace GoCare.Services.Transport;
 
-public sealed class TransportService(GoCareDbContext db)
+public sealed class CreateTransportService(GoCareDbContext db)
 {
     public async Task<Guid> CreateTransportAsync(
         Guid requestedById,
