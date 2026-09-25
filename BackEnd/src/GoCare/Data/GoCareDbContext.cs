@@ -9,6 +9,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
 {
     // Auth
     public DbSet<Account> Accounts => Set<Account>();
+    public DbSet<EmailChangeToken> EmailChangeTokens => Set<EmailChangeToken>();
     public DbSet<EmailVerificationToken> EmailVerificationTokens => Set<EmailVerificationToken>();
     public DbSet<FailedLoginAttempt> FailedLoginAttempts => Set<FailedLoginAttempt>();
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
@@ -53,6 +54,21 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
         modelBuilder.Entity<EmailVerificationToken>(token =>
         {
             token.HasKey(t => t.Id);
+            token.Property(t => t.Token).HasMaxLength(255);
+            token.Property(t => t.ExpiresAt);
+
+            token.HasOne<Account>()
+                .WithMany()
+                .HasForeignKey(t => t.AccountId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            token.HasIndex(t => t.Token).IsUnique();
+        });
+
+        modelBuilder.Entity<EmailChangeToken>(token =>
+        {
+            token.HasKey(t => t.Id);
+            token.Property(t => t.NewEmail).HasMaxLength(255);
             token.Property(t => t.Token).HasMaxLength(255);
             token.Property(t => t.ExpiresAt);
 

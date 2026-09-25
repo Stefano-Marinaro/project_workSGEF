@@ -206,4 +206,146 @@ public sealed class AuthService(
 
         return await IssueTokens(account, now, ct);
     }
+
+    public async Task ResendVerificationEmailAsync(string email, CancellationToken ct)
+    {
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email == email, ct);
+
+        // Risposta neutra: non rivela se l'account esiste o è già verificato.
+        if (account is null || account.Status is not EAccountStatus.Unverified)
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+
+        var activeTokens = await db.EmailVerificationTokens
+            .Where(t =>
+                t.AccountId == account.Id &&
+                t.ConsumedAt == null &&
+                t.ExpiresAt > now)
+            .ToListAsync(ct);
+
+        foreach (var activeToken in activeTokens)
+            activeToken.Consume(now);
+
+        var newToken = new EmailVerificationToken(
+            Guid.NewGuid(),
+            account.Id,
+            tokenService.GenerateRefreshTokenValue(),
+            now.AddHours(24));
+
+        db.EmailVerificationTokens.Add(newToken);
+        await db.SaveChangesAsync(ct);
+
+        await emailSender.SendAsync(
+            account.Email,
+            "Verifica il tuo account GoCare",
+            $"<a href=\"{_frontend.VerifyEmailUrl}?token={newToken.Token}\">Clicca qui per verificare il tuo account</a>",
+            ct);
+    }
+
+    public async Task RequestEmailChangeAsync(
+        Guid accountId,
+        string newEmail,
+        string currentPassword,
+        CancellationToken ct)
+    {
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Id == accountId, ct)
+            ?? throw new NotFoundException("Account non trovato.");
+
+        if (!account.CanLogIn)
+            throw new ForbiddenException("Account non attivo.");
+
+        if (!passwordService.Verify(currentPassword, account.PasswordHash))
+            throw new ForbiddenException("Password non valida.");
+
+        if (string.Equals(account.Email, newEmail, StringComparison.OrdinalIgnoreCase))
+            throw new ConflictException("La nuova e-mail coincide con quella attuale.");
+
+        var emailAlreadyUsed = await db.Accounts.AnyAsync(
+            a => a.Email == newEmail && a.Id != accountId,
+            ct);
+
+        if (emailAlreadyUsed)
+            throw new ConflictException("E-mail già registrata.");
+
+        var now = DateTimeOffset.UtcNow;
+
+        var previousTokens = await db.EmailChangeTokens
+            .Where(t =>
+                t.AccountId == accountId &&
+                t.ConsumedAt == null &&
+                t.ExpiresAt > now)
+            .ToListAsync(ct);
+
+        foreach (var previousToken in previousTokens)
+            previousToken.Consume(now);
+
+        var token = new EmailChangeToken(
+            Guid.NewGuid(),
+            accountId,
+            newEmail,
+            tokenService.GenerateRefreshTokenValue(),
+            now.AddHours(1));
+
+        db.EmailChangeTokens.Add(token);
+        await db.SaveChangesAsync(ct);
+
+        await emailSender.SendAsync(
+            newEmail,
+            "Conferma la nuova e-mail GoCare",
+            $"<a href=\"{_frontend.ChangeEmailUrl}?token={token.Token}\">Conferma il cambio di e-mail</a>",
+            ct);
+    }
+
+    public async Task ConfirmEmailChangeAsync(string tokenValue, CancellationToken ct)
+    {
+        var token = await db.EmailChangeTokens.SingleOrDefaultAsync(t => t.Token == tokenValue, ct)
+            ?? throw new NotFoundException("Token di cambio e-mail non trovato.");
+
+        var now = DateTimeOffset.UtcNow;
+
+        if (!token.IsUsable(now))
+            throw new ForbiddenException("Token di cambio e-mail non valido o scaduto.");
+
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Id == token.AccountId, ct)
+            ?? throw new NotFoundException("Account non trovato.");
+
+        if (!account.CanLogIn)
+            throw new ForbiddenException("Account non attivo.");
+
+        var emailAlreadyUsed = await db.Accounts.AnyAsync(
+            a => a.Email == token.NewEmail && a.Id != account.Id,
+            ct);
+
+        if (emailAlreadyUsed)
+            throw new ConflictException("E-mail già registrata.");
+
+        account.ChangeEmail(token.NewEmail, now);
+
+        if (account.Role is EAccountRole.Person)
+        {
+            var person = await db.Persons.SingleOrDefaultAsync(p => p.Id == account.Id, ct)
+                ?? throw new NotFoundException("Profilo caregiver non trovato.");
+
+            person.ChangeEmail(token.NewEmail);
+        }
+        else if (account.Role is EAccountRole.Association)
+        {
+            var association = await db.Associations.SingleOrDefaultAsync(a => a.Id == account.Id, ct)
+                ?? throw new NotFoundException("Profilo associazione non trovato.");
+
+            association.ChangeEmail(token.NewEmail);
+        }
+
+        token.Consume(now);
+
+        var activeSessions = await db.RefreshTokens
+            .Where(t => t.AccountId == account.Id && t.RevokedAt == null)
+            .ToListAsync(ct);
+
+        foreach (var activeSession in activeSessions)
+            activeSession.Revoke(now);
+
+        await db.SaveChangesAsync(ct);
+    }
 }

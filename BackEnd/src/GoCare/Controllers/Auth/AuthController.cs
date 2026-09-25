@@ -1,7 +1,11 @@
+using System.Security.Claims;
+
 using GoCare.Dtos.Auth.Requests;
 using GoCare.Dtos.Auth.Responses;
+using GoCare.Errors;
 using GoCare.Services.Auth;
 
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace GoCare.Controllers.Auth;
@@ -68,6 +72,42 @@ public sealed class AuthController(AuthService authservice) : ControllerBase
         var (accessToken, refreshToken) = await authservice.RefreshAsync(request.RefreshToken, ct);
 
         return Ok(new AuthTokenResponse(accessToken, refreshToken));
+    }
+
+    [HttpPost("verify-email/resend")]
+    public async Task<IActionResult> ResendVerificationEmail(
+        ResendVerificationEmailRequest request,
+        CancellationToken ct)
+    {
+        await authservice.ResendVerificationEmailAsync(request.Email, ct);
+        return NoContent();
+    }
+
+    [Authorize]
+    [HttpPost("change-email")]
+    public async Task<IActionResult> ChangeEmail(ChangeEmailRequest request, CancellationToken ct)
+    {
+        var subject = User.FindFirstValue("sub");
+
+        if (!Guid.TryParse(subject, out var accountId))
+            throw new ForbiddenException("Il token non contiene un identificativo account valido.");
+
+        await authservice.RequestEmailChangeAsync(
+            accountId,
+            request.NewEmail,
+            request.CurrentPassword,
+            ct);
+
+        return NoContent();
+    }
+
+    [HttpPost("change-email/confirm")]
+    public async Task<IActionResult> ConfirmEmailChange(
+        ConfirmEmailChangeRequest request,
+        CancellationToken ct)
+    {
+        await authservice.ConfirmEmailChangeAsync(request.Token, ct);
+        return NoContent();
     }
 }
 
