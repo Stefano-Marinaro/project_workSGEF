@@ -32,4 +32,9 @@ public sealed class Person
         BirthDate = birthDate;
         Phone = phone;
     }
+
+    public void ChangeEmail(string newEmail)
+    {
+        Email = newEmail;
+    }
 }

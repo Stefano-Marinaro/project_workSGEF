@@ -3,6 +3,7 @@ using GoCare.Dtos.Auth.Requests; // LoginRequest, LoginRequestValidator
 using GoCare.Dtos.Auth.Validators;
 using GoCare.Dtos.Transport.Requests;
 using GoCare.Dtos.Transport.Validators;
+using GoCare.Dtos.Domain.Requests;
 using GoCare.Services.Auth;
 using GoCare.Validation;     // ValidationFilter
 using FluentValidation;
@@ -28,6 +29,8 @@ builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        options.MapInboundClaims = false;
+
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -37,6 +40,8 @@ builder.Services
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+            NameClaimType = "sub",
+            RoleClaimType = "role",
         };
     });
 builder.Services.AddScoped<IValidator<RegisterUserRequest>, RegisterUserValidator>();
@@ -47,6 +52,11 @@ builder.Services.AddScoped<IValidator<ResetPasswordRequest>, ResetPasswordValida
 builder.Services.AddScoped<IValidator<LogoutRequest>, LogoutValidator>();
 builder.Services.AddScoped<IValidator<RefreshRequest>, RefreshValidator>();
 builder.Services.AddScoped<IValidator<NewTransportRequest>, NewTransportValidator>();
+builder.Services.AddScoped<IValidator<ResendVerificationEmailRequest>, ResendVerificationEmailRequestValidator>();
+builder.Services.AddScoped<IValidator<ChangeEmailRequest>, ChangeEmailRequestValidator>();
+builder.Services.AddScoped<IValidator<ConfirmEmailChangeRequest>, ConfirmEmailChangeRequestValidator>();
+builder.Services.AddScoped<IValidator<CompletePersonProfileRequest>, CompletePersonProfileRequestValidator>();
+builder.Services.AddScoped<IValidator<CompleteAssociationProfileRequest>, CompleteAssociationProfileRequestValidator>();
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();         // raccoglie i metadati degli endpoint per OpenAPI

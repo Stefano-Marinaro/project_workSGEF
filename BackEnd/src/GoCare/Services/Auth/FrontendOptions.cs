@@ -6,4 +6,5 @@ public sealed class FrontendOptions
 
     public string VerifyEmailUrl { get; set; } = null!;
     public string ResetPasswordUrl { get; set; } = null!;
+    public string ChangeEmailUrl { get; set; } = null!;
 }

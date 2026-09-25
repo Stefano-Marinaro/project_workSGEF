@@ -41,6 +41,9 @@ public static class DependencyInjection
         services.AddScoped<LogoutService>();
         services.AddScoped<ForgotPasswordService>();
         services.AddScoped<ResetPasswordService>();
+        services.AddScoped<ResendVerificationEmailService>();
+        services.AddScoped<ChangeEmailService>();
+        services.AddScoped<ConfirmEmailChangeService>();
         services.AddScoped<ProfileProvisioningService>();
         services.AddScoped<IEmailSender, ConsoleEmailSender>();
 

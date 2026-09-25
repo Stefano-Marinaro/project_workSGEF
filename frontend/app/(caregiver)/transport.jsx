@@ -44,8 +44,8 @@ const MOCK_TRANSPORTS = [
 const statusColor = (stato) => {
     switch (stato) {
         case 'Confermata': return '#4caf50'
-        case 'In attesa': return Colors.warning
-        case 'Conclusa': return '#8884a0'
+        case 'In attesa': return '#8884a0'
+        case 'Conclusa': return Colors.warning
         default: return Colors.primary
     }
 }
