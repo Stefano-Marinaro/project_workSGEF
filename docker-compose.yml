@@ -1,0 +1,35 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: gocare
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - gocare_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./BackEnd
+      dockerfile: Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__GoCareDb: "Host=db;Port=5432;Database=gocare;Username=postgres;Password=postgres"
+      Frontend__VerifyEmailUrl: "http://localhost:3000/verifica-email"
+      Frontend__ResetPasswordUrl: "http://localhost:3000/reimposta-password"
+      Frontend__ChangeEmailUrl: "http://localhost:3000/conferma-cambio-email"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  gocare_db_data:

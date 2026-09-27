@@ -89,6 +89,13 @@ builder.Services.AddSwaggerGen();                   // genera il documento OpenA
 
 var app = builder.Build();                          // costruisce l'app: il contenitore DI si congela
 
+// --- Migrazioni EF Core: applicate automaticamente all'avvio (crea le tabelle se non esistono).
+using (var migrationScope = app.Services.CreateScope())
+{
+    var db = migrationScope.ServiceProvider.GetRequiredService<GoCareDbContext>();
+    db.Database.Migrate();
+}
+
 app.UseExceptionHandler();                          // 1o middleware: cattura le eccezioni non gestite -> GlobalExceptionHandler -> ProblemDetails
 
 if (app.Environment.IsDevelopment())               // solo in ambiente Development
