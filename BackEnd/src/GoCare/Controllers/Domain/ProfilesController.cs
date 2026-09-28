@@ -1,8 +1,8 @@
 using System.Security.Claims;
 
 using GoCare.Dtos.Domain.Requests;
+using GoCare.Dtos.Transport.Requests;
 using GoCare.Errors;
-using GoCare.Models.Domain;
 using GoCare.Models.Enums;
 using GoCare.Services.Provisioning;
 
@@ -39,18 +39,11 @@ public sealed class ProfilesController(
         CompleteAssociationProfileRequest request,
         CancellationToken ct)
     {
-        var address = new Address(
-            request.Headquarter.Street,
-            request.Headquarter.Number,
-            request.Headquarter.PostalCode,
-            request.Headquarter.City,
-            request.Headquarter.Province);
-
         await provisioning.CompleteAssociationProfileAsync(
             GetAccountId(),
             new AssociationProfileData(
                 request.Name,
-                address,
+                request.Headquarter.ToAddress(),
                 request.Phones,
                 request.CoveredProvinces),
             ct);

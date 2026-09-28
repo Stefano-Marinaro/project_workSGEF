@@ -4,21 +4,15 @@ using GoCare.Services.Provisioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-namespace GoCare.Controllers.Domain.Admin;
+namespace GoCare.Controllers.Domain;
 
 [ApiController]
 [Authorize(Roles = nameof(EAccountRole.Admin))]
 [Route("admin/associations")]
-public sealed class AssociationAccreditationController(
+[Tags("Admin")]
+public sealed class RejectAssociationController(
     ProfileProvisioningService provisioning) : ControllerBase
 {
-    [HttpPost("{associationId:guid}/accredit")]
-    public async Task<IActionResult> Accredit(Guid associationId, CancellationToken ct)
-    {
-        await provisioning.AccreditAssociationAsync(associationId, ct);
-        return NoContent();
-    }
-
     [HttpPost("{associationId:guid}/reject")]
     public async Task<IActionResult> Reject(Guid associationId, CancellationToken ct)
     {

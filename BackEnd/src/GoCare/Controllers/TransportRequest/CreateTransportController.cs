@@ -2,7 +2,6 @@ using System.Security.Claims;
 
 using GoCare.Dtos.Transport.Requests;
 using GoCare.Dtos.Transport.Responses;
-using GoCare.Models.Domain;
 using GoCare.Models.Enums;
 using GoCare.Services.Transport;
 
@@ -22,9 +21,9 @@ public sealed class CreateTransportController(CreateTransportService transportSe
     {
         var requestedById = Guid.Parse(User.FindFirstValue("sub")!);
 
-        var startAddress = ToAddress(request.StartAddress);
-        var endAddress = ToAddress(request.EndAddress);
-        var returnEndAddress = request.ReturnEndAddress is null ? null : ToAddress(request.ReturnEndAddress);
+        var startAddress = request.StartAddress.ToAddress();
+        var endAddress = request.EndAddress.ToAddress();
+        var returnEndAddress = request.ReturnEndAddress?.ToAddress();
 
         var companions = (request.Companions ?? [])
             .Select(c => (c.Name, c.Surname, c.Relationship, c.Phone))
@@ -47,7 +46,4 @@ public sealed class CreateTransportController(CreateTransportService transportSe
 
         return Created($"/transports/{id}", new CreateTransportResponse(id));
     }
-
-    private static Address ToAddress(AddressRequest a) =>
-        new(a.Street, a.Number, a.PostalCode, a.City, a.Province);
 }
