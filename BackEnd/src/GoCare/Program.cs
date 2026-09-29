@@ -5,6 +5,7 @@ using GoCare.Errors;
 using GoCare.Infrastructure;
 using GoCare.Services.Auth;
 using GoCare.Services.Provisioning;
+using GoCare.Services.Transport;
 using GoCare.Validation;     // ValidationFilter
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,8 @@ builder.Services.Configure<JwtOptions>(
     builder.Configuration.GetSection(JwtOptions.SectionName));
 builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
+builder.Services.Configure<SmtpOptions>(
+    builder.Configuration.GetSection(SmtpOptions.SectionName));
 
 // --- Database
 var connectionString = builder.Configuration.GetConnectionString("GoCareDb")
@@ -48,6 +51,10 @@ builder.Services.AddScoped<ResendVerificationEmailService>();
 builder.Services.AddScoped<ChangeEmailService>();
 builder.Services.AddScoped<ConfirmEmailChangeService>();
 builder.Services.AddScoped<ProfileProvisioningService>();
+builder.Services.AddScoped<CreateTransportService>();
+builder.Services.AddScoped<DeleteTransportService>();
+builder.Services.AddScoped<TripDetailService>();
+builder.Services.AddScoped<ListTransportsService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
@@ -57,6 +64,11 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddControllers(options =>          // abilita i controller MVC
 {
     options.Filters.AddService<ValidationFilter>(); // esegue ValidationFilter (preso dalla DI) su OGNI azione, globalmente
+})
+.AddJsonOptions(options =>
+{
+    // Enum come stringa nel JSON (sia in risposta che in richiesta), non come numero.
+    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
 });
 
 // --- Autenticazione JWT
