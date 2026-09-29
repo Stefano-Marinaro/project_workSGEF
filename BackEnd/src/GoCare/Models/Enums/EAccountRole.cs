@@ -3,5 +3,6 @@
 public enum EAccountRole
 {
     Person,
-    Association
+    Association,
+    Admin
 }

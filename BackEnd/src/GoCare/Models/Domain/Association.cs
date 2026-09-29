@@ -29,11 +29,35 @@ public sealed class Association
     public bool IsProfileComplete =>
         Name is not null && Headquarter is not null && Phones is not null && CoveredProvinces is not null;
 
+    public bool CanOperate =>
+        IsProfileComplete && Status is EAccreditationStatus.Accredited;
+
     public void CompleteProfile(string name, Address headquarter, List<string> phones, List<string> coveredProvinces)
     {
         Name = name;
         Headquarter = headquarter;
         Phones = phones;
         CoveredProvinces = coveredProvinces;
+    }
+
+    public void Accredit()
+    {
+        if (Status is not EAccreditationStatus.Pending)
+            throw new InvalidOperationException("Solo un'associazione in attesa può essere accreditata.");
+
+        Status = EAccreditationStatus.Accredited;
+    }
+
+    public void Reject()
+    {
+        if (Status is not EAccreditationStatus.Pending)
+            throw new InvalidOperationException("Solo un'associazione in attesa può essere rifiutata.");
+
+        Status = EAccreditationStatus.Rejected;
+    }
+
+    public void ChangeEmail(string newEmail)
+    {
+        Email = newEmail;
     }
 }
