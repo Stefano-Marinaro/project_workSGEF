@@ -54,6 +54,14 @@ builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 // (il ValidationFilter salta i tipi di request senza un validator)
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+        policy.WithOrigins("http://localhost:8081")
+              .AllowAnyMethod()
+              .AllowAnyHeader());
+});
+
 builder.Services.AddControllers(options =>          // abilita i controller MVC
 {
     options.Filters.AddService<ValidationFilter>(); // esegue ValidationFilter (preso dalla DI) su OGNI azione, globalmente
@@ -90,6 +98,7 @@ builder.Services.AddSwaggerGen();                   // genera il documento OpenA
 var app = builder.Build();                          // costruisce l'app: il contenitore DI si congela
 
 app.UseExceptionHandler();                          // 1o middleware: cattura le eccezioni non gestite -> GlobalExceptionHandler -> ProblemDetails
+app.UseCors();
 
 if (app.Environment.IsDevelopment())               // solo in ambiente Development
 {
