@@ -67,8 +67,8 @@ const DashboardLayout = () => {
                 )}}
             />
             <Tabs.Screen 
-                name="group" 
-                options={{title:"Groups", tabBarIcon: ({ focused }) => (
+                name="listAssisted" 
+                options={{title:"Assisted", tabBarIcon: ({ focused }) => (
                     <Ionicons 
                         size={24} 
                         name={ focused ? 'people' : 'people-outline'} 
