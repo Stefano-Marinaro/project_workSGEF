@@ -4,6 +4,7 @@ using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Infrastructure;
 using GoCare.Services.Auth;
+using GoCare.Services.Domain;
 using GoCare.Services.Provisioning;
 using GoCare.Validation;     // ValidationFilter
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -48,6 +49,7 @@ builder.Services.AddScoped<ResendVerificationEmailService>();
 builder.Services.AddScoped<ChangeEmailService>();
 builder.Services.AddScoped<ConfirmEmailChangeService>();
 builder.Services.AddScoped<ProfileProvisioningService>();
+builder.Services.AddScoped<AssistedPersonService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
