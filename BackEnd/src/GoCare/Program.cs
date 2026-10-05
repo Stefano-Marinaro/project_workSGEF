@@ -55,6 +55,11 @@ builder.Services.AddScoped<CreateTransportService>();
 builder.Services.AddScoped<DeleteTransportService>();
 builder.Services.AddScoped<TripDetailService>();
 builder.Services.AddScoped<ListTransportsService>();
+builder.Services.AddScoped<GenerateOperatorLinkService>();
+builder.Services.AddScoped<TimelineService>();
+builder.Services.AddScoped<NotificationDispatcher>();
+builder.Services.AddScoped<AcceptTransportRequestService>();
+builder.Services.AddScoped<IPushSender, ConsolePushSender>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly

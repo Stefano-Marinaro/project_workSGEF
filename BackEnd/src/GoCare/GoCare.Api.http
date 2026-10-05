@@ -1,6 +1,0 @@
-@GoCare.Api_HostAddress = http://localhost:5161
-
-GET {{GoCare.Api_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
