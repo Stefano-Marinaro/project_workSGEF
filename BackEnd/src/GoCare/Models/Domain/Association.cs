@@ -40,6 +40,22 @@ public sealed class Association
         CoveredProvinces = coveredProvinces;
     }
 
+    // Modifica completa del profilo (PUT). Lo stato di accreditamento non si tocca qui:
+    // l'associazione non può accreditarsi da sola.
+    public void UpdateProfile(
+        string name,
+        Address headquarter,
+        List<string> phones,
+        List<string> coveredProvinces,
+        string? availabilityHours)
+    {
+        Name = name;
+        Headquarter = headquarter;
+        Phones = phones;
+        CoveredProvinces = coveredProvinces;
+        AvailabilityHours = availabilityHours;
+    }
+
     public void Accredit()
     {
         if (Status is not EAccreditationStatus.Pending)

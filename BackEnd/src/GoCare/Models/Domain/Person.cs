@@ -33,6 +33,17 @@ public sealed class Person
         Phone = phone;
     }
 
+    // Modifica completa del profilo (PUT): anche l'indirizzo, che può essere rimosso (null).
+    // L'e-mail non passa di qui: si cambia solo con il flusso di conferma (ChangeEmail).
+    public void UpdateProfile(string name, string surname, DateOnly birthDate, string phone, Address? homeAddress)
+    {
+        Name = name;
+        Surname = surname;
+        BirthDate = birthDate;
+        Phone = phone;
+        HomeAddress = homeAddress;
+    }
+
     public void ChangeEmail(string newEmail)
     {
         Email = newEmail;
