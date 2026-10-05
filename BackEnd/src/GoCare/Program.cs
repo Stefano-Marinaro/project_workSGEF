@@ -4,6 +4,7 @@ using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Infrastructure;
 using GoCare.Services.Auth;
+using GoCare.Services.Domain;
 using GoCare.Services.Provisioning;
 using GoCare.Services.Transport;
 using GoCare.Validation;     // ValidationFilter
@@ -60,6 +61,7 @@ builder.Services.AddScoped<TimelineService>();
 builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<AcceptTransportRequestService>();
 builder.Services.AddScoped<IPushSender, ConsolePushSender>();
+builder.Services.AddScoped<AssistedPersonService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly

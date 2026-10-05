@@ -20,4 +20,6 @@ public sealed class CaregiverAssistedLink
     // v0: collegamento sempre diretto e subito attivo (nessuna accettazione richiesta, anche per un
     // secondo caregiver) — il flusso di invito con consenso è rinviato alla v1 (vedi Project_GoCare.md).
     public void Revoke(DateTimeOffset at) => DeletedAt ??= at;
+
+    public void Restore() => DeletedAt = null;
 }

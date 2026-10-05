@@ -4,13 +4,21 @@ public sealed class AssistedPerson
 {
     private AssistedPerson() { } // costruttore vuoto: EF (materializzazione dal DB)
 
-    public AssistedPerson(Guid id, string name, string surname, DateOnly birthDate, string phone, Guid createdBy)
+    public AssistedPerson(
+        Guid id,
+        string name,
+        string surname,
+        DateOnly birthDate,
+        string phone,
+        Address? homeAddress,
+        Guid createdBy)
     {
         Id = id;
         Name = name;
         Surname = surname;
         BirthDate = birthDate;
         Phone = phone;
+        HomeAddress = homeAddress;
         CreatedBy = createdBy;
     }
 
@@ -23,4 +31,13 @@ public sealed class AssistedPerson
     public Guid CreatedBy { get; }          // Person.Id del caregiver che l'ha creato (audit)
     public DateTimeOffset? DeletedAt { get; private set; }
     public DateTimeOffset? AnonymizedAt { get; private set; }
+
+    public void Update(string name, string surname, DateOnly birthDate, string phone, Address? homeAddress)
+    {
+        Name = name;
+        Surname = surname;
+        BirthDate = birthDate;
+        Phone = phone;
+        HomeAddress = homeAddress;
+    }
 }
