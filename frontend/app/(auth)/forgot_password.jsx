@@ -1,20 +1,14 @@
 import { useState } from 'react'
-import {
-	Keyboard,
-	Modal,
-	Pressable,
-	StyleSheet,
-	Text,
-	TouchableWithoutFeedback,
-	View,
-	useColorScheme,
+import { Keyboard, Modal, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View, useColorScheme,
 } from 'react-native'
+import api from '../../config/httpClient.js'
 
 import ThemedButton from '../../components/ThemedButton.jsx'
 import ThemedText from '../../components/ThemedText.jsx'
 import ThemedTextInput from '../../components/ThemedTextInput.jsx'
 import ThemedView from '../../components/ThemedView.jsx'
 import { Colors } from '../../constants/Colors.js'
+
 
 const ForgotPassword = () => {
 	const [email, setEmail] = useState('')

@@ -8,7 +8,12 @@ public sealed class ConsoleEmailSender(ILogger<ConsoleEmailSender> logger) : IEm
 {
     public Task SendAsync(string to, string subject, string htmlBody, CancellationToken ct = default)
     {
-        logger.LogInformation("[EMAIL a {To}] {Subject}\n{Body}", to, subject, htmlBody);
+        logger.LogInformation(
+            "Email send requested. RecipientProvided: {RecipientProvided}, SubjectLength: {SubjectLength}, BodyLength: {BodyLength}",
+            !string.IsNullOrWhiteSpace(to),
+            subject?.Length ?? 0,
+            htmlBody?.Length ?? 0
+        );
         return Task.CompletedTask;
     }
 }
