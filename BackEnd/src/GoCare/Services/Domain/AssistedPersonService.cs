@@ -1,4 +1,5 @@
 using GoCare.Data;
+using GoCare.Dtos.Domain.Responses;
 using GoCare.Errors;
 using GoCare.Models.Domain;
 using GoCare.Models.Enums;
@@ -36,7 +37,7 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         return assistedPersonId;
     }
 
-    public async Task<IReadOnlyList<AssistedPersonSummary>> ListAsync(
+    public async Task<IReadOnlyList<AssistedPersonSummaryResponse>> ListAsync(
         Guid caregiverId,
         CancellationToken ct)
     {
@@ -69,21 +70,21 @@ public sealed class AssistedPersonService(GoCareDbContext db)
 
         var nextTripByAssistedPerson = futureTrips
             .GroupBy(trip => trip.BeneficiaryId)
-            .ToDictionary(group => group.Key, group => ToTripSummary(group.First()));
+            .ToDictionary(group => group.Key, group => ToTripResponse(group.First()));
 
         return people
-            .Select(person => new AssistedPersonSummary(
+            .Select(person => new AssistedPersonSummaryResponse(
                 person.Id,
                 person.Name,
                 person.Surname,
                 person.BirthDate,
                 person.Phone,
-                person.HomeAddress,
+                ToAddressResponse(person.HomeAddress),
                 nextTripByAssistedPerson.GetValueOrDefault(person.Id)))
             .ToList();
     }
 
-    public async Task<AssistedPersonDetail> GetDetailAsync(
+    public async Task<AssistedPersonDetailResponse> GetDetailAsync(
         Guid caregiverId,
         Guid assistedPersonId,
         CancellationToken ct)
@@ -97,7 +98,7 @@ public sealed class AssistedPersonService(GoCareDbContext db)
                 && link.DeletedAt == null
                 && person.DeletedAt == null
             orderby person.Surname, person.Name
-            select new CaregiverSummary(person.Id, person.Name, person.Surname, person.Email))
+            select new CaregiverResponse(person.Id, person.Name, person.Surname, person.Email))
             .ToListAsync(ct);
 
         var trips = await db.TransportRequests
@@ -106,15 +107,15 @@ public sealed class AssistedPersonService(GoCareDbContext db)
             .OrderByDescending(trip => trip.DepartureDateHour)
             .ToListAsync(ct);
 
-        return new AssistedPersonDetail(
+        return new AssistedPersonDetailResponse(
             assistedPerson.Id,
             assistedPerson.Name,
             assistedPerson.Surname,
             assistedPerson.BirthDate,
             assistedPerson.Phone,
-            assistedPerson.HomeAddress,
+            ToAddressResponse(assistedPerson.HomeAddress),
             caregivers,
-            trips.Select(ToTripSummary).ToList());
+            trips.Select(ToTripResponse).ToList());
     }
 
     public async Task UpdateAsync(
@@ -244,7 +245,12 @@ public sealed class AssistedPersonService(GoCareDbContext db)
             throw new NotFoundException("Assistito non trovato o non accessibile.");
     }
 
-    private static AssistedTripSummary ToTripSummary(TransportRequest trip) => new(
+    private static AddressResponse? ToAddressResponse(Address? address) =>
+        address is null
+            ? null
+            : new AddressResponse(address.Street, address.Number, address.PostalCode, address.City, address.Province);
+
+    private static AssistedTripResponse ToTripResponse(TransportRequest trip) => new(
         trip.Id,
         trip.RequestedById,
         trip.TripType,
@@ -253,37 +259,3 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         trip.ReturnDateHour,
         trip.RequestStatus);
 }
-
-public sealed record AssistedPersonSummary(
-    Guid Id,
-    string Name,
-    string Surname,
-    DateOnly BirthDate,
-    string Phone,
-    Address? HomeAddress,
-    AssistedTripSummary? NextTrip);
-
-public sealed record AssistedPersonDetail(
-    Guid Id,
-    string Name,
-    string Surname,
-    DateOnly BirthDate,
-    string Phone,
-    Address? HomeAddress,
-    IReadOnlyList<CaregiverSummary> Caregivers,
-    IReadOnlyList<AssistedTripSummary> Trips);
-
-public sealed record CaregiverSummary(
-    Guid Id,
-    string? Name,
-    string? Surname,
-    string Email);
-
-public sealed record AssistedTripSummary(
-    Guid Id,
-    Guid RequestedById,
-    ETripType TripType,
-    ETripDirection TripDirection,
-    DateTimeOffset DepartureDateHour,
-    DateTimeOffset? ReturnDateHour,
-    ETripRequestStatus Status);
