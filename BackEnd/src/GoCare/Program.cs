@@ -4,7 +4,11 @@ using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Infrastructure;
 using GoCare.Services.Auth;
+using GoCare.Services.Destinations;
+using GoCare.Services.Devices;
 using GoCare.Services.Domain;
+using GoCare.Services.Notifications;
+using GoCare.Services.Profile;
 using GoCare.Services.Provisioning;
 using GoCare.Services.Transport;
 using GoCare.Validation;     // ValidationFilter
@@ -62,6 +66,23 @@ builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<AcceptTransportRequestService>();
 builder.Services.AddScoped<IPushSender, ConsolePushSender>();
 builder.Services.AddScoped<AssistedPersonService>();
+builder.Services.AddScoped<GetPersonProfileService>();
+builder.Services.AddScoped<UpdatePersonProfileService>();
+builder.Services.AddScoped<GetAssociationProfileService>();
+builder.Services.AddScoped<UpdateAssociationProfileService>();
+builder.Services.AddScoped<ListAcceptedTransportsService>();
+builder.Services.AddScoped<AcceptedTransportDetailService>();
+builder.Services.AddScoped<AssociationHistoryService>();
+builder.Services.AddScoped<ListNotificationsService>();
+builder.Services.AddScoped<MarkNotificationReadService>();
+builder.Services.AddScoped<MarkAllNotificationsReadService>();
+builder.Services.AddScoped<NotificationCountersService>();
+builder.Services.AddScoped<RegisterDeviceService>();
+builder.Services.AddScoped<UnregisterDeviceService>();
+builder.Services.AddScoped<CreateDestinationService>();
+builder.Services.AddScoped<ListDestinationsService>();
+builder.Services.AddScoped<UpdateDestinationService>();
+builder.Services.AddScoped<DeleteDestinationService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly

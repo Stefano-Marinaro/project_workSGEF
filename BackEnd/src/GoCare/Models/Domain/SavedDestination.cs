@@ -6,12 +6,13 @@ public sealed class SavedDestination
     // (crea l'oggetto vuoto e riempie le proprietà, anche le { get; } via backing field).
     private SavedDestination() { }
 
-    public SavedDestination(Guid id, Guid personId, string placeName, Address savedAddress)
+    public SavedDestination(Guid id, Guid personId, string placeName, Address savedAddress, string? note = null)
     {
         Id = id;
         PersonId = personId;
         PlaceName = placeName;
         SavedAddress = savedAddress;
+        Note = note;
     }
 
     public Guid Id { get; }
@@ -19,4 +20,11 @@ public sealed class SavedDestination
     public string PlaceName { get; private set; } = null!;
     public Address SavedAddress { get; private set; } = null!;
     public string? Note { get; private set; }
+
+    public void UpdateDetails(string placeName, Address savedAddress, string? note)
+    {
+        PlaceName = placeName;
+        SavedAddress = savedAddress;
+        Note = note;
+    }
 }
