@@ -22,8 +22,8 @@ const MOCK_USER = {
 const Profile = () => {
     const colorScheme = useColorScheme()
     const theme = Colors[colorScheme] ?? Colors.light
-    const handleLogout = () => {router.push('/logout')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro
-    const handleModify = () => {router.push('/editProfile')}
+    const handleLogout = () => {router.replace('/logout')} 
+    const handleModify = () => {router.push('/editProfile')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro, come sopra
     const handleModifyPassword = () => {router.push('/editPassword')}
 
     return (
