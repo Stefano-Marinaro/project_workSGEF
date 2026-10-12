@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Keyboard, Modal, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View, useColorScheme,
+import { Keyboard, Modal, Pressable, Platform, StyleSheet, Text, TouchableWithoutFeedback, View, useColorScheme,
 } from 'react-native'
 import api from '../../config/httpClient.js'
 
@@ -13,16 +13,29 @@ import { Colors } from '../../constants/Colors.js'
 const ForgotPassword = () => {
 	const [email, setEmail] = useState('')
 	const [showConfirmation, setShowConfirmation] = useState(false)
+	const [errorMessage, setErrorMessage] = useState('')
 	const colorScheme = useColorScheme()
 	const theme = Colors[colorScheme] ?? Colors.light
 
-	const handleSubmit = () => {
-		Keyboard.dismiss()
-		setShowConfirmation(true)
-	}
+	// sul web TouchableWithoutFeedback blocca i click sugli input: lì basta una View
+	const Wrapper = Platform.OS === 'web' ? View : TouchableWithoutFeedback
+	const wrapperProps = Platform.OS === 'web' ? { style: { flex: 1 }} : { onPress: Keyboard.dismiss }
+
+	const handleSubmit = async () => {
+    Keyboard.dismiss()
+    setErrorMessage('')
+    try {
+        // il backend risponde sempre 204, anche se l'email non è registrata
+        await api.post('/auth/forgot-password', { email })
+        setShowConfirmation(true)
+    } catch (error) {
+        // con error.response il server ha risposto (400 = email non valida), senza non è raggiungibile
+        setErrorMessage(error.response ? 'Enter a valid email address' : 'Unable to reach the server')
+    }
+}
 
 	return (
-		<TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+		<Wrapper {...wrapperProps}>
 			<ThemedView style={styles.container}>
 				<View style={styles.form}>
 					<ThemedText title style={styles.title}>
@@ -45,6 +58,8 @@ const ForgotPassword = () => {
 						value={email}
 					/>
 
+					{errorMessage !== '' && <Text style={styles.error}>{errorMessage}</Text>}
+
 					<ThemedButton style={styles.submitButton} onPress={handleSubmit}>
 						<Text style={styles.buttonText}>Invia richiesta</Text>
 					</ThemedButton>
@@ -60,7 +75,7 @@ const ForgotPassword = () => {
 						<View style={styles.confirmationCard}>
 							<Text style={styles.confirmationTitle}>Richiesta inviata</Text>
 							<Text style={styles.confirmationMessage}>
-								Abbiamo inviato una mail per ripristino password
+								If the address is registered, you will receive an email with instructions to reset your password.
 							</Text>
 							<Pressable
 								accessibilityRole="button"
@@ -76,7 +91,7 @@ const ForgotPassword = () => {
 					</View>
 				</Modal>
 			</ThemedView>
-		</TouchableWithoutFeedback>
+		</Wrapper>
 	)
 }
 
@@ -163,5 +178,10 @@ const styles = StyleSheet.create({
 	},
 	pressed: {
 		opacity: 0.8,
+	},
+	error: {
+		color: '#c0392b', 
+		marginBottom: 12, 
+		textAlign: 'center'
 	},
 })
