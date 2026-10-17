@@ -299,6 +299,11 @@ namespace GoCare.Data.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("note");
+
                     b.Property<string>("Phone")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -390,6 +395,47 @@ namespace GoCare.Data.Migrations
                         .HasDatabaseName("ix_caregiver_assisted_links_assisted_person_id");
 
                     b.ToTable("caregiver_assisted_links", (string)null);
+                });
+
+            modelBuilder.Entity("GoCare.Models.Domain.CaregiverInviteLink", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("AssistedPersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assisted_person_id");
+
+                    b.Property<Guid>("InvitedByPersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("invited_by_person_id");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("token");
+
+                    b.HasKey("Id")
+                        .HasName("pk_caregiver_invite_links");
+
+                    b.HasIndex("AssistedPersonId")
+                        .HasDatabaseName("ix_caregiver_invite_links_assisted_person_id");
+
+                    b.HasIndex("InvitedByPersonId")
+                        .HasDatabaseName("ix_caregiver_invite_links_invited_by_person_id");
+
+                    b.HasIndex("Token")
+                        .IsUnique()
+                        .HasDatabaseName("ix_caregiver_invite_links_token");
+
+                    b.ToTable("caregiver_invite_links", (string)null);
                 });
 
             modelBuilder.Entity("GoCare.Models.Domain.Companion", b =>
@@ -685,7 +731,6 @@ namespace GoCare.Data.Migrations
                         .HasColumnName("not_covered_at");
 
                     b.Property<string>("ReferenceEmail")
-                        .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
                         .HasColumnName("reference_email");
@@ -1056,6 +1101,23 @@ namespace GoCare.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_caregiver_assisted_links_persons_caregiver_id");
+                });
+
+            modelBuilder.Entity("GoCare.Models.Domain.CaregiverInviteLink", b =>
+                {
+                    b.HasOne("GoCare.Models.Domain.AssistedPerson", null)
+                        .WithMany()
+                        .HasForeignKey("AssistedPersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_caregiver_invite_links_assisted_people_assisted_person_id");
+
+                    b.HasOne("GoCare.Models.Domain.Person", null)
+                        .WithMany()
+                        .HasForeignKey("InvitedByPersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_caregiver_invite_links_persons_invited_by_person_id");
                 });
 
             modelBuilder.Entity("GoCare.Models.Domain.Companion", b =>

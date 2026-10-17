@@ -11,7 +11,7 @@ public sealed class TransportRequest
     public TransportRequest(
         Guid id, Guid requestedById, Guid beneficiaryId, ETripType tripType, ETripDirection tripDirection,
         DateTimeOffset departureDateHour, DateTimeOffset? returnDateHour, Address startAddress, Address endAddress, Address? returnEndAddress,
-        string referencePhone, string referenceEmail, DateTimeOffset createdAt)
+        string referencePhone, string? referenceEmail, DateTimeOffset createdAt)
     {
         Id = id;
         RequestedById = requestedById;
@@ -42,7 +42,7 @@ public sealed class TransportRequest
     public Address EndAddress { get; private set; } = null!;
     public Address? ReturnEndAddress { get; private set; }
     public string ReferencePhone { get; private set; } = null!;
-    public string ReferenceEmail { get; private set; } = null!;
+    public string? ReferenceEmail { get; private set; }
     public ETripRequestStatus RequestStatus { get; private set; } = ETripRequestStatus.Pending;
     public Guid? AssignedAssociationId { get; private set; }
     public Guid? DeletedBy { get; private set; }
@@ -62,6 +62,9 @@ public sealed class TransportRequest
 
         if (!isRoundTrip && (returnDateHour is not null || returnEndAddress is not null))
             throw new InvalidOperationException("Solo un RoundTrip può avere orario o indirizzo di ritorno.");
+
+        if (isRoundTrip && (TripType == ETripType.Hospitalization || TripType == ETripType.Discharge))
+            throw new InvalidOperationException("Ricovero e Dimissione ammettono solo un viaggio OneWay, non Andata e ritorno.");
 
         if (returnDateHour is not null && returnDateHour <= departure)
             throw new InvalidOperationException("Il ritorno deve essere successivo alla partenza.");
@@ -91,6 +94,22 @@ public sealed class TransportRequest
 
         EndAddress = newEndAddress;
         ReturnEndAddress = newReturnEndAddress;
+    }
+
+    public void StartExecution()
+    {
+        if (RequestStatus != ETripRequestStatus.Confirmed)
+            throw new InvalidOperationException("Solo una richiesta confermata può avviare l'esecuzione.");
+
+        RequestStatus = ETripRequestStatus.InProgress;
+    }
+
+    public void CompleteExecution()
+    {
+        if (RequestStatus != ETripRequestStatus.InProgress)
+            throw new InvalidOperationException("Solo una richiesta in esecuzione può concludersi.");
+
+        RequestStatus = ETripRequestStatus.Completed;
     }
 
     public void RequestNotCovered(DateTimeOffset at)

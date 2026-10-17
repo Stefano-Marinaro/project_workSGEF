@@ -7,4 +7,5 @@ public sealed record AssistedPersonRequest(
     string Surname,
     DateOnly BirthDate,
     string Phone,
-    AddressRequest? HomeAddress);
+    AddressRequest? HomeAddress,
+    string? Note);

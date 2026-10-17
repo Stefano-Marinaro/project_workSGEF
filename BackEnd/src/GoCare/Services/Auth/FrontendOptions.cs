@@ -8,4 +8,5 @@ public sealed class FrontendOptions
     public string ResetPasswordUrl { get; set; } = null!;
     public string ChangeEmailUrl { get; set; } = null!;
     public string OperatorUrl { get; set; } = null!;
+    public string CaregiverInviteUrl { get; set; } = null!;
 }

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react' // fa partire la chiamata al beckend
 
 // hook di Expo Router che legge tutti i parametri presenti nell'URL della rotta corrente e li restituisce come oggetto
 // (lo stesso hook che usiamo in login.jsx per leggere role)
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, Link } from 'expo-router'
 
 // client axios
 import api from '../../config/httpClient.js'
@@ -43,10 +43,14 @@ const VerifyEmail = () => {
     }, [])
 
     return (
-        <Text>
-            Token ricevuto: {params.token} - Stato: {status} {errorMessage}
-        </Text> 
-        // {params.token} prende il valore associato alla chiave token nell'URL
+        <>
+            <Text>
+                Token ricevuto: {params.token} - Stato: {status} {errorMessage}
+            </Text>
+            {/* {params.token} prende il valore associato alla chiave token nell'URL */}
+
+            {status === 'success' && <Link href="/login">Torna al login</Link>}
+        </>
     )
 }
 

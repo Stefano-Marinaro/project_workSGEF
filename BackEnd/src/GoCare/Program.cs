@@ -62,10 +62,15 @@ builder.Services.AddScoped<TripDetailService>();
 builder.Services.AddScoped<ListTransportsService>();
 builder.Services.AddScoped<GenerateOperatorLinkService>();
 builder.Services.AddScoped<TimelineService>();
+builder.Services.AddScoped<GetTripExecutionStatusService>();
+builder.Services.AddScoped<AdvanceTripStatusService>();
 builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<AcceptTransportRequestService>();
 builder.Services.AddScoped<IPushSender, ConsolePushSender>();
 builder.Services.AddScoped<AssistedPersonService>();
+builder.Services.AddScoped<GenerateCaregiverInviteLinkService>();
+builder.Services.AddScoped<GetCaregiverInvitePreviewService>();
+builder.Services.AddScoped<AcceptCaregiverInviteService>();
 builder.Services.AddScoped<GetPersonProfileService>();
 builder.Services.AddScoped<UpdatePersonProfileService>();
 builder.Services.AddScoped<GetAssociationProfileService>();
@@ -92,7 +97,7 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:8081")
+        policy.WithOrigins("http://localhost:8081", "http://192.168.1.5:8081")
               .AllowAnyMethod()
               .AllowAnyHeader());
 });
@@ -153,7 +158,10 @@ if (app.Environment.IsDevelopment())               // solo in ambiente Developme
     app.UseSwaggerUI();                            // espone la pagina web Swagger su /swagger
 }
 
-app.UseHttpsRedirection();                          // redirige le richieste http:// verso https://
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();                      // in dev niente redirect forzato: il cert è valido solo per localhost, non per l'IP di LAN
+}
 
 app.UseAuthentication();                            // popola HttpContext.User dal token
 app.UseAuthorization();                             // valuta i tag [Authorize]

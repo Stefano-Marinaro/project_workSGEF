@@ -32,5 +32,8 @@ public sealed class AssistedPersonValidator : AbstractValidator<AssistedPersonRe
         RuleFor(x => x.HomeAddress)
             .SetValidator(new AddressValidator()!)
             .When(x => x.HomeAddress is not null);
+
+        RuleFor(x => x.Note)
+            .MaximumLength(255);
     }
 }

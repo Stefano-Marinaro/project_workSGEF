@@ -25,6 +25,7 @@ public sealed record AssistedPersonDetailResponse(
     DateOnly BirthDate,
     string Phone,
     AddressResponse? HomeAddress,
+    string? Note,
     IReadOnlyList<CaregiverResponse> Caregivers,
     IReadOnlyList<AssistedTripResponse> Trips);
 

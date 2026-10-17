@@ -11,7 +11,8 @@ public sealed class AssistedPerson
         DateOnly birthDate,
         string phone,
         Address? homeAddress,
-        Guid createdBy)
+        Guid createdBy,
+        string? note = null)
     {
         Id = id;
         Name = name;
@@ -20,6 +21,7 @@ public sealed class AssistedPerson
         Phone = phone;
         HomeAddress = homeAddress;
         CreatedBy = createdBy;
+        Note = note;
     }
 
     public Guid Id { get; }                 // Guid proprio: nessun Account collegato, l'assistito non fa login
@@ -28,16 +30,18 @@ public sealed class AssistedPerson
     public DateOnly BirthDate { get; private set; }
     public string Phone { get; private set; } = null!;
     public Address? HomeAddress { get; private set; }
+    public string? Note { get; private set; }
     public Guid CreatedBy { get; }          // Person.Id del caregiver che l'ha creato (audit)
     public DateTimeOffset? DeletedAt { get; private set; }
     public DateTimeOffset? AnonymizedAt { get; private set; }
 
-    public void Update(string name, string surname, DateOnly birthDate, string phone, Address? homeAddress)
+    public void Update(string name, string surname, DateOnly birthDate, string phone, Address? homeAddress, string? note)
     {
         Name = name;
         Surname = surname;
         BirthDate = birthDate;
         Phone = phone;
         HomeAddress = homeAddress;
+        Note = note;
     }
 }

@@ -20,7 +20,7 @@ public sealed class CreateTransportService(GoCareDbContext db)
         Address endAddress,
         Address? returnEndAddress,
         string referencePhone,
-        string referenceEmail,
+        string? referenceEmail,
         IReadOnlyList<(string Name, string Surname, string Relationship, string Phone)> companion,
         CancellationToken ct)
     {

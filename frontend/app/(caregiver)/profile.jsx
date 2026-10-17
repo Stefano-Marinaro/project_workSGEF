@@ -1,5 +1,5 @@
-import { StyleSheet, Image, ScrollView, useColorScheme } from 'react-native'
-import { useRouter } from 'expo-router'
+import { StyleSheet, Image, ScrollView, useColorScheme, ActivityIndicator } from 'react-native'
+import { useState, useEffect } from 'react'
 
 import ThemedView from '../../components/ThemedView'
 import Spacer from '../../components/Spacer'
@@ -7,24 +7,45 @@ import ThemedText from '../../components/ThemedText'
 import ThemedButton from '../../components/ThemedButton'
 import { Colors } from '../../constants/Colors'
 import { router } from 'expo-router'
-
-const MOCK_USER = {
-    name: 'Mario Rossi',
-    ruolo: 'Son',
-    dateOfBirth : '11/10/1995',
-    placeOfBirth: 'Assisi',
-    email: 'mariorossi@gmail.com',
-    dataIscrizione: '12/06/2026',
-    password: 'mariorossi12', // in mock va in chiaro, poi l'API pensa a gestire la sicurezza
-    avatar: require('../../assets/img/fotoProfilo.jpg')
-}
+import api from '../../config/httpClient.js'
 
 const Profile = () => {
     const colorScheme = useColorScheme()
     const theme = Colors[colorScheme] ?? Colors.light
-    const handleLogout = () => {router.replace('/logout')} 
+    const [profile, setProfile] = useState(null)
+    const [errorMessage, setErrorMessage] = useState('')
+
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const response = await api.get('/me/profile')
+                setProfile(response.data)
+            } catch (error) {
+                setErrorMessage(error.response ? error.response.data.detail || 'Impossibile caricare il profilo' : 'Unable to reach the server')
+            }
+        }
+        loadProfile()
+    }, [])
+
+    const handleLogout = () => {router.replace('/logout')}
     const handleModify = () => {router.push('/editProfile')} //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro, come sopra
     const handleModifyPassword = () => {router.push('/editPassword')}
+
+    if (errorMessage) {
+        return (
+            <ThemedView style={styles.container}>
+                <ThemedText style={{ color: 'red' }}>{errorMessage}</ThemedText>
+            </ThemedView>
+        )
+    }
+
+    if (!profile) {
+        return (
+            <ThemedView style={styles.container}>
+                <ActivityIndicator size="large" />
+            </ThemedView>
+        )
+    }
 
     return (
         <ThemedView style={styles.container}>
@@ -35,36 +56,29 @@ const Profile = () => {
 
                 {/* Avatar */}
                 <Image
-                    source={MOCK_USER.avatar }
+                    source={require('../../assets/img/fotoProfilo.jpg')}
                     style={[styles.avatar, { borderColor: Colors.primary, backgroundColor: 'red'}]}
                 />
- 
+
                 <Spacer height={12}/>
- 
+
                 {/* Nome utente */}
- 
+
                 <ThemedText title={true} style={styles.nome}>
-                    {MOCK_USER.name}
+                    {profile.name} {profile.surname}
                 </ThemedText>
- 
-                {/* Badge Ruolo */}
-                <ThemedView style={[styles.badge, {backgroudColor: Colors.primary}]}>
-                    <ThemedText style={styles.badgeText}>
-                        {MOCK_USER.ruolo}
-                    </ThemedText>
-                </ThemedView>
 
                 <Spacer height={30}/>
 
                 {/* Card Informazioni Personali */}
                 <ThemedView style={[styles.card, {backgroundColor: theme.uiBackground }]}>
                     <ThemedText style={styles.label}>Email</ThemedText>
-                    <ThemedText style={styles.value}>{MOCK_USER.email}</ThemedText>
+                    <ThemedText style={styles.value}>{profile.email}</ThemedText>
 
                     <Spacer height={16} />
 
-                    <ThemedText style={styles.label}>Member since</ThemedText>
-                    <ThemedText style={styles.value}>{MOCK_USER.dataIscrizione}</ThemedText>
+                    <ThemedText style={styles.label}>Phone</ThemedText>
+                    <ThemedText style={styles.value}>{profile.phone}</ThemedText>
 
                 </ThemedView>
 
@@ -73,27 +87,22 @@ const Profile = () => {
                 {/* Card Informazioni Utente */}
                 <ThemedView style={[styles.card, {backgroundColor: theme.uiBackground }]}>
                     <ThemedText style={styles.label}>Date of Birth</ThemedText>
-                    <ThemedText style={styles.value}>{MOCK_USER.dateOfBirth}</ThemedText>
-
-                    <Spacer height={16} />
-
-                    <ThemedText style={styles.label}>Place of Birth</ThemedText>
-                    <ThemedText style={styles.value}>{MOCK_USER.placeOfBirth}</ThemedText>
+                    <ThemedText style={styles.value}>{profile.birthDate}</ThemedText>
 
                 </ThemedView>
 
                 <Spacer height={30} />
 
-                <ThemedButton 
+                <ThemedButton
                     style={styles.input}
-                    onPress={() => router.push('/editProfile')}
+                    onPress={handleModify}
                 >
                     <ThemedText style={styles.btnText}>Modify Profile</ThemedText>
                 </ThemedButton>
 
                 <Spacer height={15} />
 
-                <ThemedButton 
+                <ThemedButton
                     style={styles.input}
                     onPress={handleModifyPassword}
                 >
@@ -111,9 +120,9 @@ const Profile = () => {
         </ThemedView>
     )
 }
- 
+
 export default Profile
- 
+
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -133,17 +142,6 @@ const styles = StyleSheet.create({
         fontSize: 20,
         fontWeight: 'bold',
         textAlign: 'center',
-    },
-    badge: {
-        marginTop: 8,
-        paddingVertical: 4,
-        paddingHorizontal: 14,
-        borderRadius: 20,
-    },
-    badgeText: {
-        color: '#fff',
-        fontSize: 13,
-        fontWeight: '600',
     },
     card: {
         width: '85%',
@@ -168,4 +166,3 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
 })
-

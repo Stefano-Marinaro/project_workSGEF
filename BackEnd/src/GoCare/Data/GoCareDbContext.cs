@@ -27,6 +27,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
     public DbSet<Companion> Companions => Set<Companion>();
     public DbSet<TripStatusTransition> TripStatusTransitions => Set<TripStatusTransition>();
     public DbSet<TripOperatorLink> TripOperatorLinks => Set<TripOperatorLink>();
+    public DbSet<CaregiverInviteLink> CaregiverInviteLinks => Set<CaregiverInviteLink>();
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ContactAccessLog> ContactAccessLogs => Set<ContactAccessLog>();
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
@@ -178,6 +179,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
             assisted.Property(a => a.Name).HasMaxLength(100);
             assisted.Property(a => a.Surname).HasMaxLength(100);
             assisted.Property(a => a.Phone).HasMaxLength(32);
+            assisted.Property(a => a.Note).HasMaxLength(255);
 
             assisted.HasOne<Person>()
                 .WithMany()
@@ -379,6 +381,25 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
 
             opLink.HasIndex(o => o.Token).IsUnique();
             opLink.HasIndex(o => o.TransportRequestId); // per trovare i link (attivi e passati) di un trasporto
+        });
+
+        modelBuilder.Entity<CaregiverInviteLink>(invite =>
+        {
+            invite.HasKey(i => i.Id);
+            invite.Property(i => i.Token).HasMaxLength(255);
+
+            invite.HasOne<AssistedPerson>()
+                .WithMany()
+                .HasForeignKey(i => i.AssistedPersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            invite.HasOne<Person>()
+                .WithMany()
+                .HasForeignKey(i => i.InvitedByPersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            invite.HasIndex(i => i.Token).IsUnique();
+            invite.HasIndex(i => i.AssistedPersonId);
         });
 
         #endregion

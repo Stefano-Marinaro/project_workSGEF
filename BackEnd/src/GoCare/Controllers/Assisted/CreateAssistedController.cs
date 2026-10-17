@@ -28,6 +28,7 @@ public sealed class CreateAssistedController(AssistedPersonService assistedPeopl
             request.BirthDate,
             request.Phone,
             request.HomeAddress?.ToAddress(),
+            request.Note,
             ct);
 
         var created = await assistedPeople.GetDetailAsync(caregiverId, assistedPersonId, ct);
