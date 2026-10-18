@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.OpenApi;
 
 var builder = WebApplication.CreateBuilder(args);   
 
@@ -133,7 +134,24 @@ builder.Services
 
 builder.Services.AddAuthorization();
 builder.Services.AddEndpointsApiExplorer();         // raccoglie i metadati degli endpoint per OpenAPI
-builder.Services.AddSwaggerGen();                   // genera il documento OpenAPI (Swagger)
+
+builder.Services.AddSwaggerGen(options =>           // genera il documento OpenAPI (Swagger)
+{
+    // Dichiara che l'API usa un token JWT "Bearer": fa comparire il pulsante Authorize
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        Description = "Incolla l'accessToken ottenuto da POST /auth/login (solo il token, senza 'Bearer')."
+    });
+
+    // Dice a Swagger di inviare quel token nelle richieste
+    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", document)] = []
+    });
+});
 
 var app = builder.Build();                          // costruisce l'app: il contenitore DI si congela
 
