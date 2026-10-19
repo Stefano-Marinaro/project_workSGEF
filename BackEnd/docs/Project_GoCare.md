@@ -132,47 +132,42 @@ Le user story sono riportate con il riferimento allo Use Case (e alla sotto-voce
 
 ## 3.1 Stories caregiver
 
-| ID    | User story                                                                                                                                                       | UC            |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| CG-01 | Come caregiver voglio potermi registrare in GoCare.                                                                                                              | 10.1          |
-| CG-02 | Come caregiver voglio poter effettuare il login.                                                                                                                 | 10.2          |
-| CG-03 | Come caregiver voglio poter modificare i miei dati personali e di contatto.                                                                                      | 8.2, 8.3      |
-| CG-04 | Come caregiver voglio poter recuperare la password in caso di smarrimento.                                                                                       | 10.3          |
-| CG-05 | Come caregiver voglio poter eliminare il mio account.                                                                                                            | 10.4          |
-| CG-14 | Come caregiver voglio poter registrare il prossimo trasporto del mio assistito.                                                                                  | 1.1, 1.6      |
-| CG-15 | Come caregiver voglio poter scegliere la direzione del viaggio (andata e ritorno, solo andata, solo ritorno).                                                    | 1.2           |
-| CG-16 | Come caregiver voglio poter indicare il tipo di viaggio (visita, ricovero, dimissione, trasferimento).                                                           | 1.5           |
-| CG-17 | Come caregiver voglio poter scegliere una destinazione diversa dal domicilio abituale dell'assistito.                                                            | 1.3           |
-| CG-18 | Come caregiver voglio poter salvare, modificare ed eliminare le mie destinazioni ricorrenti.                                                                     | 8.4           |
-| CG-19 | Come caregiver voglio poter indicare un accompagnatore per il viaggio.                                                                                           | 1.4           |
-| CG-23 | Come caregiver voglio poter annullare il viaggio.                                                                                                                | 3.1           |
-| CG-24 | Come caregiver voglio poter indicare il motivo dell'annullamento.                                                                                                | 3.3           |
-| CG-25 | Come caregiver voglio sapere se il viaggio non può essere coperto.                                                                                               | 4.4           |
-| CG-26 | Come caregiver voglio ricevere notifica quando il viaggio è preso in carico dall'associazione.                                                                   | 4.4           |
-| CG-27 | Come caregiver voglio essere avvisato tempestivamente se un viaggio già preso in carico viene annullato dall'associazione, così da poter cercare un'alternativa. | 4.6           |
-| CG-28 | Come caregiver voglio poter ricevere notifica dei prossimi trasporti programmati.                                                                                | 4.3           |
-| CG-29 | Come caregiver voglio poter vedere lo stato in tempo reale del viaggio dell'assistito preso in carico (posizione GPS esclusa, vedi Roadmap v1).                  | 4.1, 4.2, 5.5 |
-| CG-30 | Come caregiver voglio poter vedere lo stato della mia richiesta (in attesa, confermata, in esecuzione, conclusa, non coperta, annullata).                        | 5.2           |
-| CG-31 | Come caregiver voglio poter vedere i contatti dell'associazione che ha preso in carico il mio viaggio, per poterla contattare in caso di necessità.              | 5.3           |
-| CG-32 | Come caregiver voglio poter avere uno storico delle visite fatte.                                                                                                | 5.4           |
-| CG-33 | Come caregiver voglio poter registrare un trasporto ricorrente (es. dialisi ogni martedì), così da non dover ripetere la richiesta ogni volta. Rinviata alla v1. | 1.1           |
-| CG-38 | Come caregiver voglio poter indicare per il ritorno una destinazione diversa da quella da cui sono partito.                                                      | 1.7           |
-| CG-39 | Come caregiver voglio poter aggiungere un assistito di cui mi prendo cura.                                                                                       | 9.1           |
-| CG-40 | Come caregiver voglio poter visualizzare l'elenco degli assistiti di cui mi occupo.                                                                              | 9.2           |
-| CG-41 | Come caregiver voglio poter visualizzare i dati e i viaggi di un assistito che seguo.                                                                            | 9.3           |
-| CG-42 | Come caregiver voglio poter modificare i dati di un assistito che seguo, dato che non può farlo da solo.                                                         | 9.4           |
-| CG-43 | Come caregiver voglio poter collegare direttamente un altro caregiver a un assistito che già seguo, così che possa vederne dati e viaggi.                        | 9.5           |
-| CG-44 | Come caregiver voglio poter rimuovere un collegamento caregiver↔assistito, il mio o quello di un altro caregiver collegato.                                      | 9.6           |
+| ID    | User story                                                                                                                                                                                                               | UC                 |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------ |
+| CG-01 | Come caregiver voglio potermi registrare in GoCare.                                                                                                                                                                      | 10.1               |
+| CG-02 | Come caregiver voglio poter effettuare il login.                                                                                                                                                                         | 10.2               |
+| CG-03 | Come caregiver voglio poter modificare i miei dati personali e di contatto.                                                                                                                                              | 8.2, 8.3           |
+| CG-04 | Come caregiver voglio poter recuperare la password in caso di smarrimento.                                                                                                                                               | 10.3               |
+| CG-05 | Come caregiver voglio poter eliminare il mio account.                                                                                                                                                                    | 10.4               |
+| CG-14 | Come caregiver voglio poter registrare il prossimo trasporto del mio assistito, indicando la direzione (andata e ritorno, solo andata, solo ritorno) e il tipo di viaggio (visita, ricovero, dimissione, trasferimento). | 1.1, 1.2, 1.5, 1.6 |
+| CG-17 | Come caregiver voglio poter scegliere una destinazione diversa dall'indirizzo abituale dell'assistito.                                                                                                                   | 1.3                |
+| CG-18 | Come caregiver voglio poter salvare, modificare ed eliminare le mie destinazioni ricorrenti.                                                                                                                             | 8.4                |
+| CG-23 | Come caregiver voglio poter annullare il viaggio, indicando il motivo dell'annullamento.                                                                                                                                 | 3.1, 3.3           |
+| CG-25 | Come caregiver voglio sapere se il viaggio non può essere coperto.                                                                                                                                                       | 4.4                |
+| CG-26 | Come caregiver voglio ricevere notifica quando il viaggio è preso in carico dall'associazione.                                                                                                                           | 4.4                |
+| CG-27 | Come caregiver voglio essere avvisato tempestivamente se un viaggio già preso in carico viene annullato dall'associazione, così da poter cercare un'alternativa.                                                         | 4.6                |
+| CG-28 | Come caregiver voglio poter ricevere notifica dei prossimi trasporti programmati.                                                                                                                                        | 4.3                |
+| CG-29 | Come caregiver voglio poter vedere lo stato in tempo reale del viaggio dell'assistito preso in carico (posizione GPS esclusa, vedi Roadmap v1).                                                                          | 4.1, 4.2, 5.5      |
+| CG-30 | Come caregiver voglio poter vedere lo stato della mia richiesta (in attesa, confermata, in esecuzione, conclusa, non coperta, annullata).                                                                                | 5.2                |
+| CG-31 | Come caregiver voglio poter vedere i contatti dell'associazione che ha preso in carico il mio viaggio, per poterla contattare in caso di necessità, solamente dopo l'avvenuto pagamento.                                 | 5.3                |
+| CG-32 | Come caregiver voglio poter avere uno storico delle visite fatte.                                                                                                                                                        | 5.4                |
+| CG-33 | Come caregiver voglio poter registrare un trasporto ricorrente (es. dialisi ogni martedì), così da non dover ripetere la richiesta ogni volta. Rinviata alla v1.                                                         | 1.1                |
+| CG-38 | Come caregiver voglio poter indicare per il ritorno una destinazione diversa da quella da cui sono partito.                                                                                                              | 1.7                |
+| CG-39 | Come caregiver voglio poter aggiungere un assistito di cui mi prendo cura.                                                                                                                                               | 9.1                |
+| CG-40 | Come caregiver voglio poter visualizzare l'elenco degli assistiti di cui mi occupo.                                                                                                                                      | 9.2                |
+| CG-41 | Come caregiver voglio poter visualizzare i dati e i viaggi di un assistito che seguo.                                                                                                                                    | 9.3                |
+| CG-42 | Come caregiver voglio poter modificare i dati di un assistito che seguo, dato che non può farlo da solo.                                                                                                                 | 9.4                |
+| CG-43 | Come caregiver voglio poter collegare direttamente un altro caregiver a un assistito che già seguo, così che possa vederne dati e viaggi.                                                                                | 9.5                |
+| CG-44 | Come caregiver voglio poter rimuovere un collegamento caregiver↔assistito, il mio o quello di un altro caregiver collegato.                                                                                              | 9.6                |
 
 ## 3.2 Stories associazione
 
 | ID    | User story                                                                                                                                                                   | UC       |
 | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------- |
-| AS-01 | Come associazione voglio potermi registrare in GoCare.                                                                                                                       | 10.1     |
 | AS-02 | Come associazione voglio poter effettuare il login.                                                                                                                          | 10.2     |
 | AS-03 | Come associazione voglio poter recuperare la password in caso di smarrimento.                                                                                                | 10.3     |
 | AS-04 | Come associazione voglio poter eliminare il mio account.                                                                                                                     | 10.4     |
-| AS-05 | Come associazione voglio poter visualizzare e modificare i dati, i contatti e le province coperte dalla mia associazione.                                                    | 8.5, 8.6 |
+| AS-05 | Come associazione voglio poter visualizzare e modificare i dati, i contatti e i comuni coperti dalla mia associazione.                                                       | 8.5, 8.6 |
 | AS-06 | Come associazione voglio ricevere notifica quando un utente invia una richiesta di trasporto.                                                                                | 4.7      |
 | AS-07 | Come associazione voglio poter vedere tutte le richieste di trasporto pendenti a me destinate nella mia dashboard, con filtri (data, orario, destinazione, tipo di viaggio). | 6.1, 6.2 |
 | AS-08 | Come associazione voglio poter accettare una richiesta di trasporto pendente.                                                                                                | 6.3      |
@@ -186,60 +181,65 @@ Le user story sono riportate con il riferimento allo Use Case (e alla sotto-voce
 
 ## 3.3 Stories amministratore GoCare
 
-| ID    | User story                                                                                                                                                     | UC   |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| AD-01 | Come amministratore GoCare voglio poter accreditare o rifiutare un'associazione registrata, così che solo gli enti verificati possano operare sulle richieste. | 10.5 |
+| ID    | User story                                                                                                                                  | UC   |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| AD-01 | Come amministratore GoCare voglio poter registrare l'associazione partner.                                                                  | 10.5 |
+| AD-02 | Come amministratore GoCare voglio poter modificare i dati dell'associazione partner.                                                        | —    |
+| AD-03 | Come amministratore GoCare voglio poter monitorare le richieste all'associazione partner.                                                   | —    |
+| AD-04 | Come amministratore GoCare voglio poter eliminare l'associazione partner al termine della collaborazione.                                   | —    |
+| AD-05 | Come amministratore GoCare voglio poter gestire gli account CareGiver: ripristino account.                                                  | —    |
+| AD-06 | Come amministratore GoCare voglio poter visualizzare le associazioni partner e le rispettive informazioni (dati, stato account, trasporti). | —    |
 
 ## 3.4 Matrice di copertura Use Case → User Stories
 
 Verifica che ogni sotto-voce di Use Case abbia almeno una user story associata.
 
-| Use Case        | User stories | Esito   |
-| --------------- | ------------ | ------- |
-| 1.1             | CG-14, CG-33 | Coperto |
-| 1.2             | CG-15        | Coperto |
-| 1.3             | CG-17        | Coperto |
-| 1.4             | CG-19        | Coperto |
-| 1.5             | CG-16        | Coperto |
-| 1.6             | CG-14        | Coperto |
-| 1.7             | CG-38        | Coperto |
-| 3.1             | CG-23        | Coperto |
-| 3.2             | AS-17        | Coperto |
-| 3.3             | CG-24, AS-17 | Coperto |
-| 4.1             | CG-29        | Coperto |
-| 4.2             | CG-29        | Coperto |
-| 4.3             | CG-28        | Coperto |
-| 4.4             | CG-25, CG-26 | Coperto |
-| 4.6             | CG-27        | Coperto |
-| 4.7             | AS-06        | Coperto |
-| 4.9             | AS-18        | Coperto |
-| 4.10            | AS-19        | Coperto |
-| 5.1             | CG-32        | Coperto |
-| 5.2             | CG-30        | Coperto |
-| 5.3             | CG-31        | Coperto |
-| 5.4             | CG-32        | Coperto |
-| 5.5             | CG-29        | Coperto |
-| 6.1             | AS-07        | Coperto |
-| 6.2             | AS-07        | Coperto |
-| 6.3             | AS-08        | Coperto |
-| 6.4             | AS-09        | Coperto |
-| 6.5             | AS-10        | Coperto |
-| 7.1             | AS-11        | Coperto |
-| 7.2             | AS-12        | Coperto |
-| 8.1 / 8.2 / 8.3 | CG-03        | Coperto |
-| 8.4             | CG-18        | Coperto |
-| 8.5 / 8.6       | AS-05        | Coperto |
-| 9.1             | CG-39        | Coperto |
-| 9.2             | CG-40        | Coperto |
-| 9.3             | CG-41        | Coperto |
-| 9.4             | CG-42        | Coperto |
-| 9.5             | CG-43        | Coperto |
-| 9.6             | CG-44        | Coperto |
-| 10.1            | CG-01, AS-01 | Coperto |
-| 10.2            | CG-02, AS-02 | Coperto |
-| 10.3            | CG-04, AS-03 | Coperto |
-| 10.4            | CG-05, AS-04 | Coperto |
-| 10.5            | AD-01        | Coperto |
+| Use Case        | User stories | Esito                         |
+| --------------- | ------------ | ----------------------------- |
+| 1.1             | CG-14, CG-33 | Coperto                       |
+| 1.2             | CG-14        | Coperto                       |
+| 1.3             | CG-17        | Coperto                       |
+| 1.4             | —            | Nessuna story (CG-19 rimossa) |
+| 1.5             | CG-14        | Coperto                       |
+| 1.6             | CG-14        | Coperto                       |
+| 1.7             | CG-38        | Coperto                       |
+| 3.1             | CG-23        | Coperto                       |
+| 3.2             | AS-17        | Coperto                       |
+| 3.3             | CG-23, AS-17 | Coperto                       |
+| 4.1             | CG-29        | Coperto                       |
+| 4.2             | CG-29        | Coperto                       |
+| 4.3             | CG-28        | Coperto                       |
+| 4.4             | CG-25, CG-26 | Coperto                       |
+| 4.6             | CG-27        | Coperto                       |
+| 4.7             | AS-06        | Coperto                       |
+| 4.9             | AS-18        | Coperto                       |
+| 4.10            | AS-19        | Coperto                       |
+| 5.1             | CG-32        | Coperto                       |
+| 5.2             | CG-30        | Coperto                       |
+| 5.3             | CG-31        | Coperto                       |
+| 5.4             | CG-32        | Coperto                       |
+| 5.5             | CG-29        | Coperto                       |
+| 6.1             | AS-07        | Coperto                       |
+| 6.2             | AS-07        | Coperto                       |
+| 6.3             | AS-08        | Coperto                       |
+| 6.4             | AS-09        | Coperto                       |
+| 6.5             | AS-10        | Coperto                       |
+| 7.1             | AS-11        | Coperto                       |
+| 7.2             | AS-12        | Coperto                       |
+| 8.1 / 8.2 / 8.3 | CG-03        | Coperto                       |
+| 8.4             | CG-18        | Coperto                       |
+| 8.5 / 8.6       | AS-05        | Coperto                       |
+| 9.1             | CG-39        | Coperto                       |
+| 9.2             | CG-40        | Coperto                       |
+| 9.3             | CG-41        | Coperto                       |
+| 9.4             | CG-42        | Coperto                       |
+| 9.5             | CG-43        | Coperto                       |
+| 9.6             | CG-44        | Coperto                       |
+| 10.1            | CG-01        | Coperto                       |
+| 10.2            | CG-02, AS-02 | Coperto                       |
+| 10.3            | CG-04, AS-03 | Coperto                       |
+| 10.4            | CG-05, AS-04 | Coperto                       |
+| 10.5            | AD-01        | Coperto                       |
 
 ---
 
@@ -358,7 +358,7 @@ BACKEND:
 - Verifica che il richiedente abbia un collegamento attivo con l'assistito indicato (autorizzazione).
 - Salvataggio della richiesta con doppio riferimento: richiedente (caregiver) e beneficiario (assistito) — alimenta l'UC 9.3.
 
-**1.3 Come caregiver voglio poter scegliere la direzione del viaggio. (CG-15)**
+**1.3 Come caregiver voglio poter scegliere la direzione del viaggio. (CG-14)**
 
 FRONTEND:
 
@@ -370,7 +370,7 @@ BACKEND:
 - Validazione della coerenza fra direzione, orari e indirizzi: un "andata e ritorno" richiede obbligatoriamente l'orario di ritorno; le altre due direzioni non possono avere né orario né indirizzo di ritorno; l'orario di ritorno deve essere successivo a quello di partenza. La regola vale alla creazione (non ci sono più modifiche successive: il viaggio non è modificabile una volta registrato).
 - Persistenza della direzione sulla richiesta: determina gli stati attraversati dal viaggio (UC 4.1).
 
-**1.4 Come caregiver voglio poter indicare il tipo di viaggio. (CG-16)**
+**1.4 Come caregiver voglio poter indicare il tipo di viaggio. (CG-14)**
 
 FRONTEND:
 
@@ -382,7 +382,7 @@ BACKEND:
 - Validazione del valore rispetto alla lista dei tipi ammessi.
 - Salvataggio del tipo sulla richiesta (dato visibile all'associazione nell'UC 6.2).
 
-**1.5 Come caregiver voglio poter indicare un accompagnatore per il viaggio. (CG-19)**
+**1.5 Come caregiver voglio poter indicare un accompagnatore per il viaggio.**
 
 FRONTEND:
 
@@ -394,7 +394,7 @@ BACKEND:
 - Validazione dati e form.
 - Salvataggio degli accompagnatori collegati alla richiesta, al momento della creazione. L'accompagnatore è un dato immutabile dopo l'invio della richiesta: non esiste più un flusso di modifica successivo (era l'ex UC 2.2).
 
-**1.6 Come caregiver voglio poter scegliere una destinazione diversa dal domicilio abituale dell'assistito. (CG-17)**
+**1.6 Come caregiver voglio poter scegliere una destinazione diversa dall'indirizzo abituale dell'assistito. (CG-17)**
 
 FRONTEND:
 
@@ -426,7 +426,7 @@ BACKEND:
 
 ## UC 3 – ANNULLA TRASPORTO
 
-**3.1 Come caregiver voglio poter annullare il viaggio, indicando il motivo. (CG-23, CG-24)**
+**3.1 Come caregiver voglio poter annullare il viaggio, indicando il motivo. (CG-23)**
 
 FRONTEND:
 
@@ -610,7 +610,7 @@ BACKEND:
 
 _[DA VALIDARE] Va deciso se esporre il contatto generico dell'associazione e, durante il viaggio, quello dell'operatore, oppure solo quello generico. Ripreso nella sezione Punti aperti._
 
-**5.2 Come caregiver voglio vedere i contatti dell'associazione che ha preso in carico il mio viaggio. (CG-31)**
+**5.2 Come caregiver voglio vedere i contatti dell'associazione che ha preso in carico il mio viaggio, solamente dopo l'avvenuto pagamento. (CG-31)**
 
 FRONTEND:
 
@@ -897,7 +897,7 @@ BACKEND:
 
 ## UC 10 – ACCOUNT
 
-**10.1 Come caregiver o associazione voglio potermi registrare in GoCare. (CG-01, AS-01)**
+**10.1 Come caregiver voglio potermi registrare in GoCare. (CG-01)**
 
 FRONTEND:
 
@@ -968,7 +968,7 @@ BACKEND:
 
 _[DA VALIDARE] Va definita la politica di conservazione dei dati dopo l'eliminazione dell'account: i viaggi conclusi restano nello storico dell'associazione anche dopo l'anonimizzazione dell'utente? E cosa succede a un assistito che resta senza nessun caregiver collegato?_
 
-**10.5 Come amministratore GoCare voglio poter accreditare o rifiutare un'associazione. (AD-01)**
+**10.5 Come amministratore GoCare voglio poter registrare l'associazione partner. (AD-01)**
 
 FRONTEND:
 
