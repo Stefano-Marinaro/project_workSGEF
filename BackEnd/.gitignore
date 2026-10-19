@@ -485,3 +485,7 @@ $RECYCLE.BIN/
 /CLAUDE.md
 /AGENTS.md
 /MEMORY.md
+
+# Override locali non condivisi (es. IP LAN del proprio PC): ogni sviluppatore
+# ha il proprio, basato su appsettings.Local.json.example
+appsettings.Local.json

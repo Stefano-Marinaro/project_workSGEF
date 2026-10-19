@@ -17,7 +17,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
-var builder = WebApplication.CreateBuilder(args);   
+var builder = WebApplication.CreateBuilder(args);
+
+// Override locali e non condivisi (es. l'IP LAN del proprio PC per i link via e-mail):
+// ogni sviluppatore ha il proprio file, mai committato (vedi .gitignore).
+builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);   
 
 // --- Infrastruttura trasversale
 builder.Services.AddHttpContextAccessor();
@@ -97,9 +101,23 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-        policy.WithOrigins("http://localhost:8081", "http://192.168.1.5:8081")
-              .AllowAnyMethod()
-              .AllowAnyHeader());
+    {
+        // In sviluppo l'IP del frontend web cambia da PC a PC (e nel tempo):
+        // accettiamo qualunque origine invece di elencarne una fissa, per non
+        // doverlo risistemare ogni volta che cambia la rete di qualcuno.
+        if (builder.Environment.IsDevelopment())
+        {
+            policy.SetIsOriginAllowed(_ => true)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+        else
+        {
+            policy.WithOrigins("http://localhost:8081")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        }
+    });
 });
 
 builder.Services.AddControllers(options =>          // abilita i controller MVC

@@ -1,0 +1,9 @@
+{
+  "Frontend": {
+    "VerifyEmailUrl": "http://TUO_IP_LAN:8081/verify_email",
+    "ResetPasswordUrl": "http://TUO_IP_LAN:8081/reset_password",
+    "ChangeEmailUrl": "http://TUO_IP_LAN:8081/conferma-cambio-email",
+    "OperatorUrl": "http://TUO_IP_LAN:8081/operatore",
+    "CaregiverInviteUrl": "http://TUO_IP_LAN:8081/invito-caregiver"
+  }
+}
