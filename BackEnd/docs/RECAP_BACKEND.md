@@ -1,6 +1,7 @@
 # Recap backend GoCare — passaggio di consegne
 
 > Stato del codice al commit `ce6ca9e` (merge PR #25, `PUT /association/profile`), 19/10/2026.
+> Aggiornato dopo la revisione di `Project_GoCare.md` (UC 11 Amministrazione, pagamento Stripe, comuni coperti, registrazione associazioni solo da admin).
 > Per chi prende in mano il backend (Stefano e Giorgia). Dove questo documento e `PIANO_BACKEND_GoCare.md` non coincidono, vale questo: il piano non è stato aggiornato dopo l'avvio dei controller di dominio (lì risultano ancora "da fare" endpoint che esistono già).
 
 ---
@@ -10,7 +11,7 @@
 - **Fondamenta**: un solo progetto `.NET 10` (`BackEnd/src/GoCare`), un solo database PostgreSQL `gocare`, un solo `GoCareDbContext`. Le migrazioni vengono applicate **automaticamente all'avvio** (`db.Database.Migrate()` in `Program.cs`).
 - **`docker-compose.yml`** (nella root del repo): Postgres 16 + backend (porta `5000` → `8080`).
 - **Auth completa**: registrazione utente/associazione, verifica email (con reinvio), login, refresh con rotazione, logout, password dimenticata/reset, cambio email con conferma.
-- **Account admin** creato da migrazione (`SeedAdminAccount`, email `admin@gocare.it`) + endpoint di accreditamento/rifiuto associazioni.
+- **Account admin** creato da migrazione (`SeedAdminAccount`, email `admin@gocare.it`) + endpoint di accreditamento/rifiuto associazioni (⚠️ ora obsoleti: le associazioni le registra l'admin, vedi §3.3).
 - **Profili**: GET/PUT profilo caregiver e associazione (+ PATCH di completamento del profilo "scheletro").
 - **Assistiti**: CRUD completo + aggiunta/rimozione di un caregiver collegato.
 - **Trasporti lato caregiver**: crea, lista (filtrabile per assistito), dettaglio, annulla, timeline di stato.
@@ -79,7 +80,7 @@ Mappatura errori (`Errors/GlobalExceptionHandler.cs`):
 - `TransportRequest` ha due "assi" di stato:
   - **stato della richiesta** `ETripRequestStatus`: `Pending → Confirmed → InProgress → Completed`, più i terminali `NotCovered` e `Cancelled`;
   - **stato di esecuzione** `ETripTransitionStatus` (log append-only in `TripStatusTransition`): `Pending → InCharge → Arriving → OnSite → Returning → Completed`, con `Suspended` per gli imprevisti.
-- **Creazione** (`CreateTransportService`): controlla che il caregiver sia collegato all'assistito, salva richiesta + accompagnatori, calcola i **candidati** = associazioni `Accredited` la cui lista `CoveredProvinces` contiene la provincia di partenza (`TransportRequestCandidate`).
+- **Creazione** (`CreateTransportService`): controlla che il caregiver sia collegato all'assistito, salva richiesta + accompagnatori, calcola i **candidati** = associazioni `Accredited` la cui lista `CoveredProvinces` contiene la provincia di partenza (`TransportRequestCandidate`). ⚠️ Con il nuovo documento il confronto va fatto sui **comuni** (città di partenza) e gli accompagnatori (UC 1.4) sono stati tolti: vedi §3.3.
 - **Accettazione** (`AcceptTransportRequestService`): l'associazione deve essere candidata e la richiesta `Pending`; se due associazioni accettano insieme, la seconda riceve `DbUpdateConcurrencyException` → 409 (colonna di sistema Postgres `xmin` come token di concorrenza). Poi notifica il caregiver (push + email).
 - **Link operatore** (`GenerateOperatorLinkService`): l'associazione assegnataria genera un token che scade a `DepartureDateHour + 24h`; l'URL restituito è `Frontend:OperatorUrl/{token}`. L'operatore non ha account: userà il link per aggiornare lo stato (endpoint **ancora da scrivere**, vedi §3).
 - **Notifiche** (`NotificationDispatcher`): salva sempre la `Notification`, poi invia sui canali richiesti; se manca l'email o non ci sono device registrati quel canale viene saltato.
@@ -110,7 +111,7 @@ Nota: `BackEnd/README.md` è **obsoleto** (parla di `GoCare.Api` e di due databa
 | Area | Metodo + route | Ruolo |
 |---|---|---|
 | Auth | `POST /auth/register/user` | Pubblico |
-| Auth | `POST /auth/register/association` | Pubblico |
+| Auth | `POST /auth/register/association` | Pubblico (⚠️ obsoleto: da rimuovere, vedi §3.3) |
 | Auth | `POST /auth/verify-email` | Pubblico |
 | Auth | `POST /auth/verify-email/resend` | Pubblico |
 | Auth | `POST /auth/login` | Pubblico |
@@ -135,7 +136,7 @@ Nota: `BackEnd/README.md` è **obsoleto** (parla di `GoCare.Api` e di due databa
 | Notifiche | `GET /notifications` · `GET /notifications/counters` | Caregiver / Associazione |
 | Notifiche | `POST /notifications/{id}/read` · `POST /notifications/read-all` | Caregiver / Associazione |
 | Dispositivi | `POST /devices` · `DELETE /devices/{id}` | Caregiver / Associazione |
-| Admin | `POST /admin/associations/{id}/accredit` · `POST /admin/associations/{id}/reject` | Admin |
+| Admin | `POST /admin/associations/{id}/accredit` · `POST /admin/associations/{id}/reject` | Admin (⚠️ obsoleti: PA-05 superato, da rimuovere) |
 
 ### 3.2 API rimanenti
 
@@ -152,7 +153,26 @@ Ordinate per priorità (prima ciò che blocca il flusso principale richiesta →
 | 7 | `GET /association/requests/{id}/contacts` | Associazione | Recapiti completi del richiedente/assistito solo dopo l'accettazione; scrive `ContactAccessLog` (PA-04). | `RequesterContactsService` | 🟠 Media |
 | 8 | `GET /associations/{id}/contacts` | Caregiver | Contatti pubblici dell'associazione che ha preso in carico il viaggio. | `AssociationContactsService` | 🟡 Bassa — nome e telefoni dell'associazione sono già restituiti da `GET /transports/{id}`: probabilmente si può saltare |
 | 9 | `DELETE /auth/account` | Autenticato | Eliminazione account con anonimizzazione dei dati personali, mantenendo lo storico dei viaggi (PA-06). | `DeleteAccountService` / `AnonymizeForDeletedAccountAsync` | 🟡 Bassa |
-| 10 | `GET /admin/associations?status=Pending` | Admin | Lista delle associazioni da accreditare (oggi l'admin deve conoscere l'id). Non era nel piano, ma serve per usare davvero accredit/reject. | `ListAssociationsForAdminService` | 🟡 Bassa |
+| 10 | `POST /transports/{id}/payment` | Caregiver | Crea la sessione Stripe Checkout per un viaggio `Confirmed` (caregiver collegato all'assistito) e restituisce l'URL di pagamento (UC 5.3, CG-31). | `CreatePaymentSessionService` | 🟠 Media |
+| 11 | `POST /payments/stripe/webhook` | Stripe (firma verificata) | Riceve l'esito da Stripe, verifica la firma e segna il viaggio come pagato (importo, id pagamento, istante). Solo il webhook conferma il pagamento. | `StripeWebhookService` | 🟠 Media |
+
+#### API amministratore (UC 11 di `Project_GoCare.md`)
+
+Tutte con `[Authorize(Roles = nameof(EAccountRole.Admin))]`, tranne `set-password` che è pubblica con token.
+
+| # | Metodo + route | UC / story | Cosa deve fare | Service da creare | Priorità |
+|---|---|---|---|---|---|
+| 12 | `POST /admin/associations` | 11.1 · AD-01 | Crea `Account` (ruolo `Association`, senza password) + `Association` con lo stesso id: denominazione, sede, comuni coperti, telefoni, email, orari. Valida come `UpdateAssociationProfileValidator`, email univoca. Invia email di invito con token monouso a scadenza. | `CreatePartnerAssociationService` | 🔴 Alta — senza questa non esistono associazioni |
+| 13 | `POST /auth/set-password` | 11.1 · AD-01 | Pubblico (token di invito): imposta la password, attiva l'account e segna l'email come verificata. Può riusare la logica di `ResetPasswordService`. | `SetPasswordService` | 🔴 Alta |
+| 14 | `GET /admin/associations` | 11.6 · AD-06 | Elenco paginato (`PageQuery`/`PagedResult<T>`) con denominazione, comuni, stato account (invito in attesa / attivo / eliminato), conteggio trasporti in carico. Filtri per stato e comune, ricerca per nome. | `ListPartnerAssociationsService` | 🔴 Alta |
+| 15 | `GET /admin/associations/{id}` | 11.6 · AD-06 | Dettaglio: dati, contatti, stato account, trasporti assegnati (in carico + storico, solo dati di servizio). | `PartnerAssociationDetailService` | 🟠 Media |
+| 16 | `PUT /admin/associations/{id}` | 11.2 · AD-02 | Aggiorna gli stessi campi di `PUT /association/profile` con le stesse validazioni. I comuni valgono solo per le richieste future (candidati già congelati). Cambio email → conferma al nuovo indirizzo. | `UpdatePartnerAssociationService` (può riusare `UpdateAssociationProfileService`) | 🟠 Media |
+| 17 | `GET /admin/associations/{id}/requests` | 11.3 · AD-03 | Richieste in cui l'associazione è candidata, con esito per lei (in attesa, accettata, rifiutata, disdetta, non coperta, annullata) + indicatori (ricevute, accettate, rifiutate, disdette, tempo medio di presa in carico). Filtri periodo/esito, paginata, nessun recapito personale. | `PartnerAssociationRequestsService` | 🟡 Bassa |
+| 18 | `DELETE /admin/associations/{id}` | 11.4 · AD-04 | 409 se ha trasporti `Confirmed`/`InProgress`. Altrimenti soft delete di account e profilo, revoca refresh token e `TripOperatorLink` validi, esclusione da candidature future; rivalutazione copertura delle richieste pendenti di cui era candidata. | `DeletePartnerAssociationService` | 🟡 Bassa |
+| 19 | `GET /admin/caregivers` · `GET /admin/caregivers/{id}` | 11.5 · AD-05 | Ricerca caregiver per email/nome con stato account (`Unverified`, `Active`, `Suspended`, `Deleted`). | `ListCaregiverAccountsService` | 🟡 Bassa |
+| 20 | `POST /admin/caregivers/{id}/restore` | 11.5 · AD-05 | Riattiva un account `Suspended`/bloccato (azzera `FailedLoginAttempt`) o `Deleted` **solo se non ancora anonimizzato**. Registra chi/cosa/quando. Perimetro [DA VALIDARE]. | `RestoreCaregiverAccountService` | 🟡 Bassa |
+| 21 | `POST /admin/caregivers/{id}/resend-verification` | 11.5 · AD-05 | Reinvia l'email di verifica a un account `Unverified` (riusa `ResendVerificationEmailService`). | — (riuso) | 🟡 Bassa |
+| 22 | `POST /admin/caregivers/{id}/password-reset` | 11.5 · AD-05 | Invia l'email di reset password e revoca le sessioni (riusa `ForgotPasswordService`). | — (riuso) | 🟡 Bassa |
 
 **Lavoro non-endpoint ancora da fare:**
 
@@ -169,6 +189,16 @@ Ordinate per priorità (prima ciò che blocca il flusso principale richiesta →
 | Test | Nessun progetto di test presente. |
 | Documentazione | Aggiornare `BackEnd/README.md` e la tabella §14 di `PIANO_BACKEND_GoCare.md`. |
 
+### 3.3 Da rimuovere / adeguare per le nuove decisioni
+
+| Cosa | Note |
+|---|---|
+| `POST /auth/register/association` | Le associazioni non si registrano più da sole (UC 10.1 solo caregiver). Rimuovere controller, service, request e validator. |
+| `POST /admin/associations/{id}/accredit` · `reject` | PA-05 superato: un'associazione registrata dall'admin è subito operativa. Rimuovere i due controller e `AccreditAssociationAsync`/`RejectAssociationAsync`; valutare se eliminare `EAccreditationStatus` e il filtro `Status == Accredited` in `CreateTransportService` (sostituendolo con `DeletedAt == null`). |
+| `CoveredProvinces` → comuni coperti | Instradamento per comune (PA-03 deciso): rinominare la colonna (es. `CoveredMunicipalities`), confrontarla con `StartAddress.City`, aggiornare validator, DTO e migrazione. |
+| Accompagnatori (`Companion`) | UC 1.4 rimossa: togliere `Companions` da `NewTransportRequest`, `CreateTransportService` e dalle risposte; decidere se eliminare tabella ed entità con una migrazione. |
+| Pagamento | Nuova entità/colonne (stato pagamento, importo, id Stripe, `PaidAt`) su `TransportRequest`; `TripDetailService` deve restituire i contatti dell'associazione solo se il viaggio è pagato. Configurazione `StripeOptions` (chiave segreta, secret del webhook) fuori dal repo. Importo e destinatario dei fondi ancora aperti (PA-07). |
+
 ---
 
 ## 4. Problemi trovati nel codice attuale
@@ -176,4 +206,4 @@ Ordinate per priorità (prima ciò che blocca il flusso principale richiesta →
 1. **`DeleteTransportController` non ha `[Authorize]`** (`Controllers/TransportRequest/DeleteTransportController.cs`): una chiamata senza token arriva al controller, `User.FindFirstValue("sub")!` è `null` e `Guid.Parse` lancia un'eccezione → **500 invece di 401**. Va aggiunto `[Authorize(Roles = nameof(EAccountRole.Person))]` come negli altri controller dei trasporti (e corretto il refuso `DeleteTranasport`).
 2. **Doppio endpoint per il profilo**: esistono sia `PATCH` (completamento, `ProfilesController`) sia `PUT` (aggiornamento) su `/me/profile` e `/association/profile`. Conviene decidere quale usa il frontend e togliere l'altro.
 3. **Annullamento caregiver**: `DeleteTransportService` usa `ForbiddenException` (403) quando lo stato non permette l'annullamento; semanticamente sarebbe un `ConflictException` (409).
-4. **Gate di accreditamento**: un'associazione non accreditata può fare login e usare gli endpoint `/association/*`. In pratica non può accettare nulla (non diventa mai candidata), ma va deciso se bloccarla esplicitamente (PA-05).
+4. **Accreditamento**: superato dalla nuova decisione (le associazioni le registra l'admin, PA-05 superato). Il codice di accreditamento va rimosso, vedi §3.3.
