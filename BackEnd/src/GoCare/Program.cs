@@ -17,6 +17,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
+using GoCare.Services.Admin;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +47,7 @@ builder.Services.AddDbContext<GoCareDbContext>(options =>
     options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention());
 
 // --- Servizi applicativi
+// AddScoped registra una classe nel contenitore della dependency injection, e stabilisce quando vive ogni istanza: una per ogni richiesta HTTP
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<TokenIssuer>();
@@ -100,7 +102,7 @@ builder.Services.AddScoped<ListDestinationsService>();
 builder.Services.AddScoped<UpdateDestinationService>();
 builder.Services.AddScoped<DeleteDestinationService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
-
+builder.Services.AddScoped<ListPartnerAssociationsService>();
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
 // (il ValidationFilter salta i tipi di request senza un validator)
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
