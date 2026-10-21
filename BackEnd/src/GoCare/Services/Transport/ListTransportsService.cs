@@ -14,7 +14,7 @@ public sealed class ListTransportsService(GoCareDbContext db)
             .Select(l => l.AssistedPersonId)
             .ToListAsync(ct);
 
-        var query = db.TransportRequests.Where(t => assistedIds.Contains(t.BeneficiaryId));
+        var query = db.TransportRequests.AsNoTracking().Where(t => assistedIds.Contains(t.BeneficiaryId));
 
         if (assistedId is not null)
             query = query.Where(t => t.BeneficiaryId == assistedId);

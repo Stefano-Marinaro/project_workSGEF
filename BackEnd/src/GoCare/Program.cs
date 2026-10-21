@@ -87,6 +87,7 @@ builder.Services.AddScoped<UpdatePersonProfileService>();
 builder.Services.AddScoped<GetAssociationProfileService>();
 builder.Services.AddScoped<UpdateAssociationProfileService>();
 builder.Services.AddScoped<ListAcceptedTransportsService>();
+builder.Services.AddScoped<ListPendingRequestsService>();
 builder.Services.AddScoped<AcceptedTransportDetailService>();
 builder.Services.AddScoped<AssociationHistoryService>();
 builder.Services.AddScoped<ListNotificationsService>();

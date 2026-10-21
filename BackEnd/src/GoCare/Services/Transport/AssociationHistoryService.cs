@@ -11,6 +11,7 @@ public sealed class AssociationHistoryService(GoCareDbContext db)
     public async Task<List<AssociationTransportResponse>> GetHistoryAsync(Guid associationId, CancellationToken ct)
     {
         return await db.TransportRequests
+            .AsNoTracking()
             .Where(t => t.AssignedAssociationId == associationId
                 && (t.RequestStatus == ETripRequestStatus.Completed || t.RequestStatus == ETripRequestStatus.Cancelled))
             .OrderByDescending(t => t.DepartureDateHour)
