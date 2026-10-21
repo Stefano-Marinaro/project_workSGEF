@@ -100,7 +100,7 @@ public sealed class AssistedPersonService(GoCareDbContext db)
                 && link.DeletedAt == null
                 && person.DeletedAt == null
             orderby person.Surname, person.Name
-            select new CaregiverResponse(person.Id, person.Name, person.Surname, person.Email))
+            select new CaregiverResponse(person.Id, person.Name, person.Surname, person.Email, person.Phone))
             .ToListAsync(ct);
 
         var trips = await db.TransportRequests

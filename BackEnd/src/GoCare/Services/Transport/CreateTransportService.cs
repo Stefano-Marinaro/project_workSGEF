@@ -21,7 +21,8 @@ public sealed class CreateTransportService(GoCareDbContext db)
         Address? returnEndAddress,
         string referencePhone,
         string? referenceEmail,
-        IReadOnlyList<(string Name, string Surname, string Relationship, string Phone)> companion,
+        Guid preferredContactPersonId,
+        IReadOnlyList<(string Phone, string? Note)> alternativeContacts,
         CancellationToken ct)
     {
         var isLinked = await db.CaregiverAssistedLinks.AnyAsync(
@@ -29,17 +30,24 @@ public sealed class CreateTransportService(GoCareDbContext db)
         if (!isLinked)
             throw new ForbiddenException("Non sei collegato a questo assistito.");
 
-        var now = DateTimeOffset.UtcNow;    
+        var isPreferredContactValid = preferredContactPersonId == requestedById
+            || await db.CaregiverAssistedLinks.AnyAsync(
+                l => l.CaregiverId == preferredContactPersonId && l.AssistedPersonId == beneficiaryId && l.DeletedAt == null, ct);
+        if (!isPreferredContactValid)
+            throw new ForbiddenException("Il contatto preferenziale deve essere un caregiver collegato a questo assistito.");
+
+        var now = DateTimeOffset.UtcNow;
         var transportId = Guid.NewGuid();
 
         var transport = new TransportRequest(
             transportId, requestedById, beneficiaryId, tripType, tripDirection, departureDateHour,
-            returnDateHour, startAddress, endAddress, returnEndAddress, referencePhone, referenceEmail, now);
+            returnDateHour, startAddress, endAddress, returnEndAddress, referencePhone, referenceEmail,
+            preferredContactPersonId, now);
 
         db.TransportRequests.Add(transport);
 
-        foreach (var c in companion)
-            db.Companions.Add(new Companion(Guid.NewGuid(), transportId, c.Name, c.Surname, c.Relationship, c.Phone));
+        foreach (var c in alternativeContacts)
+            db.AlternativeContacts.Add(new AlternativeContact(Guid.NewGuid(), transportId, c.Phone, c.Note));
 
         var candidateAssociationIds = await db.Associations
          .Where(a => a.Status == EAccreditationStatus.Accredited

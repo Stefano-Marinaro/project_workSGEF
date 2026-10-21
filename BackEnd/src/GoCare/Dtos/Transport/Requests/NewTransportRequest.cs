@@ -13,4 +13,5 @@ public sealed record NewTransportRequest(
     AddressRequest? ReturnEndAddress,
     string ReferencePhone,
     string? ReferenceEmail,
-    IReadOnlyList<CompanionRequest>? Companions);
+    Guid PreferredContactPersonId,
+    IReadOnlyList<AlternativeContactRequest>? AlternativeContacts);

@@ -270,6 +270,37 @@ namespace GoCare.Data.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.AlternativeContact", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("note");
+
+                    b.Property<string>("Phone")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("phone");
+
+                    b.Property<Guid>("TransportRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transport_request_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_alternative_contacts");
+
+                    b.HasIndex("TransportRequestId")
+                        .HasDatabaseName("ix_alternative_contacts_transport_request_id");
+
+                    b.ToTable("alternative_contacts", (string)null);
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.AssistedPerson", b =>
                 {
                     b.Property<Guid>("Id")
@@ -436,50 +467,6 @@ namespace GoCare.Data.Migrations
                         .HasDatabaseName("ix_caregiver_invite_links_token");
 
                     b.ToTable("caregiver_invite_links", (string)null);
-                });
-
-            modelBuilder.Entity("GoCare.Models.Domain.Companion", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("phone");
-
-                    b.Property<string>("Relationship")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("relationship");
-
-                    b.Property<string>("Surname")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("surname");
-
-                    b.Property<Guid>("TransportRequestId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("transport_request_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_companions");
-
-                    b.HasIndex("TransportRequestId")
-                        .HasDatabaseName("ix_companions_transport_request_id");
-
-                    b.ToTable("companions", (string)null);
                 });
 
             modelBuilder.Entity("GoCare.Models.Domain.Comune", b =>
@@ -773,6 +760,10 @@ namespace GoCare.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("not_covered_at");
 
+                    b.Property<Guid>("PreferredContactPersonId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("preferred_contact_person_id");
+
                     b.Property<string>("ReferenceEmail")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -821,6 +812,9 @@ namespace GoCare.Data.Migrations
 
                     b.HasIndex("BeneficiaryId")
                         .HasDatabaseName("ix_transport_requests_beneficiary_id");
+
+                    b.HasIndex("PreferredContactPersonId")
+                        .HasDatabaseName("ix_transport_requests_preferred_contact_person_id");
 
                     b.HasIndex("RequestStatus")
                         .HasDatabaseName("ix_transport_requests_request_status");
@@ -1015,6 +1009,16 @@ namespace GoCare.Data.Migrations
                         .HasConstraintName("fk_refresh_tokens_accounts_account_id");
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.AlternativeContact", b =>
+                {
+                    b.HasOne("GoCare.Models.Domain.TransportRequest", null)
+                        .WithMany()
+                        .HasForeignKey("TransportRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_alternative_contacts_transport_requests_transport_request_id");
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.AssistedPerson", b =>
                 {
                     b.HasOne("GoCare.Models.Domain.Person", null)
@@ -1163,16 +1167,6 @@ namespace GoCare.Data.Migrations
                         .HasConstraintName("fk_caregiver_invite_links_persons_invited_by_person_id");
                 });
 
-            modelBuilder.Entity("GoCare.Models.Domain.Companion", b =>
-                {
-                    b.HasOne("GoCare.Models.Domain.TransportRequest", null)
-                        .WithMany()
-                        .HasForeignKey("TransportRequestId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired()
-                        .HasConstraintName("fk_companions_transport_requests_transport_request_id");
-                });
-
             modelBuilder.Entity("GoCare.Models.Domain.ContactAccessLog", b =>
                 {
                     b.HasOne("GoCare.Models.Domain.Association", null)
@@ -1319,6 +1313,13 @@ namespace GoCare.Data.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_transport_requests_assisted_people_beneficiary_id");
+
+                    b.HasOne("GoCare.Models.Domain.Person", null)
+                        .WithMany()
+                        .HasForeignKey("PreferredContactPersonId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_transport_requests_persons_preferred_contact_person_id");
 
                     b.HasOne("GoCare.Models.Domain.Person", null)
                         .WithMany()

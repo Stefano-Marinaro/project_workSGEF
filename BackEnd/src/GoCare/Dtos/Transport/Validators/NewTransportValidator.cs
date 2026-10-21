@@ -22,10 +22,10 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
             .IsInEnum();
 
         // stessa regola di TransportRequest.EnsureScheduleConsistency, qui per rispondere 422 invece di 500
-        When(t => t.TripType == ETripType.Hospitalization || t.TripType == ETripType.Discharge, () =>
+        When(t => t.TripType == ETripType.Hospitalization || t.TripType == ETripType.Discharge || t.TripType == ETripType.Transfer, () =>
         {
             RuleFor(t => t.TripDirection)
-                .Equal(ETripDirection.OneWay).WithMessage("Ricovero e Dimissione ammettono solo un viaggio di sola andata/ritorno (OneWay), non Andata e ritorno.");
+                .Equal(ETripDirection.OneWay).WithMessage("Ricovero, Dimissione e Trasferimento ammettono solo un viaggio di sola andata/ritorno (OneWay), non Andata e ritorno.");
         });
 
         RuleFor(t => t.DepartureDateHour)
@@ -69,7 +69,10 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
             .EmailAddress().WithMessage("L'email di riferimento non è valida.")
             .When(t => !string.IsNullOrEmpty(t.ReferenceEmail));
 
-        RuleForEach(t => t.Companions)
-            .SetValidator(new CompanionValidator());
+        RuleFor(t => t.PreferredContactPersonId)
+            .NotEmpty().WithMessage("Il contatto preferenziale è obbligatorio.");
+
+        RuleForEach(t => t.AlternativeContacts)
+            .SetValidator(new AlternativeContactValidator());
     }
 }

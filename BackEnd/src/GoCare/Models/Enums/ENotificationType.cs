@@ -9,7 +9,6 @@ public enum ENotificationType
     ModificationRequested,
     ModificationApproved,
     ModificationRejected,
-    CompanionUpdated,
     TripCancelledByUser,
     TripCancelledByAssociation,
     TripReminder

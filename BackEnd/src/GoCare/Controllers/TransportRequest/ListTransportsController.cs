@@ -15,11 +15,11 @@ namespace GoCare.Controllers.TransportRequest;
 public sealed class ListTransportsController(ListTransportsService service) : ControllerBase
 {
     [HttpGet]
-    public async Task<IActionResult> ListMine([FromQuery] Guid? assistedId, CancellationToken ct)
+    public async Task<IActionResult> ListMine([FromQuery] Guid? assistedId, [FromQuery] ETripTimeframe? when, CancellationToken ct)
     {
         var callerId = Guid.Parse(User.FindFirstValue("sub")!);
 
-        var trips = await service.ListMineAsync(callerId, assistedId, ct);
+        var trips = await service.ListMineAsync(callerId, assistedId, when, ct);
 
         return Ok(trips);
     }

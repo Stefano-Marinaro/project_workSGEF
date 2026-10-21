@@ -24,7 +24,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
     public DbSet<TransportRequest> TransportRequests => Set<TransportRequest>();
     public DbSet<TransportRequestCandidate> TransportRequestCandidates => Set<TransportRequestCandidate>();
     public DbSet<TransportRequestRejection> TransportRequestRejections => Set<TransportRequestRejection>();
-    public DbSet<Companion> Companions => Set<Companion>();
+    public DbSet<AlternativeContact> AlternativeContacts => Set<AlternativeContact>();
     public DbSet<TripStatusTransition> TripStatusTransitions => Set<TripStatusTransition>();
     public DbSet<TripOperatorLink> TripOperatorLinks => Set<TripOperatorLink>();
     public DbSet<CaregiverInviteLink> CaregiverInviteLinks => Set<CaregiverInviteLink>();
@@ -268,6 +268,11 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 .HasForeignKey(t => t.BeneficiaryId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            transportReq.HasOne<Person>()
+                .WithMany()
+                .HasForeignKey(t => t.PreferredContactPersonId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             transportReq.HasOne<Association>()
                 .WithMany()
                 .HasForeignKey(t => t.AssignedAssociationId)
@@ -346,15 +351,13 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
-        modelBuilder.Entity<Companion>(companion =>
+        modelBuilder.Entity<AlternativeContact>(contact =>
         {
-            companion.HasKey(c => c.Id);
-            companion.Property(c => c.Name).HasMaxLength(200);
-            companion.Property(c => c.Surname).HasMaxLength(200);
-            companion.Property(c => c.Phone).HasMaxLength(32);
-            companion.Property(c => c.Relationship).HasMaxLength(200);
+            contact.HasKey(c => c.Id);
+            contact.Property(c => c.Phone).HasMaxLength(32);
+            contact.Property(c => c.Note).HasMaxLength(255);
 
-            companion.HasOne<TransportRequest>()
+            contact.HasOne<TransportRequest>()
                 .WithMany()
                 .HasForeignKey(c => c.TransportRequestId)
                 .OnDelete(DeleteBehavior.Restrict);

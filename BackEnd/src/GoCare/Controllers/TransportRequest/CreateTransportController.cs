@@ -25,8 +25,8 @@ public sealed class CreateTransportController(CreateTransportService transportSe
         var endAddress = request.EndAddress.ToAddress();
         var returnEndAddress = request.ReturnEndAddress?.ToAddress();
 
-        var companions = (request.Companions ?? [])
-            .Select(c => (c.Name, c.Surname, c.Relationship, c.Phone))
+        var alternativeContacts = (request.AlternativeContacts ?? [])
+            .Select(c => (c.Phone, c.Note))
             .ToList();
 
         var id = await transportService.CreateTransportAsync(
@@ -41,7 +41,8 @@ public sealed class CreateTransportController(CreateTransportService transportSe
             returnEndAddress,
             request.ReferencePhone,
             request.ReferenceEmail,
-            companions,
+            request.PreferredContactPersonId,
+            alternativeContacts,
             ct);
 
         return Created($"/transports/{id}", new CreateTransportResponse(id));

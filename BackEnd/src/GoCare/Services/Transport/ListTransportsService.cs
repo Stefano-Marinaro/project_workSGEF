@@ -1,5 +1,6 @@
 using GoCare.Data;
 using GoCare.Dtos.Transport.Responses;
+using GoCare.Models.Enums;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,8 @@ namespace GoCare.Services.Transport;
 
 public sealed class ListTransportsService(GoCareDbContext db)
 {
-    public async Task<List<TransportListItemResponse>> ListMineAsync(Guid caregiver, Guid? assistedId, CancellationToken ct)
+    public async Task<List<TransportListItemResponse>> ListMineAsync(
+        Guid caregiver, Guid? assistedId, ETripTimeframe? timeframe, CancellationToken ct)
     {
         var assistedIds = await db.CaregiverAssistedLinks
             .Where(l => l.CaregiverId == caregiver && l.DeletedAt == null)
@@ -19,8 +21,24 @@ public sealed class ListTransportsService(GoCareDbContext db)
         if (assistedId is not null)
             query = query.Where(t => t.BeneficiaryId == assistedId);
 
-        return await query
-            .OrderByDescending(t => t.DepartureDateHour)
+        if (timeframe == ETripTimeframe.Upcoming)
+        {
+            query = query.Where(t => t.RequestStatus == ETripRequestStatus.Pending
+                || t.RequestStatus == ETripRequestStatus.Confirmed
+                || t.RequestStatus == ETripRequestStatus.InProgress);
+        }
+        else if (timeframe == ETripTimeframe.Past)
+        {
+            query = query.Where(t => t.RequestStatus == ETripRequestStatus.Completed
+                || t.RequestStatus == ETripRequestStatus.Cancelled
+                || t.RequestStatus == ETripRequestStatus.NotCovered);
+        }
+
+        var orderedQuery = timeframe == ETripTimeframe.Upcoming
+            ? query.OrderBy(t => t.DepartureDateHour)
+            : query.OrderByDescending(t => t.DepartureDateHour);
+
+        return await orderedQuery
             .Select(t => new TransportListItemResponse(
                 t.Id, t.TripType, t.TripDirection, t.DepartureDateHour, t.ReturnDateHour,
                 t.StartAddress, t.EndAddress, t.RequestStatus,

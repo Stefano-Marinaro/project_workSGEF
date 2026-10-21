@@ -33,7 +33,8 @@ public sealed record CaregiverResponse(
     Guid Id,
     string? Name,
     string? Surname,
-    string Email);
+    string Email,
+    string? Phone);
 
 public sealed record AssistedTripResponse(
     Guid Id,
