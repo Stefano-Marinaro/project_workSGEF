@@ -482,6 +482,49 @@ namespace GoCare.Data.Migrations
                     b.ToTable("companions", (string)null);
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.Comune", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.PrimitiveCollection<List<string>>("CapCodes")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("cap_codes");
+
+                    b.Property<string>("CodiceIstat")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("codice_istat");
+
+                    b.Property<string>("NomeComune")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("nome_comune");
+
+                    b.Property<string>("Provincia")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)")
+                        .HasColumnName("provincia");
+
+                    b.HasKey("Id")
+                        .HasName("pk_comuni");
+
+                    b.HasIndex("CodiceIstat")
+                        .IsUnique()
+                        .HasDatabaseName("ix_comuni_codice_istat");
+
+                    b.HasIndex("NomeComune")
+                        .HasDatabaseName("ix_comuni_nome_comune");
+
+                    b.ToTable("comuni", (string)null);
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.ContactAccessLog", b =>
                 {
                     b.Property<Guid>("Id")

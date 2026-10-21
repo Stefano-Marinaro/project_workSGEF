@@ -1,4 +1,5 @@
 using FluentValidation;
+using GoCare.Data;
 using GoCare.Dtos.Domain.Requests;
 using GoCare.Dtos.Transport.Validators;
 
@@ -6,7 +7,7 @@ namespace GoCare.Dtos.Domain.Validators;
 
 public sealed class AssistedPersonValidator : AbstractValidator<AssistedPersonRequest>
 {
-    public AssistedPersonValidator()
+    public AssistedPersonValidator(GoCareDbContext db)
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
@@ -30,7 +31,7 @@ public sealed class AssistedPersonValidator : AbstractValidator<AssistedPersonRe
             .WithMessage("Il numero di telefono non è valido.");
 
         RuleFor(x => x.HomeAddress)
-            .SetValidator(new AddressValidator()!)
+            .SetValidator(new AddressValidator(db)!)
             .When(x => x.HomeAddress is not null);
 
         RuleFor(x => x.Note)

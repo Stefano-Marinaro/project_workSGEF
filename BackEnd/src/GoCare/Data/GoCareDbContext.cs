@@ -31,6 +31,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
     public DbSet<Notification> Notifications => Set<Notification>();
     public DbSet<ContactAccessLog> ContactAccessLogs => Set<ContactAccessLog>();
     public DbSet<DeviceToken> DeviceTokens => Set<DeviceToken>();
+    public DbSet<Comune> Comuni => Set<Comune>();
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
@@ -234,6 +235,17 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
             });
+        });
+
+        modelBuilder.Entity<Comune>(comune =>
+        {
+            comune.HasKey(c => c.Id);
+            comune.Property(c => c.CodiceIstat).HasMaxLength(10);
+            comune.Property(c => c.NomeComune).HasMaxLength(120);
+            comune.Property(c => c.Provincia).HasMaxLength(120);
+
+            comune.HasIndex(c => c.CodiceIstat).IsUnique();
+            comune.HasIndex(c => c.NomeComune); // ricerca per nome durante l'autofill
         });
 
         #endregion

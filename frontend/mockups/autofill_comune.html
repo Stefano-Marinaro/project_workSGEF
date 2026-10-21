@@ -1,0 +1,318 @@
+<title>Autofill Comune</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banner di stato in alto, poi un form indirizzo a colonna singola con tendina
+   suggerimenti sotto il campo comune, poi un pannello dati grezzi per la verifica */
+:root {
+  --bg: #f4f2fa;
+  --surface: #ffffff;
+  --border: #ddd6ee;
+  --text: #241f33;
+  --text-muted: #6b6480;
+  --accent: #6849a7;
+  --accent-soft: #efeaf9;
+  --success: #2f8f58;
+  --success-soft: #e4f3ea;
+  --danger: #cc475a;
+  --danger-soft: #fbe8eb;
+  --font-display: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1724;
+    --surface: #241f33;
+    --border: #38324c;
+    --text: #ece9f7;
+    --text-muted: #9a93b5;
+    --accent: #a98ee8;
+    --accent-soft: #2e2747;
+    --success: #5cc98a;
+    --success-soft: #1f3327;
+    --danger: #e8798c;
+    --danger-soft: #3a2228;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1724;
+  --surface: #241f33;
+  --border: #38324c;
+  --text: #ece9f7;
+  --text-muted: #9a93b5;
+  --accent: #a98ee8;
+  --accent-soft: #2e2747;
+  --success: #5cc98a;
+  --success-soft: #1f3327;
+  --danger: #e8798c;
+  --danger-soft: #3a2228;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-display);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 48px;
+}
+
+.wrap { max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+h1 { font-size: 1.3rem; margin: 0; text-wrap: balance; }
+.subtitle { color: var(--text-muted); font-size: 0.88rem; margin: 4px 0 0; line-height: 1.5; }
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  border: 1px solid transparent;
+}
+.status[data-state="ok"] { background: var(--success-soft); color: var(--success); border-color: var(--success); }
+.status[data-state="fail"] { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); }
+.status[data-state="loading"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.status .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; flex: none; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+label { font-size: 0.78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; display: block; margin-bottom: 6px; }
+
+.field { position: relative; }
+input, select {
+  width: 100%;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+}
+input:focus, select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+input[readonly] { color: var(--text-muted); }
+
+.suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 10;
+}
+.suggestions button {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+.suggestions button:last-child { border-bottom: none; }
+.suggestions button:hover, .suggestions button:focus { background: var(--accent-soft); }
+.suggestions .cap-value { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-muted); flex: none; }
+
+.row { display: flex; gap: 12px; }
+.row > div { flex: 1; min-width: 0; }
+
+.confirmed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--success);
+  font-weight: 500;
+}
+.confirmed[hidden] { display: none; }
+
+details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
+pre {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.empty { color: var(--text-muted); font-size: 0.85rem; padding: 10px 12px; }
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Autofill Comune</h1>
+    <p class="subtitle">Mockup collegato davvero al database GoCare in locale — digita un comune o un CAP, scegli un risultato, verifica che provincia e CAP si riempiano da soli.</p>
+  </div>
+
+  <div class="status" data-state="loading" id="status">
+    <span class="dot"></span>
+    <span id="statusText">Verifico la connessione a localhost:5161…</span>
+  </div>
+
+  <div class="card">
+    <div class="field">
+      <label for="query">Comune o CAP</label>
+      <input id="query" type="text" placeholder="es. Perugia, Assisi, 06081..." autocomplete="off">
+      <div class="suggestions" id="suggestions" hidden></div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label for="provincia">Provincia</label>
+        <input id="provincia" type="text" readonly placeholder="—">
+      </div>
+      <div>
+        <label for="cap">CAP</label>
+        <input id="cap" type="text" placeholder="—">
+      </div>
+    </div>
+
+    <div class="confirmed" id="confirmed" hidden>
+      <span>✓</span>
+      <span id="confirmedText"></span>
+    </div>
+  </div>
+
+  <details>
+    <summary>Dati grezzi dell'ultima risposta (per verifica)</summary>
+    <pre id="rawData">Nessuna ricerca ancora eseguita.</pre>
+  </details>
+</div>
+
+<script>
+(function () {
+  const API_BASE = 'http://localhost:5161';
+  const queryInput = document.getElementById('query');
+  const suggestionsBox = document.getElementById('suggestions');
+  const provinciaInput = document.getElementById('provincia');
+  const capInput = document.getElementById('cap');
+  const confirmedBox = document.getElementById('confirmed');
+  const confirmedText = document.getElementById('confirmedText');
+  const statusBox = document.getElementById('status');
+  const statusText = document.getElementById('statusText');
+  const rawData = document.getElementById('rawData');
+
+  let debounceTimer = null;
+
+  function setStatus(state, text) {
+    statusBox.dataset.state = state;
+    statusText.textContent = text;
+  }
+
+  async function search(q) {
+    const response = await fetch(API_BASE + '/comuni/search?q=' + encodeURIComponent(q));
+    if (!response.ok) throw new Error('HTTP ' + response.status);
+    return response.json();
+  }
+
+  function renderSuggestions(results) {
+    suggestionsBox.innerHTML = '';
+
+    // Un comune con piu' CAP diventa una riga per CAP: la scelta del CAP si fa
+    // qui, nella stessa tendina, non in un secondo controllo separato.
+    const rows = [];
+    results.forEach(function (r) {
+      const caps = r.capCodes && r.capCodes.length ? r.capCodes : [null];
+      caps.forEach(function (cap) {
+        rows.push({ nomeComune: r.nomeComune, provincia: r.provincia, cap: cap });
+      });
+    });
+
+    if (rows.length === 0) {
+      suggestionsBox.innerHTML = '<div class="empty">Nessun comune trovato.</div>';
+      suggestionsBox.hidden = false;
+      return;
+    }
+
+    rows.forEach(function (row) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.innerHTML = '<span>' + row.nomeComune + ' (' + row.provincia + ')</span>' +
+        '<span class="cap-value">' + (row.cap || '—') + '</span>';
+      btn.addEventListener('click', function () { selectComune(row); });
+      suggestionsBox.appendChild(btn);
+    });
+    suggestionsBox.hidden = false;
+  }
+
+  function selectComune(row) {
+    queryInput.value = row.nomeComune;
+    provinciaInput.value = row.provincia;
+    capInput.value = row.cap || '';
+    suggestionsBox.hidden = true;
+
+    confirmedText.textContent = 'Comune confermato: provincia e CAP riempiti dal database, non scritti a mano.';
+    confirmedBox.hidden = false;
+  }
+
+  async function runSearch(q) {
+    try {
+      const results = await search(q);
+      rawData.textContent = JSON.stringify(results, null, 2);
+      renderSuggestions(results);
+      setStatus('ok', 'Connesso a ' + API_BASE);
+    } catch (err) {
+      setStatus('fail', 'Backend non raggiungibile su ' + API_BASE + ' — avvia il progetto in locale (dotnet run) e riprova.');
+      suggestionsBox.hidden = true;
+      rawData.textContent = 'Errore: ' + err.message;
+    }
+  }
+
+  queryInput.addEventListener('input', function () {
+    confirmedBox.hidden = true;
+    const q = queryInput.value.trim();
+    clearTimeout(debounceTimer);
+    if (q.length < 2) {
+      suggestionsBox.hidden = true;
+      return;
+    }
+    debounceTimer = setTimeout(function () { runSearch(q); }, 400);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!suggestionsBox.contains(e.target) && e.target !== queryInput) {
+      suggestionsBox.hidden = true;
+    }
+  });
+
+  // Stato iniziale: una ricerca di esempio, cosi' la pagina mostra subito dati reali
+  // e verifica la connessione senza che il viewer debba scrivere nulla.
+  queryInput.value = 'Perugia';
+  runSearch('Perugia');
+})();
+</script>

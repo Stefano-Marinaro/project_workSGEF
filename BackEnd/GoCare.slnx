@@ -2,4 +2,7 @@
   <Folder Name="/src/">
     <Project Path="src/GoCare/GoCare.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GoCare.Tests/GoCare.Tests.csproj" />
+  </Folder>
 </Solution>

@@ -76,6 +76,12 @@ builder.Services.AddScoped<AssistedPersonService>();
 builder.Services.AddScoped<GenerateCaregiverInviteLinkService>();
 builder.Services.AddScoped<GetCaregiverInvitePreviewService>();
 builder.Services.AddScoped<AcceptCaregiverInviteService>();
+builder.Services.AddScoped<SearchComuneService>(); // mockup di verifica, vedi SearchComuneService
+builder.Services.AddScoped<SearchAddressService>();
+builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(client =>
+{
+    client.DefaultRequestHeaders.Add("User-Agent", "GoCare/1.0 (progetto universitario)");
+});
 builder.Services.AddScoped<GetPersonProfileService>();
 builder.Services.AddScoped<UpdatePersonProfileService>();
 builder.Services.AddScoped<GetAssociationProfileService>();
