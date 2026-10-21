@@ -11,6 +11,7 @@ public sealed class ListAcceptedTransportsService(GoCareDbContext db)
     public async Task<List<AssociationTransportResponse>> ListAsync(Guid associationId, CancellationToken ct)
     {
         return await db.TransportRequests
+            .AsNoTracking()
             .Where(t => t.AssignedAssociationId == associationId
                 && (t.RequestStatus == ETripRequestStatus.Confirmed || t.RequestStatus == ETripRequestStatus.InProgress))
             .OrderBy(t => t.DepartureDateHour)
