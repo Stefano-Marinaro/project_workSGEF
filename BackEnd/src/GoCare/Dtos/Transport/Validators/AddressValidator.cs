@@ -1,13 +1,16 @@
 using FluentValidation;
 
+using GoCare.Data;
 using GoCare.Dtos.Transport.Requests;
 using GoCare.Models.Domain;
+
+using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Dtos.Transport.Validators;
 
 public sealed class AddressValidator : AbstractValidator<AddressRequest>
 {
-    public AddressValidator()
+    public AddressValidator(GoCareDbContext db)
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
@@ -32,5 +35,23 @@ public sealed class AddressValidator : AbstractValidator<AddressRequest>
         RuleFor(a => a.Province)
             .NotEmpty().WithMessage("La provincia è obbligatoria.")
             .Must(ItalianProvinces.IsValid).WithMessage("Sigla di provincia non valida.");
+
+        // Il comune deve esistere davvero, non solo avere il formato giusto: l'autocomplete
+        // lato frontend non basta, un client potrebbe mandare qualunque stringa.
+        RuleFor(a => a).MustAsync(async (address, ct) =>
+        {
+            var comune = await db.Comuni.SingleOrDefaultAsync(
+                c => c.NomeComune == address.City && c.Provincia == address.Province, ct);
+
+            if (comune is null)
+                return false;
+
+            // CapCodes vuoto = comune non ancora catalogato per il CAP: non blocchiamo,
+            // meglio accettare un CAP scritto a mano che rifiutare un comune valido.
+            if (comune.CapCodes.Count > 0 && !comune.CapCodes.Contains(address.PostalCode))
+                return false;
+
+            return true;
+        }).WithMessage("Comune, provincia o CAP non coerenti tra loro.");
     }
 }

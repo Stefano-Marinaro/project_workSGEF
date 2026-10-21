@@ -17,6 +17,7 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         DateOnly birthDate,
         string phone,
         Address? homeAddress,
+        string? note,
         CancellationToken ct)
     {
         var assistedPersonId = Guid.NewGuid();
@@ -27,7 +28,8 @@ public sealed class AssistedPersonService(GoCareDbContext db)
             birthDate,
             phone,
             homeAddress,
-            caregiverId);
+            caregiverId,
+            note);
 
         db.AssistedPeople.Add(assistedPerson);
         db.CaregiverAssistedLinks.Add(
@@ -114,6 +116,7 @@ public sealed class AssistedPersonService(GoCareDbContext db)
             assistedPerson.BirthDate,
             assistedPerson.Phone,
             ToAddressResponse(assistedPerson.HomeAddress),
+            assistedPerson.Note,
             caregivers,
             trips.Select(ToTripResponse).ToList());
     }
@@ -126,10 +129,11 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         DateOnly birthDate,
         string phone,
         Address? homeAddress,
+        string? note,
         CancellationToken ct)
     {
         var assistedPerson = await FindAccessibleAsync(caregiverId, assistedPersonId, tracked: true, ct);
-        assistedPerson.Update(name, surname, birthDate, phone, homeAddress);
+        assistedPerson.Update(name, surname, birthDate, phone, homeAddress, note);
         await db.SaveChangesAsync(ct);
     }
 

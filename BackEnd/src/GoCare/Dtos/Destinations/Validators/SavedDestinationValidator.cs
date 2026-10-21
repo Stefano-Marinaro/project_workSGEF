@@ -1,5 +1,6 @@
 using FluentValidation;
 
+using GoCare.Data;
 using GoCare.Dtos.Destinations.Requests;
 using GoCare.Dtos.Transport.Validators;
 
@@ -7,7 +8,7 @@ namespace GoCare.Dtos.Destinations.Validators;
 
 public sealed class SavedDestinationValidator : AbstractValidator<SavedDestinationRequest>
 {
-    public SavedDestinationValidator()
+    public SavedDestinationValidator(GoCareDbContext db)
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
@@ -17,7 +18,7 @@ public sealed class SavedDestinationValidator : AbstractValidator<SavedDestinati
 
         RuleFor(x => x.SavedAddress)
             .NotNull()
-            .SetValidator(new AddressValidator());
+            .SetValidator(new AddressValidator(db));
 
         RuleFor(x => x.Note)
             .MaximumLength(255);

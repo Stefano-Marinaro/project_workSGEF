@@ -29,6 +29,7 @@ public sealed class UpdateAssistedController(AssistedPersonService assistedPeopl
             request.BirthDate,
             request.Phone,
             request.HomeAddress?.ToAddress(),
+            request.Note,
             ct);
 
         return NoContent();

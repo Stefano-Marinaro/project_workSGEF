@@ -1,4 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
+﻿using System.Buffers.Text;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -48,6 +49,6 @@ public sealed class TokenService(IOptions<JwtOptions> jwtOptions)
     public string GenerateRefreshTokenValue()
     {
         var bytes = RandomNumberGenerator.GetBytes(64);
-        return Convert.ToBase64String(bytes);
+        return Base64Url.EncodeToString(bytes);
     }
 }

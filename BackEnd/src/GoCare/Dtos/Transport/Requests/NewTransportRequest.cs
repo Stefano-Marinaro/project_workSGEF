@@ -12,5 +12,5 @@ public sealed record NewTransportRequest(
     AddressRequest EndAddress,
     AddressRequest? ReturnEndAddress,
     string ReferencePhone,
-    string ReferenceEmail,
+    string? ReferenceEmail,
     IReadOnlyList<CompanionRequest>? Companions);

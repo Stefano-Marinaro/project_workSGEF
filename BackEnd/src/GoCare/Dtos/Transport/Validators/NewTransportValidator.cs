@@ -1,5 +1,6 @@
 using FluentValidation;
 
+using GoCare.Data;
 using GoCare.Dtos.Transport.Requests;
 using GoCare.Models.Enums;
 
@@ -7,7 +8,7 @@ namespace GoCare.Dtos.Transport.Validators;
 
 public class NewTransportValidator : AbstractValidator<NewTransportRequest>
 {
-    public NewTransportValidator()
+    public NewTransportValidator(GoCareDbContext db)
     {
         RuleLevelCascadeMode = CascadeMode.Stop;
 
@@ -19,6 +20,13 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
 
         RuleFor(t => t.TripDirection)
             .IsInEnum();
+
+        // stessa regola di TransportRequest.EnsureScheduleConsistency, qui per rispondere 422 invece di 500
+        When(t => t.TripType == ETripType.Hospitalization || t.TripType == ETripType.Discharge, () =>
+        {
+            RuleFor(t => t.TripDirection)
+                .Equal(ETripDirection.OneWay).WithMessage("Ricovero e Dimissione ammettono solo un viaggio di sola andata/ritorno (OneWay), non Andata e ritorno.");
+        });
 
         RuleFor(t => t.DepartureDateHour)
             .GreaterThan(_ => DateTimeOffset.UtcNow).WithMessage("La partenza deve essere nel futuro.");
@@ -40,15 +48,15 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
 
         RuleFor(t => t.StartAddress)
             .NotNull().WithMessage("L'indirizzo di partenza è obbligatorio.")
-            .SetValidator(new AddressValidator());
+            .SetValidator(new AddressValidator(db));
 
         RuleFor(t => t.EndAddress)
             .NotNull().WithMessage("L'indirizzo di destinazione è obbligatorio.")
-            .SetValidator(new AddressValidator());
+            .SetValidator(new AddressValidator(db));
 
         // facoltativo: se assente il ritorno è verso l'indirizzo di partenza
         RuleFor(t => t.ReturnEndAddress)
-            .SetValidator(new AddressValidator()!)
+            .SetValidator(new AddressValidator(db)!)
             .When(t => t.ReturnEndAddress is not null);
 
         RuleFor(t => t.ReferencePhone)
@@ -57,9 +65,9 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
             .Matches(@"^\+?[0-9][0-9 ()\-]{5,}$").WithMessage("Il numero di telefono non è valido.");
 
         RuleFor(t => t.ReferenceEmail)
-            .NotEmpty().WithMessage("L'email di riferimento è obbligatoria.")
             .MaximumLength(255)
-            .EmailAddress().WithMessage("L'email di riferimento non è valida.");
+            .EmailAddress().WithMessage("L'email di riferimento non è valida.")
+            .When(t => !string.IsNullOrEmpty(t.ReferenceEmail));
 
         RuleForEach(t => t.Companions)
             .SetValidator(new CompanionValidator());

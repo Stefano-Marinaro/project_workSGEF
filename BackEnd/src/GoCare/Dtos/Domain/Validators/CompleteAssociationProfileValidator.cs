@@ -1,4 +1,5 @@
 using FluentValidation;
+using GoCare.Data;
 using GoCare.Dtos.Domain.Requests;
 using GoCare.Dtos.Transport.Validators;
 using GoCare.Models.Domain;
@@ -8,7 +9,7 @@ namespace GoCare.Dtos.Domain.Validators;
 public sealed class CompleteAssociationProfileValidator
     : AbstractValidator<CompleteAssociationProfileRequest>
 {
-    public CompleteAssociationProfileValidator()
+    public CompleteAssociationProfileValidator(GoCareDbContext db)
     {
         RuleFor(x => x.Name)
             .NotEmpty()
@@ -16,7 +17,7 @@ public sealed class CompleteAssociationProfileValidator
 
         RuleFor(x => x.Headquarter)
             .NotNull()
-            .SetValidator(new AddressValidator());
+            .SetValidator(new AddressValidator(db));
 
         RuleFor(x => x.Phones)
             .NotEmpty()

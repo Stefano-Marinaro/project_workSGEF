@@ -1,5 +1,6 @@
 using FluentValidation;
 
+using GoCare.Data;
 using GoCare.Dtos.Domain.Requests;
 using GoCare.Dtos.Transport.Validators;
 
@@ -7,7 +8,7 @@ namespace GoCare.Dtos.Transport.Validators;
 
 public sealed class UpdatePersonProfileValidator : AbstractValidator<UpdatePersonProfileRequest>
 {
-    public UpdatePersonProfileValidator()
+    public UpdatePersonProfileValidator(GoCareDbContext db)
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(100);
         RuleFor(x => x.Surname).NotEmpty().MaximumLength(100);
@@ -19,7 +20,7 @@ public sealed class UpdatePersonProfileValidator : AbstractValidator<UpdatePerso
         RuleFor(x => x.Phone).NotEmpty().MaximumLength(32);
 
         RuleFor(x => x.HomeAddress!)
-        .SetValidator(new AddressValidator())
+        .SetValidator(new AddressValidator(db))
         .When(x => x.HomeAddress is not null);
     }
 }

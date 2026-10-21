@@ -2,7 +2,6 @@
 
 public enum ETripDirection
 {
-    OnlyGo, // andata
-    OnlyReturn, //ritorno
+    OneWay, // sola andata o solo ritorno: la direzione fisica è già data da StartAddress/EndAddress
     RoundTrip, //andata e ritorno
 }

@@ -2,14 +2,14 @@ import { StyleSheet } from 'react-native'
 import ThemedView from '../../components/ThemedView'
 import ThemedText from '../../components/ThemedText'
 
-const Group = () => (
+const Notifications = () => (
 	<ThemedView style={styles.container} safe={true}>
-		<ThemedText title={true}>Gruppo di cura</ThemedText>
-		<ThemedText>La gestione dei gruppi sarà disponibile prossimamente.</ThemedText>
+		<ThemedText title={true}>Notifiche</ThemedText>
+		<ThemedText>L'elenco delle notifiche sarà disponibile prossimamente.</ThemedText>
 	</ThemedView>
 )
 
-export default Group
+export default Notifications
 
 const styles = StyleSheet.create({
 	container: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
