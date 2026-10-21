@@ -11,7 +11,7 @@ public sealed class ListPendingRequestsService(GoCareDbContext db)
 {
     public async Task<List<AssociationTransportResponse>> ListAsync(Guid associationId, CancellationToken ct)
     {
-        return await db.TransportRequests
+        return await db.TransportRequests.AsNoTracking()
             .Where(t => t.RequestStatus == ETripRequestStatus.Pending
                 // sono fra le candidate di QUESTA richiesta
                 && db.TransportRequestCandidates.Any(c => c.TransportRequestId == t.Id && c.AssociationId == associationId)
