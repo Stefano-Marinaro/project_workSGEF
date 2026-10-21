@@ -185,10 +185,13 @@ builder.Services.AddSwaggerGen(options =>           // genera il documento OpenA
 var app = builder.Build();                          // costruisce l'app: il contenitore DI si congela
 
 // --- Migrazioni EF Core: applicate automaticamente all'avvio (crea le tabelle se non esistono).
+// --- Subito dopo, i comuni ISTAT vengono importati se la tabella è ancora vuota (vedi ComuniSeeder):
+// un collega che clona il progetto li ha già, senza rifare a mano l'import.
 using (var migrationScope = app.Services.CreateScope())
 {
     var db = migrationScope.ServiceProvider.GetRequiredService<GoCareDbContext>();
     db.Database.Migrate();
+    await GoCare.Data.ComuniSeeder.SeedAsync(db, AppContext.BaseDirectory, CancellationToken.None);
 }
 
 app.UseExceptionHandler();                          // 1o middleware: cattura le eccezioni non gestite -> GlobalExceptionHandler -> ProblemDetails

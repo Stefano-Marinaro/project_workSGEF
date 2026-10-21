@@ -26,4 +26,12 @@
     <Folder Include="Data\Migrations\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Dati di seed dei comuni ISTAT: deve stare nell'output di build, non solo nel sorgente,
+         perche' ComuniSeeder lo legge da AppContext.BaseDirectory a runtime. -->
+    <None Include="Data\Seed\comuni.csv">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
