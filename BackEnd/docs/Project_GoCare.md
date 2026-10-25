@@ -293,7 +293,7 @@ Il tipo di viaggio determina il valore di default della direzione nel form dell'
 - Il rifiuto di una singola associazione non è uno stato della richiesta: la richiesta resta "in attesa" e visibile alle altre associazioni destinatarie. L'esito negativo aggregato è sempre "non coperta".
 - Ogni evento genera una sola notifica, con i canali (push, e-mail) combinati sulla stessa voce: il centro notifiche non mostra righe duplicate per lo stesso evento.
 - Gli indirizzi sono strutturati (via, civico, CAP, città, provincia) e vengono copiati sulla richiesta al momento della creazione: modificare o eliminare una destinazione salvata non altera i viaggi già registrati.
-- L'instradamento delle richieste avviene per comune: ogni associazione dichiara i comuni coperti e riceve solo le richieste con partenza in uno di essi (confronto con la città dell'indirizzo di partenza).
+- L'instradamento delle richieste avviene per comune, non per provincia: ogni associazione dichiara l'elenco esplicito dei comuni che copre (il proprio e quelli limitrofi in cui è disposta a operare) e riceve solo le richieste con partenza in uno di essi. I comuni si scelgono dall'elenco ufficiale ISTAT e sono identificati dal codice ISTAT; il comune di partenza si ricava dall'indirizzo di partenza (città e provincia) della richiesta (vedi PA-03).
 - Il pagamento del trasporto avviene tramite Stripe (pagina di pagamento ospitata da Stripe, esito confermato al backend via webhook). I contatti dell'associazione assegnataria diventano visibili al caregiver solo dopo l'avvenuto pagamento (CG-31).
 - Le associazioni non si registrano autonomamente: sono associazioni partner registrate, modificate ed eliminate dall'amministratore GoCare (UC 11). La verifica dell'ente avviene fuori dalla piattaforma, prima della registrazione.
 - Autenticazione e dominio vivono nello stesso database; l'account e il profilo caregiver sono due entità distinte che **condividono lo stesso identificatore**, con una foreign key reale fra loro (`Person.Id`/`Association.Id` → `Account.Id`, `OnDelete(Cascade)`). L'assistito non ha invece un account e non ha identificatore condiviso, perché non fa mai login. In v0 ogni caregiver di dominio ha esattamente un account: non si opera con caregiver non registrati.
@@ -356,7 +356,7 @@ BACKEND:
 - Validazione dati e form.
 - Creazione della richiesta in stato "in attesa", con doppio riferimento a richiedente (il caregiver) e beneficiario (l'assistito).
 - Copia sulla richiesta degli indirizzi (via, civico, CAP, città, provincia) e dei contatti di riferimento: sono uno scatto al momento della richiesta e non seguono le modifiche successive dell'anagrafica.
-- Congelamento della lista delle associazioni destinatarie: al momento della creazione vengono selezionate le associazioni partner attive che coprono il comune di partenza, e l'elenco resta immutabile per tutta la vita della richiesta.
+- Congelamento della lista delle associazioni destinatarie: al momento della creazione vengono selezionate le associazioni partner attive il cui elenco di comuni coperti contiene il comune di partenza, e l'elenco resta immutabile per tutta la vita della richiesta.
 - Invio della notifica di nuova richiesta alle associazioni destinatarie (UC 4.7).
 
 **1.2 Come caregiver voglio poter registrare il prossimo trasporto del mio assistito. (CG-14)**
@@ -810,13 +810,14 @@ FRONTEND:
 
 - Pagina informazioni associazione in sola lettura: denominazione, sede, comuni coperti, recapiti telefonici, e-mail, orari di reperibilità.
 - Pagina di modifica delle informazioni, con form precompilato e pop-up di conferma.
-- I comuni coperti si gestiscono come elenco, con aggiunta e rimozione delle singole voci.
+- I comuni coperti si gestiscono come elenco, con aggiunta e rimozione delle singole voci. Ogni comune si aggiunge cercandolo per nome con l'autocompletamento sull'elenco ufficiale dei comuni (nome e sigla della provincia, per distinguere i comuni omonimi): non si scrive testo libero.
 - Anteprima di come i contatti vengono visti dagli utenti (UC 5.2).
 
 BACKEND:
 
 - Lettura e aggiornamento dei dati dell'associazione autenticata: denominazione, sede (indirizzo strutturato, obbligatoria), elenco dei telefoni, una e-mail, orari di reperibilità facoltativi, elenco dei comuni coperti.
 - Validazione dei recapiti (almeno un telefono e una e-mail obbligatori, perché esposti agli utenti) e di almeno un comune coperto, perché da esso dipende l'instradamento delle richieste.
+- I comuni coperti sono identificati dal codice ISTAT: ogni codice deve esistere nell'elenco ufficiale dei comuni, i duplicati vengono rifiutati. In lettura il backend restituisce per ogni comune codice, nome e sigla della provincia.
 - La modifica dei contatti si riflette immediatamente sui viaggi in carico.
 - La modifica dei comuni coperti vale per le richieste future: le liste di destinatari già congelate non vengono ricalcolate.
 
@@ -983,7 +984,7 @@ FRONTEND:
 
 BACKEND:
 
-- Validazione dei dati con le stesse regole dell'UC 8.4 (almeno un telefono, una e-mail, almeno un comune coperto); controllo di unicità dell'e-mail.
+- Validazione dei dati con le stesse regole dell'UC 8.4 (almeno un telefono, una e-mail, almeno un comune coperto e valido secondo l'elenco ISTAT); controllo di unicità dell'e-mail.
 - Creazione nello stesso passaggio dell'account (ruolo associazione) e del profilo associazione con lo stesso identificatore.
 - L'account nasce senza password: viene inviata all'associazione un'e-mail di invito con un token monouso a scadenza per impostarla (stesso meccanismo del reset password). Impostata la password, l'account è attivo e l'e-mail è considerata verificata.
 - Da quel momento l'associazione entra nelle liste di destinatari delle nuove richieste che partono da uno dei suoi comuni.
@@ -1051,7 +1052,7 @@ _[DA VALIDARE] Va confermato il perimetro del "ripristino": in particolare se in
 FRONTEND:
 
 - Pagina principale dell'amministratore: elenco delle associazioni partner con denominazione, comuni coperti, stato dell'account (invito in attesa, attivo, eliminato) e numero di trasporti in carico.
-- Ricerca per denominazione e filtri per stato e comune.
+- Ricerca per denominazione e filtri per stato e comune coperto (selezionato con l'autocompletamento sull'elenco ufficiale dei comuni).
 - Dettaglio dell'associazione: dati e contatti, stato dell'account, trasporti in carico e storico, accesso alle sezioni 11.2, 11.3 e 11.4.
 
 BACKEND:
@@ -1280,7 +1281,7 @@ Casi alternativi:
 4. Seleziona la destinazione dalla lista delle destinazioni salvate oppure ne inserisce una nuova; in questo secondo caso il sistema chiede se salvarla per il futuro. Se il ritorno è verso un indirizzo diverso da quello di partenza, lo indica come terzo indirizzo.
 5. Indica i contatti di riferimento.
 6. Il sistema valida i dati e la coerenza fra direzione, orari e indirizzi, copia gli indirizzi e i contatti sulla richiesta e la crea in stato "in attesa".
-7. Il sistema calcola le associazioni destinatarie, cioè le associazioni partner attive che coprono il comune di partenza, e congela l'elenco sulla richiesta.
+7. Il sistema ricava il comune di partenza dall'indirizzo di partenza, calcola le associazioni destinatarie, cioè le associazioni partner attive che includono quel comune fra i propri comuni coperti, e congela l'elenco sulla richiesta.
 8. Il sistema invia la notifica di nuova richiesta alle associazioni destinatarie (UC 4.9).
 9. La richiesta compare nella dashboard /associazione/richieste di ciascuna destinataria, con i relativi filtri.
 10. Un'associazione apre il dettaglio e accetta: la richiesta passa in stato "confermata" e le viene assegnata l'associazione.
@@ -1419,7 +1420,18 @@ Problema: La dashboard dell'UC 6 mostra "tutte le richieste di trasporto dei car
 
 Opzione consigliata: Introdurre un'area di operatività nel profilo dell'associazione (UC 8.5) e mostrare a ciascuna associazione solo le richieste con partenza entro la propria area. In fase di test, con poche associazioni pilota, la regola può essere disattivata; senza di essa, però, il prodotto non è scalabile oltre una singola città.
 
-Decisione: l'area di operatività è definita per **comune**. L'associazione dichiara un elenco di comuni coperti, confrontato con il comune (città) dell'indirizzo di partenza; l'elenco delle destinatarie viene congelato sulla richiesta alla creazione. Il modello dati attuale usa ancora le province (`CoveredProvinces`) e va adeguato.
+Decisione (rivista con il docente): l'area di operatività è definita per **comune**, non per provincia. La provincia si è rivelata troppo ampia: un'associazione con sede ad Assisi non opera su tutta la provincia di Perugia, ma sul proprio comune e su quelli limitrofi.
+
+Regole:
+
+- L'associazione dichiara un **elenco esplicito** di comuni coperti: il proprio e quelli limitrofi in cui è disposta a operare. Esempio: un'associazione di Assisi può coprire Assisi, Bastia Umbra, Perugia, Foligno e Valfabbrica; una richiesta con partenza da uno di questi comuni le arriva, una con partenza da Spoleto no.
+- Non c'è un calcolo automatico per distanza o per confini: la scelta resta all'associazione (o all'amministratore, UC 11.1 e 11.2), che conosce il proprio territorio e i propri mezzi.
+- I comuni si scelgono dall'elenco ufficiale ISTAT già presente nella piattaforma e sono identificati dal **codice ISTAT** (ad esempio Assisi `054001`), non dal nome: il nome non è univoco (esistono comuni omonimi in province diverse) e può essere scritto in modi diversi.
+- Il comune di partenza della richiesta si ricava dall'indirizzo di partenza (città e sigla della provincia), già validato contro lo stesso elenco ufficiale.
+- L'elenco delle destinatarie viene congelato sulla richiesta alla creazione: modificare i comuni coperti vale solo per le richieste future.
+- Nessuna associazione copre il comune di partenza → la richiesta nasce senza destinatarie ed è "non coperta" (12.4).
+
+Stato in v0: decisione presa; il modello dati usa ancora le province (`CoveredProvinces`) ed è in corso di adeguamento. Il dettaglio tecnico (tabella dei comuni coperti, contratto delle API, migrazione dei dati esistenti) è in `RECAP_BACKEND.md`, §5.
 
 ## PA-04 Esposizione dei dati di contatto dell'assistito all'associazione
 
