@@ -7,7 +7,7 @@ public sealed record AssociationProfileResponse(
     string? Name,
     Address? Headquarter,
     List<string>? Phones,
-    List<string>? CoveredProvinces,
+    List<CoveredComuneResponse> CoveredComuni,
     string? AvailabilityHours,
     string Email,
     EAccreditationStatus Status);

@@ -6,4 +6,4 @@ public sealed record CompleteAssociationProfileRequest(
     string Name,
     AddressRequest Headquarter,
     List<string> Phones,
-    List<string> CoveredProvinces);
+    List<string> CoveredComuni);

@@ -12,13 +12,24 @@ namespace GoCare.Tests.Services.Transport;
 
 public class CreateTransportServiceTests
 {
-    private static GoCareDbContext NewDb() =>
-        new(new DbContextOptionsBuilder<GoCareDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options);
+    // database in memoria con i soli comuni usati dai test
+private static GoCareDbContext NewDb()
+{
+    var db = new GoCareDbContext(new DbContextOptionsBuilder<GoCareDbContext>()
+        .UseInMemoryDatabase(Guid.NewGuid().ToString())
+        .Options);
 
-    private static Address AddressIn(string province) =>
-        new("Via Test", "1", "06100", "Perugia", province);
+    db.Comuni.AddRange(
+        new Comune(Guid.NewGuid(), "054039", "Perugia", "PG"),
+        new Comune(Guid.NewGuid(), "054001", "Assisi", "PG"),
+        new Comune(Guid.NewGuid(), "058091", "Roma", "RM"));
+    db.SaveChanges();
+
+    return db;
+}
+
+private static Address AddressIn(string province) =>
+    new("Via Test", "1", "06100", province == "RM" ? "Roma" : "Perugia", province);
 
     [Fact]
     public async Task Throws_WhenCaregiverIsNotLinkedToBeneficiary()
@@ -136,7 +147,7 @@ public class CreateTransportServiceTests
     }
 
     [Fact]
-    public async Task IncludesAssociation_WhenAccreditedAndCoversStartProvince()
+    public async Task IncludesAssociation_WhenAccreditedAndCoversStartComune()
     {
         using var db = NewDb();
         var caregiverId = Guid.NewGuid();
@@ -144,7 +155,7 @@ public class CreateTransportServiceTests
         var associationId = Guid.NewGuid();
 
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
-        db.Associations.Add(MakeAssociation(associationId, EAccreditationStatus.Accredited, deleted: false, provinces: ["PG"]));
+        db.Associations.Add(MakeAssociation(db, associationId, EAccreditationStatus.Accredited, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
         var service = new CreateTransportService(db);
@@ -167,7 +178,7 @@ public class CreateTransportServiceTests
         var beneficiaryId = Guid.NewGuid();
 
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
-        db.Associations.Add(MakeAssociation(Guid.NewGuid(), EAccreditationStatus.Pending, deleted: false, provinces: ["PG"]));
+        db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Pending, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
         var service = new CreateTransportService(db);
@@ -189,7 +200,7 @@ public class CreateTransportServiceTests
         var beneficiaryId = Guid.NewGuid();
 
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
-        db.Associations.Add(MakeAssociation(Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: true, provinces: ["PG"]));
+        db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: true, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
         var service = new CreateTransportService(db);
@@ -204,14 +215,14 @@ public class CreateTransportServiceTests
     }
 
     [Fact]
-    public async Task ExcludesAssociation_WhenProvinceNotCovered()
+    public async Task ExcludesAssociation_WhenComuneNotCovered()
     {
         using var db = NewDb();
         var caregiverId = Guid.NewGuid();
         var beneficiaryId = Guid.NewGuid();
 
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
-        db.Associations.Add(MakeAssociation(Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, provinces: ["MI"]));
+        db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, comuni: ["054001"]));
         await db.SaveChangesAsync();
 
         var service = new CreateTransportService(db);
@@ -234,7 +245,7 @@ public class CreateTransportServiceTests
 
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
         // coopre la provincia di ARRIVO (PG), non quella di PARTENZA (RM): non deve diventare candidata.
-        db.Associations.Add(MakeAssociation(Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, provinces: ["PG"]));
+        db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
         var service = new CreateTransportService(db);
@@ -249,10 +260,14 @@ public class CreateTransportServiceTests
         Assert.Empty(candidates);
     }
 
-    private static Association MakeAssociation(Guid id, EAccreditationStatus status, bool deleted, List<string> provinces)
-    {
-        var association = new Association(id, $"{id}@associazione.test");
-        association.CompleteProfile("Associazione Test", AddressIn("PG"), ["0751234567"], provinces);
+private static Association MakeAssociation(GoCareDbContext db, Guid id, EAccreditationStatus status, bool deleted, List<string> comuni)
+{
+    var association = new Association(id, $"{id}@associazione.test");
+    association.CompleteProfile("Associazione Test", AddressIn("PG"), ["0751234567"]);
+
+    // i comuni coperti stanno nella tabella ponte
+    foreach (var codice in comuni)
+        db.AssociationCoveredComuni.Add(new AssociationCoveredComune(id, codice));
 
         if (status == EAccreditationStatus.Accredited)
             association.Accredit();

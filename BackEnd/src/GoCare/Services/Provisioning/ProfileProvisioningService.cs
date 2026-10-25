@@ -2,7 +2,7 @@ using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Models.Domain;
 using GoCare.Models.Enums;
-
+using GoCare.Services.Profile;
 using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Services.Provisioning;
@@ -37,7 +37,8 @@ public sealed class ProfileProvisioningService(GoCareDbContext db)
         var association = await db.Associations.SingleOrDefaultAsync(a => a.Id == accountId, ct)
             ?? throw new NotFoundException("Profilo associazione non trovato.");
 
-        association.CompleteProfile(data.Name, data.Headquarter, data.Phones, data.CoveredProvinces);
+        association.CompleteProfile(data.Name, data.Headquarter, data.Phones);
+        await CoveredComuniWriter.ReplaceAsync(db, association.Id, data.CoveredComuni, ct);
         await db.SaveChangesAsync(ct);
     }
 

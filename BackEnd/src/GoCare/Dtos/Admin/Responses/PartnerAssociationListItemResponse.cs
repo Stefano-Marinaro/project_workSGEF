@@ -1,4 +1,5 @@
 using GoCare.Models.Enums;
+using GoCare.Dtos.Domain.Responses;
 
 namespace GoCare.Dtos.Admin.Responses;
 
@@ -7,6 +8,6 @@ public sealed record PartnerAssociationListItemResponse(
     Guid Id,
     string? Name,
     string Email,
-    List<string>? CoveredProvinces,
+    List<CoveredComuneResponse> CoveredComuni,
     EAccountStatus AccountStatus,
     int ActiveTransports);

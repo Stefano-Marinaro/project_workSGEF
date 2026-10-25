@@ -48,14 +48,20 @@ public sealed class CreateTransportService(GoCareDbContext db)
         foreach (var c in companion)
             db.Companions.Add(new Companion(Guid.NewGuid(), transportId, c.Name, c.Surname, c.Relationship, c.Phone));
 
-        //ASSOCIAZIONI CANDIDATE
-        var candidateAssociationIds = await db.Associations
-         .Where(a => a.Status == EAccreditationStatus.Accredited //l'associazione deve essere accreditata
-                  && a.DeletedAt == null //non deve eseere cancellata
-                  && a.CoveredProvinces != null //deve coprire le province
-                  && a.CoveredProvinces.Contains(startAddress.Province)) //tra le province coperte deve esserci quella di partenza, CoveredProvinces è una lista di stringhe salvata come primitive collection
-         .Select(a => a.Id)
-         .ToListAsync(ct);
+            //ASSOCIAZIONI CANDIDATE
+            // codice ISTAT del comune di partenza (AddressValidator ha già verificato che esista)
+            var startCodiceIstat = await db.Comuni
+                .Where(c => c.NomeComune == startAddress.City && c.Provincia == startAddress.Province)
+                .Select(c => c.CodiceIstat)
+                .SingleAsync(ct);
+
+            // associazioni attive che hanno quel comune fra i propri comuni coperti
+            var candidateAssociationIds = await db.Associations
+                .Where(a => a.Status == EAccreditationStatus.Accredited
+                        && a.DeletedAt == null
+                        && db.AssociationCoveredComuni.Any(c => c.AssociationId == a.Id && c.ComuneCodiceIstat == startCodiceIstat))
+                .Select(a => a.Id)
+                .ToListAsync(ct);
 
         // Per ogni associazione trovata registra una riga TransportRequestCandidate, permetterà a ciascuna associazione di vedere l'elenco delle richieste pendenti nella propria zona
         foreach (var associationId in candidateAssociationIds)

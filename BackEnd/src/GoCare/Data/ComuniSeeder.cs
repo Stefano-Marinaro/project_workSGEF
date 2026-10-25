@@ -1,20 +1,22 @@
 using GoCare.Models.Domain;
 
-using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore; 
 
 namespace GoCare.Data;
 
 // Importa i comuni ISTAT (nome, codice, provincia, CAP) da un CSV committato nel repo,
 // cosi' che un collega che clona il progetto li abbia gia' senza rifare a mano tutto
 // il lavoro di import fatto una volta sola (vedi RECAP_BACKEND.md per i dettagli).
-public static class ComuniSeeder
+public static class ComuniSeeder //static non permette la creazione dell'oggetto new ComuniSeeder()
 {
     public static async Task SeedAsync(GoCareDbContext db, string contentRootPath, CancellationToken ct)
     {
         if (await db.Comuni.AnyAsync(ct))
             return; // gia' popolata, non reimportare
 
-        var csvPath = Path.Combine(contentRootPath, "Data", "Seed", "comuni.csv");
+        //Path.Combine costruisce il percorso con il separatore giusto per OS (/ o \)
+        //contentRootPath è la cartella di BUILD di AppContext.BaseDirectory non dei file sorgenti, perciò nel project vi è CopytoOutputDirectory con il quale il CSV è copitato lì e il seeder lo trova
+        var csvPath = Path.Combine(contentRootPath, "Data", "Seed", "comuni.csv"); 
         if (!File.Exists(csvPath))
             return; // file assente (es. ambiente senza il seed): non blocchiamo l'avvio
 
@@ -32,7 +34,7 @@ public static class ComuniSeeder
                 continue;
 
             var capCodes = parts[3].Length == 0
-                ? []
+                ? [] //[] è collection expression che equivale a new List<string>()
                 : parts[3].Split(';').ToList();
 
             var comune = new Comune(Guid.NewGuid(), parts[0], parts[1], parts[2]);

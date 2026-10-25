@@ -18,9 +18,9 @@ public sealed class ListPartnerAssociationsController(ListPartnerAssociationsSer
         // [FromQuery] è un attributo che dice a ASP.Net Core da dove prendere il valore di un parametro dal metodo del controller
         [FromQuery] string? search,
         [FromQuery] EAccountStatus? status,
-        [FromQuery] string? province,
+        [FromQuery] string? comune,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
         CancellationToken ct = default) =>
-        Ok(await service.ListAsync(search, status, province, new PageQuery(page, pageSize), ct));
+        Ok(await service.ListAsync(search, status, comune, new PageQuery(page, pageSize), ct));
 }

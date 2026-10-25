@@ -2,6 +2,7 @@
 
 > Stato del codice al commit `ce6ca9e` (merge PR #25, `PUT /association/profile`), 19/10/2026.
 > Aggiornato dopo la revisione di `Project_GoCare.md` (UC 11 Amministrazione, pagamento Stripe, comuni coperti, registrazione associazioni solo da admin).
+> Aggiornato il 25/10/2026: instradamento delle richieste per **comuni coperti** al posto delle province (§5); fix di `DeleteTransport` risolti (§4).
 > Per chi prende in mano il backend (Stefano e Giorgia). Dove questo documento e `PIANO_BACKEND_GoCare.md` non coincidono, vale questo: il piano non è stato aggiornato dopo l'avvio dei controller di dominio (lì risultano ancora "da fare" endpoint che esistono già).
 
 ---
@@ -80,7 +81,7 @@ Mappatura errori (`Errors/GlobalExceptionHandler.cs`):
 - `TransportRequest` ha due "assi" di stato:
   - **stato della richiesta** `ETripRequestStatus`: `Pending → Confirmed → InProgress → Completed`, più i terminali `NotCovered` e `Cancelled`;
   - **stato di esecuzione** `ETripTransitionStatus` (log append-only in `TripStatusTransition`): `Pending → InCharge → Arriving → OnSite → Returning → Completed`, con `Suspended` per gli imprevisti.
-- **Creazione** (`CreateTransportService`): controlla che il caregiver sia collegato all'assistito, salva richiesta + accompagnatori, calcola i **candidati** = associazioni `Accredited` la cui lista `CoveredProvinces` contiene la provincia di partenza (`TransportRequestCandidate`). ⚠️ Con il nuovo documento il confronto va fatto sui **comuni** (città di partenza) e gli accompagnatori (UC 1.4) sono stati tolti: vedi §3.3.
+- **Creazione** (`CreateTransportService`): controlla che il caregiver sia collegato all'assistito, salva richiesta + accompagnatori, calcola i **candidati** = associazioni `Accredited` la cui lista `CoveredProvinces` contiene la provincia di partenza (`TransportRequestCandidate`). ⚠️ Decisione cambiata: il confronto va fatto sui **comuni coperti** (codice ISTAT del comune di partenza), vedi §5; gli accompagnatori (UC 1.4) sono stati tolti, vedi §3.3.
 - **Accettazione** (`AcceptTransportRequestService`): l'associazione deve essere candidata e la richiesta `Pending`; se due associazioni accettano insieme, la seconda riceve `DbUpdateConcurrencyException` → 409 (colonna di sistema Postgres `xmin` come token di concorrenza). Poi notifica il caregiver (push + email).
 - **Link operatore** (`GenerateOperatorLinkService`): l'associazione assegnataria genera un token che scade a `DepartureDateHour + 24h`; l'URL restituito è `Frontend:OperatorUrl/{token}`. L'operatore non ha account: userà il link per aggiornare lo stato (endpoint **ancora da scrivere**, vedi §3).
 - **Notifiche** (`NotificationDispatcher`): salva sempre la `Notification`, poi invia sui canali richiesti; se manca l'email o non ci sono device registrati quel canale viene saltato.
@@ -195,7 +196,7 @@ Tutte con `[Authorize(Roles = nameof(EAccountRole.Admin))]`, tranne `set-passwor
 |---|---|
 | `POST /auth/register/association` | Le associazioni non si registrano più da sole (UC 10.1 solo caregiver). Rimuovere controller, service, request e validator. |
 | `POST /admin/associations/{id}/accredit` · `reject` | PA-05 superato: un'associazione registrata dall'admin è subito operativa. Rimuovere i due controller e `AccreditAssociationAsync`/`RejectAssociationAsync`; valutare se eliminare `EAccreditationStatus` e il filtro `Status == Accredited` in `CreateTransportService` (sostituendolo con `DeletedAt == null`). |
-| `CoveredProvinces` → comuni coperti | Instradamento per comune (PA-03 deciso): rinominare la colonna (es. `CoveredMunicipalities`), confrontarla con `StartAddress.City`, aggiornare validator, DTO e migrazione. |
+| `CoveredProvinces` → comuni coperti | Instradamento per comune (PA-03 deciso): specifica completa in §5. |
 | Accompagnatori (`Companion`) | UC 1.4 rimossa: togliere `Companions` da `NewTransportRequest`, `CreateTransportService` e dalle risposte; decidere se eliminare tabella ed entità con una migrazione. |
 | Pagamento | Nuova entità/colonne (stato pagamento, importo, id Stripe, `PaidAt`) su `TransportRequest`; `TripDetailService` deve restituire i contatti dell'associazione solo se il viaggio è pagato. Configurazione `StripeOptions` (chiave segreta, secret del webhook) fuori dal repo. Importo e destinatario dei fondi ancora aperti (PA-07). |
 
@@ -203,7 +204,191 @@ Tutte con `[Authorize(Roles = nameof(EAccountRole.Admin))]`, tranne `set-passwor
 
 ## 4. Problemi trovati nel codice attuale
 
-1. **`DeleteTransportController` non ha `[Authorize]`** (`Controllers/TransportRequest/DeleteTransportController.cs`): una chiamata senza token arriva al controller, `User.FindFirstValue("sub")!` è `null` e `Guid.Parse` lancia un'eccezione → **500 invece di 401**. Va aggiunto `[Authorize(Roles = nameof(EAccountRole.Person))]` come negli altri controller dei trasporti (e corretto il refuso `DeleteTranasport`).
+1. ✅ **Risolto** (commit `29192fa`). **`DeleteTransportController` non aveva `[Authorize]`** (`Controllers/TransportRequest/DeleteTransportController.cs`): una chiamata senza token arriva al controller, `User.FindFirstValue("sub")!` è `null` e `Guid.Parse` lancia un'eccezione → **500 invece di 401**. Va aggiunto `[Authorize(Roles = nameof(EAccountRole.Person))]` come negli altri controller dei trasporti (e corretto il refuso `DeleteTranasport`).
 2. **Doppio endpoint per il profilo**: esistono sia `PATCH` (completamento, `ProfilesController`) sia `PUT` (aggiornamento) su `/me/profile` e `/association/profile`. Conviene decidere quale usa il frontend e togliere l'altro.
-3. **Annullamento caregiver**: `DeleteTransportService` usa `ForbiddenException` (403) quando lo stato non permette l'annullamento; semanticamente sarebbe un `ConflictException` (409).
+3. ✅ **Risolto** (commit `b127e88`). **Annullamento caregiver**: `DeleteTransportService` usava `ForbiddenException` (403) quando lo stato non permette l'annullamento; ora `ConflictException` (409).
+5. ✅ **Risolto** (commit `8c8ca8a`). Le liste che proiettano indirizzi owned (`StartAddress`, `EndAddress`, `SavedAddress`) andavano in 500 (*tracking query … owned entity without owner*): aggiunto `AsNoTracking()`. Regola per le nuove query di sola lettura: sempre `AsNoTracking()`.
 4. **Accreditamento**: superato dalla nuova decisione (le associazioni le registra l'admin, PA-05 superato). Il codice di accreditamento va rimosso, vedi §3.3.
+
+---
+
+## 5. Instradamento per comuni coperti (al posto delle province)
+
+### 5.1 La decisione
+
+Dopo la revisione con il docente l'area di operatività di un'associazione non è più la **provincia** ma un **elenco esplicito di comuni** (`Project_GoCare.md`, PA-03 e §6). La provincia è troppo ampia: un'associazione di Assisi non opera su tutta la provincia di Perugia, ma sul proprio comune e su quelli limitrofi.
+
+Esempio: l'associazione di Assisi copre Assisi, Bastia Umbra, Perugia, Foligno e Valfabbrica.
+
+| Richiesta con partenza da… | Arriva all'associazione di Assisi? |
+|---|---|
+| Bastia Umbra (`054002`) | ✅ sì |
+| Perugia (`054039`) | ✅ sì |
+| Spoleto (`054051`) | ❌ no: non è nel suo elenco |
+
+Regole:
+
+- l'elenco è **scelto dall'associazione** (o dall'admin): nessun calcolo automatico per distanza o per confini;
+- i comuni sono identificati dal **codice ISTAT** (tabella `comuni`, già popolata da `ComuniSeeder` all'avvio), non dal nome: il nome non è univoco (comuni omonimi in province diverse) e si può scrivere in modi diversi (accenti, apostrofi, maiuscole);
+- il comune di partenza si ricava dall'indirizzo di partenza (`City` + `Province`), che `AddressValidator` già verifica contro la tabella `comuni`;
+- i candidati restano **congelati** alla creazione (`transport_request_candidates`): cambiare i comuni coperti vale solo per le richieste future;
+- almeno un comune coperto è obbligatorio (UC 8.4, 11.1).
+
+### 5.2 Modello dati
+
+Si sostituisce la colonna `associations.covered_provinces` (`text[]`) con una **tabella ponte** associazione ↔ comune:
+
+```text
+association_covered_comuni
+  association_id      uuid         PK (1/2), FK → associations.id   ON DELETE CASCADE
+  comune_codice_istat varchar(10)  PK (2/2), FK → comuni.codice_istat
+  index (comune_codice_istat)      -- per l'instradamento: "chi copre questo comune?"
+```
+
+Perché una tabella e non un array di codici:
+
+- **integrità**: la FK verso `comuni` impedisce di salvare un codice inesistente;
+- **instradamento e filtri**: la ricerca "associazioni che coprono il comune X" usa l'indice su `comune_codice_istat`, sia in `CreateTransportService` sia nel filtro della lista admin;
+- **lettura**: per mostrare nome e provincia di ogni comune basta un `JOIN` con `comuni`.
+
+Perché la FK punta a `codice_istat` e non a `comuni.id`: `ComuniSeeder` genera `comuni.id` con `Guid.NewGuid()`, quindi lo stesso comune ha un id diverso in ogni database (locale di ognuno, Docker, produzione). Il codice ISTAT invece è stabile ovunque ed è già **univoco** (`HasIndex(c => c.CodiceIstat).IsUnique()`), quindi può fare da chiave alternativa (`HasPrincipalKey(c => c.CodiceIstat)` in EF Core).
+
+Nel dominio:
+
+```csharp
+// Models/Domain/AssociationCoveredComune.cs — entità della tabella ponte
+public sealed class AssociationCoveredComune
+{
+    private AssociationCoveredComune() { }
+    public AssociationCoveredComune(Guid associationId, string comuneCodiceIstat)
+    {
+        AssociationId = associationId;
+        ComuneCodiceIstat = comuneCodiceIstat;
+    }
+
+    public Guid AssociationId { get; }
+    public string ComuneCodiceIstat { get; } = null!;
+}
+```
+
+- `Association`: togliere `CoveredProvinces`; `IsProfileComplete` controlla che esista almeno un comune coperto. I metodi `CompleteProfile`/`UpdateProfile` non ricevono più la lista: l'elenco si sostituisce nel service (cancella le righe dell'associazione, inserisce le nuove) nella stessa `SaveChangesAsync`.
+- Come per le altre tabelle ponte del progetto (`caregiver_assisted_links`, `transport_request_candidates`) non servono proprietà di navigazione: la relazione si dichiara nel `DbContext` con `HasOne<Association>().WithMany()` e `HasOne<Comune>().WithMany().HasForeignKey(x => x.ComuneCodiceIstat).HasPrincipalKey(c => c.CodiceIstat)`.
+- Togliere l'indice `ix_transport_requests_start_address_province`: non serve più all'instradamento.
+
+### 5.3 Contratto delle API
+
+Le API parlano **solo di codici ISTAT** in scrittura; in lettura restituiscono anche nome e provincia, per il frontend.
+
+**Scrittura** — `PUT /association/profile`, `PATCH /association/profile`, in futuro `POST /admin/associations` (#12) e `PUT /admin/associations/{id}` (#16):
+
+```json
+{
+  "name": "Croce Bianca Assisi",
+  "headquarter": { "street": "Via Roma", "number": "1", "postalCode": "06081", "city": "Assisi", "province": "PG" },
+  "phones": ["+39 075 1234567"],
+  "coveredComuni": ["054001", "054002", "054039", "054018", "054057"],
+  "availabilityHours": "Lun-Ven 8-18"
+}
+```
+
+Validazione (`UpdateAssociationProfileValidator`, `CompleteAssociationProfileValidator`):
+
+| Regola | Messaggio |
+|---|---|
+| `coveredComuni` non vuoto | "Inserire almeno un comune coperto." |
+| ogni codice: 6 cifre | "Codice ISTAT non valido." |
+| nessun duplicato | "Comune ripetuto." |
+| ogni codice esiste in `comuni` (validator asincrono, come in `AddressValidator`) | "Comune non trovato." |
+
+**Lettura** — `GET /association/profile` (`AssociationProfileResponse`) e `GET /admin/associations` (`PartnerAssociationListItemResponse`): `CoveredProvinces` diventa
+
+```json
+"coveredComuni": [
+  { "codiceIstat": "054001", "nome": "Assisi", "provincia": "PG" },
+  { "codiceIstat": "054002", "nome": "Bastia Umbra", "provincia": "PG" }
+]
+```
+
+ordinati per nome.
+
+**Filtro admin** — `GET /admin/associations`: il parametro `?province=` diventa `?comune=054001` (codice ISTAT): associazioni che coprono quel comune.
+
+**Autocompletamento** — il frontend sceglie i comuni con `GET /comuni/search?q=...`, che quindi passa da "controller temporaneo" a endpoint vero:
+
+- aggiungere `[Authorize]` (qualsiasi utente autenticato);
+- aggiungere `codiceIstat` a `ComuneSuggestion`: senza, il frontend non ha il valore da inviare in `coveredComuni`.
+
+### 5.4 Instradamento in `CreateTransportService`
+
+Prima:
+
+```csharp
+.Where(a => a.Status == EAccreditationStatus.Accredited && a.DeletedAt == null
+         && a.CoveredProvinces != null && a.CoveredProvinces.Contains(startAddress.Province))
+```
+
+Dopo, in due passi:
+
+1. ricavare il codice ISTAT del comune di partenza da `comuni` con `NomeComune == startAddress.City && Provincia == startAddress.Province` (lo stesso confronto di `AddressValidator`, che garantisce già che il comune esista);
+2. candidati = associazioni attive con una riga in `association_covered_comuni` per quel codice:
+
+```csharp
+.Where(a => a.Status == EAccreditationStatus.Accredited && a.DeletedAt == null
+         && db.AssociationCoveredComuni.Any(c => c.AssociationId == a.Id && c.ComuneCodiceIstat == startCodiceIstat))
+```
+
+Il filtro su `Status == Accredited` resta finché non si chiude l'accreditamento (§3.3, PA-05).
+
+### 5.5 Migrazione
+
+Una migrazione unica (es. `CoveredComuniInsteadOfProvinces`):
+
+1. crea `association_covered_comuni` con PK composta, FK e indice;
+2. **converte i dati esistenti**, per non perdere la copertura delle associazioni già configurate: ogni provincia coperta diventa l'elenco di tutti i comuni di quella provincia. In `Up()`, prima di togliere la colonna:
+
+   ```sql
+   INSERT INTO association_covered_comuni (association_id, comune_codice_istat)
+   SELECT a.id, c.codice_istat
+   FROM associations a
+   CROSS JOIN LATERAL unnest(a.covered_provinces) AS p(sigla)
+   JOIN comuni c ON c.provincia = p.sigla
+   ON CONFLICT DO NOTHING;
+   ```
+
+   È un punto di partenza "largo": ogni associazione poi restringe l'elenco ai comuni che copre davvero. Su un database nuovo la query non inserisce nulla (`comuni` viene popolata da `ComuniSeeder` *dopo* le migrazioni), ed è corretto così: non ci sono ancora associazioni;
+3. elimina la colonna `covered_provinces` e l'indice su `start_address_province`;
+4. `Down()`: ricrea `covered_provinces` (ricostruendola con le sigle distinte delle province dei comuni coperti) ed elimina la tabella.
+
+Le righe di `transport_request_candidates` già create **non si toccano**: sono la lista congelata delle richieste esistenti.
+
+### 5.6 File da toccare (checklist)
+
+| Area | File |
+|---|---|
+| Dominio | `Models/Domain/Association.cs`, nuovo `Models/Domain/AssociationCoveredComune.cs` |
+| Database | `Data/GoCareDbContext.cs` (nuovo `DbSet`, configurazione con `HasPrincipalKey`, rimozione indice provincia), nuova migrazione |
+| DTO | `Dtos/Domain/Requests/CompleteAssociationProfileRequest.cs`, `UpdateAssociationProfileRequest.cs`; `Dtos/Domain/Responses/AssociationProfileResponse.cs`; `Dtos/Admin/Responses/PartnerAssociationListItemResponse.cs`; nuovo `CoveredComuneResponse(CodiceIstat, Nome, Provincia)` |
+| Validator | `Dtos/Domain/Validators/CompleteAssociationProfileValidator.cs`, `UpdateAssociationProfileValidator.cs` |
+| Service | `Services/Profile/UpdateAssociationProfileService.cs`, `GetAssociationProfileService.cs`; `Services/Provisioning/ProfileProvisioningService.cs` + `AssociationProfileData.cs`; `Services/Transport/CreateTransportService.cs`; `Services/Admin/ListPartnerAssociationService.cs`; `Services/Domain/SearchComuneService.cs` |
+| Controller | `Controllers/Profile/UpdateAssociationProfileController.cs`, `Controllers/Domain/ProfilesController.cs`, `Controllers/Admin/ListPartnerAssociationController.cs` (`province` → `comune`), `Controllers/Domain/SearchComuneController.cs` (`[Authorize]`) |
+| Frontend | form profilo associazione e form admin: selezione multipla con autocompletamento al posto delle sigle di provincia |
+
+### 5.7 Test
+
+Con due associazioni come nella guida dell'API #1, ma con comuni al posto delle province:
+
+| Associazione | `coveredComuni` |
+|---|---|
+| A | Assisi `054001`, Bastia Umbra `054002`, Perugia `054039` |
+| B | Spoleto `054051` |
+
+| Caso | Atteso |
+|---|---|
+| Trasporto con partenza da Perugia | candidata solo **A** (`transport_request_candidates`, `GET /association/requests`) |
+| Trasporto con partenza da Spoleto | candidata solo **B** |
+| Trasporto con partenza da Foligno | nessuna candidata → la richiesta non arriva a nessuno |
+| `PUT /association/profile` con `coveredComuni: []` | **422** "Inserire almeno un comune coperto." |
+| `PUT /association/profile` con `"999999"` | **422** "Comune non trovato." |
+| A aggiunge Foligno, poi nuovo trasporto da Foligno | candidata **A**; il trasporto precedente da Foligno resta senza candidate (lista congelata) |
+| `GET /admin/associations?comune=054039` | solo **A** |
+| `GET /comuni/search?q=assi` senza token | **401** |

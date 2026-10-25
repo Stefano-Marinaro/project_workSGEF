@@ -1,5 +1,7 @@
 # GoCare — schema logico (DBML per dbdiagram.io)
 
+> ⚠️ **Documento in parte superato.** Oggi il database è uno solo (`gocare`) e alcune tabelle qui sotto (`care_groups`, `care_group_memberships`, `transport_modification_requests`) non esistono più. Per lo stato reale fa fede il codice (`Data/GoCareDbContext.cs`, snapshot delle migrazioni) e `RECAP_BACKEND.md`. Aggiornato il 25/10/2026 solo per la copertura per **comuni** (tabelle `comuni` e `association_covered_comuni`, `RECAP_BACKEND.md` §5).
+
 Allineato allo schema reale generato dalle migrazioni EF applicate
 (`Initial` su `gocare_business`, `InitialAuth` su `gocare_auth`), non a una bozza.
 
@@ -199,7 +201,6 @@ Table associations {
   email varchar(255) [not null]
   availability_hours varchar(200)
   status e_accreditation_status [not null, default: 'Pending']
-  covered_provinces "text[]" [not null, note: 'PA-05: instradamento richieste per provincia']
   deleted_at timestamptz
 }
 
@@ -279,8 +280,30 @@ Table transport_requests {
   deleted_at timestamptz
 
   Indexes {
-    start_address_province
     request_status
+  }
+}
+
+Table comuni {
+  id uuid [pk, note: 'generato dal seed: diverso in ogni database, non usarlo come riferimento esterno']
+  codice_istat varchar(10) [unique, not null, note: 'chiave stabile del comune, es. 054001 = Assisi']
+  nome_comune varchar(120) [not null]
+  provincia varchar(120) [not null, note: 'sigla, es. PG']
+  cap_codes "text[]" [not null]
+
+  Indexes {
+    nome_comune
+  }
+}
+
+Table association_covered_comuni {
+  association_id uuid [not null]
+  comune_codice_istat varchar(10) [not null]
+  Note: 'PA-03: area di operatività = elenco esplicito di comuni (sostituisce associations.covered_provinces)'
+
+  Indexes {
+    (association_id, comune_codice_istat) [pk]
+    comune_codice_istat
   }
 }
 
@@ -385,6 +408,8 @@ Ref: transport_requests.requested_by_id > persons.id
 Ref: transport_requests.beneficiary_id > persons.id
 Ref: transport_requests.care_group_id > care_groups.id
 Ref: transport_requests.assigned_association_id > associations.id
+Ref: association_covered_comuni.association_id > associations.id [delete: cascade]
+Ref: association_covered_comuni.comune_codice_istat > comuni.codice_istat
 Ref: transport_request_candidates.transport_request_id > transport_requests.id
 Ref: transport_request_candidates.association_id > associations.id
 Ref: transport_request_rejections.transport_request_id > transport_requests.id
@@ -416,6 +441,8 @@ TableGroup gocare_auth {
 TableGroup gocare_business {
   persons
   associations
+  comuni
+  association_covered_comuni
   care_groups
   care_group_memberships
   saved_destinations
