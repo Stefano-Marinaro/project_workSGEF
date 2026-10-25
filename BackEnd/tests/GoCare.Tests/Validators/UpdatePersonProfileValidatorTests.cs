@@ -2,13 +2,18 @@ using FluentValidation.TestHelper;
 using GoCare.Dtos.Domain.Requests;
 using GoCare.Dtos.Transport.Validators;
 using Xunit;
+using GoCare.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Tests.Validators;
 
 public class UpdatePersonProfileValidatorTests
 {
-    private readonly UpdatePersonProfileValidator _validator = new();
-
+    // il validator ora riceve il DbContext (serve ad AddressValidator); qui basta uno in memoria vuoto
+    private readonly UpdatePersonProfileValidator _validator = new(
+        new GoCareDbContext(new DbContextOptionsBuilder<GoCareDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options));
     [Fact]
     public void Should_have_error_when_name_is_empty()
     {

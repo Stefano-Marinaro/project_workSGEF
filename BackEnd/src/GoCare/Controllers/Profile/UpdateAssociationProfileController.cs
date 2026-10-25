@@ -26,7 +26,7 @@ public sealed class UpdateAssociationProfileController(UpdateAssociationProfileS
             request.Name,
             request.Headquarter.ToAddress(),
             request.Phones,
-            request.CoveredProvinces,
+            request.CoveredComuni,
             request.AvailabilityHours,
             ct);
 

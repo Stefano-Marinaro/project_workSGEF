@@ -24,20 +24,19 @@ public sealed class Association
     public string? AvailabilityHours { get; private set; }
     public EAccreditationStatus Status { get; private set; } = EAccreditationStatus.Pending;
     public DateTimeOffset? DeletedAt { get; private set; }
-    public List<string>? CoveredProvinces { get; private set; }
+   
 
     public bool IsProfileComplete =>
-        Name is not null && Headquarter is not null && Phones is not null && CoveredProvinces is not null;
+        Name is not null && Headquarter is not null && Phones is not null;
 
     public bool CanOperate =>
         IsProfileComplete && Status is EAccreditationStatus.Accredited;
 
-    public void CompleteProfile(string name, Address headquarter, List<string> phones, List<string> coveredProvinces)
+    public void CompleteProfile(string name, Address headquarter, List<string> phones)
     {
         Name = name;
         Headquarter = headquarter;
         Phones = phones;
-        CoveredProvinces = coveredProvinces;
     }
 
     // Modifica completa del profilo (PUT). Lo stato di accreditamento non si tocca qui:
@@ -46,13 +45,11 @@ public sealed class Association
         string name,
         Address headquarter,
         List<string> phones,
-        List<string> coveredProvinces,
         string? availabilityHours)
     {
         Name = name;
         Headquarter = headquarter;
         Phones = phones;
-        CoveredProvinces = coveredProvinces;
         AvailabilityHours = availabilityHours;
     }
 

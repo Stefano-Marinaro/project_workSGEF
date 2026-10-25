@@ -14,11 +14,19 @@ public sealed class GetAssociationProfileService(GoCareDbContext db)
             .SingleOrDefaultAsync(a => a.Id == accountId && a.DeletedAt == null, ct)
             ?? throw new NotFoundException("Profilo associazione non trovato.");
 
+        var coveredComuni = await (
+            from c in db.AssociationCoveredComuni
+            join comune in db.Comuni on c.ComuneCodiceIstat equals comune.CodiceIstat
+            where c.AssociationId == accountId
+            orderby comune.NomeComune
+            select new CoveredComuneResponse(comune.CodiceIstat, comune.NomeComune, comune.Provincia))
+            .ToListAsync(ct);
+
         return new AssociationProfileResponse(
             association.Name,
             association.Headquarter,
             association.Phones,
-            association.CoveredProvinces,
+            coveredComuni,
             association.AvailabilityHours,
             association.Email,
             association.Status);

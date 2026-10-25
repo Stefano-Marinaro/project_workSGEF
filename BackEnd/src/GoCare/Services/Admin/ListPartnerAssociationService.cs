@@ -2,6 +2,7 @@ using GoCare.Data;
 using GoCare.Dtos.Admin.Responses;
 using GoCare.Models.Enums;
 using GoCare.Pagination;
+using GoCare.Dtos.Domain.Responses;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -10,7 +11,7 @@ namespace GoCare.Services.Admin;
 public sealed class ListPartnerAssociationsService(GoCareDbContext db)
 {
     public async Task<PagedResult<PartnerAssociationListItemResponse>> ListAsync(
-        string? search, EAccountStatus? status, string? province, PageQuery page, CancellationToken ct)
+        string? search, EAccountStatus? status, string? comune, PageQuery page, CancellationToken ct)
     {
         // associazione e account hanno lo stesso Id: li uniamo per leggere email e stato dell'account
         var query =
@@ -25,9 +26,9 @@ public sealed class ListPartnerAssociationsService(GoCareDbContext db)
         if (status is not null)
             query = query.Where(x => x.acc.Status == status);
 
-        if (!string.IsNullOrWhiteSpace(province))
-            query = query.Where(x => x.a.CoveredProvinces != null && x.a.CoveredProvinces.Contains(province.ToUpperInvariant()));
-
+        if (!string.IsNullOrWhiteSpace(comune))
+            query = query.Where(x => db.AssociationCoveredComuni
+                .Any(c => c.AssociationId == x.a.Id && c.ComuneCodiceIstat == comune));
         var total = await query.CountAsync(ct);
 
         var items = await query
@@ -35,7 +36,13 @@ public sealed class ListPartnerAssociationsService(GoCareDbContext db)
             .Skip(page.Skip)
             .Take(page.PageSize)
             .Select(x => new PartnerAssociationListItemResponse(
-                x.a.Id, x.a.Name, x.acc.Email, x.a.CoveredProvinces, x.acc.Status,
+                x.a.Id, x.a.Name, x.acc.Email,
+                (from c in db.AssociationCoveredComuni
+                join co in db.Comuni on c.ComuneCodiceIstat equals co.CodiceIstat
+                where c.AssociationId == x.a.Id
+                orderby co.NomeComune
+                select new CoveredComuneResponse(co.CodiceIstat, co.NomeComune, co.Provincia)).ToList(),
+                x.acc.Status,
                 // in carico = assegnati a lei e non ancora conclusi
                 db.TransportRequests.Count(t => t.AssignedAssociationId == x.a.Id
                     && (t.RequestStatus == ETripRequestStatus.Confirmed || t.RequestStatus == ETripRequestStatus.InProgress))))

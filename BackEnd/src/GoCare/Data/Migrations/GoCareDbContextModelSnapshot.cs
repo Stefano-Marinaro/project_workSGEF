@@ -336,10 +336,6 @@ namespace GoCare.Data.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("availability_hours");
 
-                    b.PrimitiveCollection<List<string>>("CoveredProvinces")
-                        .HasColumnType("text[]")
-                        .HasColumnName("covered_provinces");
-
                     b.Property<DateTimeOffset?>("DeletedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("deleted_at");
@@ -368,6 +364,26 @@ namespace GoCare.Data.Migrations
                         .HasName("pk_associations");
 
                     b.ToTable("associations", (string)null);
+                });
+
+            modelBuilder.Entity("GoCare.Models.Domain.AssociationCoveredComune", b =>
+                {
+                    b.Property<Guid>("AssociationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("association_id");
+
+                    b.Property<string>("ComuneCodiceIstat")
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("comune_codice_istat");
+
+                    b.HasKey("AssociationId", "ComuneCodiceIstat")
+                        .HasName("pk_association_covered_comuni");
+
+                    b.HasIndex("ComuneCodiceIstat")
+                        .HasDatabaseName("ix_association_covered_comuni_comune_codice_istat");
+
+                    b.ToTable("association_covered_comuni", (string)null);
                 });
 
             modelBuilder.Entity("GoCare.Models.Domain.CaregiverAssistedLink", b =>
@@ -514,6 +530,9 @@ namespace GoCare.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_comuni");
+
+                    b.HasAlternateKey("CodiceIstat")
+                        .HasName("ak_comuni_codice_istat");
 
                     b.HasIndex("CodiceIstat")
                         .IsUnique()
@@ -1129,6 +1148,24 @@ namespace GoCare.Data.Migrations
                     b.Navigation("Headquarter");
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.AssociationCoveredComune", b =>
+                {
+                    b.HasOne("GoCare.Models.Domain.Association", null)
+                        .WithMany()
+                        .HasForeignKey("AssociationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_association_covered_comuni_associations_association_id");
+
+                    b.HasOne("GoCare.Models.Domain.Comune", null)
+                        .WithMany()
+                        .HasForeignKey("ComuneCodiceIstat")
+                        .HasPrincipalKey("CodiceIstat")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_association_covered_comuni_comuni_comune_codice_istat");
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.CaregiverAssistedLink", b =>
                 {
                     b.HasOne("GoCare.Models.Domain.AssistedPerson", null)
@@ -1454,9 +1491,6 @@ namespace GoCare.Data.Migrations
                                 .HasColumnName("start_address_street");
 
                             b1.HasKey("TransportRequestId");
-
-                            b1.HasIndex("Province")
-                                .HasDatabaseName("ix_transport_requests_start_address_province");
 
                             b1.ToTable("transport_requests");
 
