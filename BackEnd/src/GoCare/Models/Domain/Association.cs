@@ -73,4 +73,13 @@ public sealed class Association
     {
         Email = newEmail;
     }
+
+    // soft delete: la riga resta per lo storico dei trasporti
+    public void MarkDeleted(DateTimeOffset at)
+    {
+        if (DeletedAt is not null)
+            throw new InvalidOperationException("L'associazione è già stata eliminata.");
+
+        DeletedAt = at;
+    }
 }
