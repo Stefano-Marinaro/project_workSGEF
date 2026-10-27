@@ -73,6 +73,7 @@ builder.Services.AddScoped<GetTripExecutionStatusService>();
 builder.Services.AddScoped<AdvanceTripStatusService>();
 builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<AcceptTransportRequestService>();
+builder.Services.AddScoped<CancelAcceptedTransportService>();
 builder.Services.AddScoped<IPushSender, ConsolePushSender>();
 builder.Services.AddScoped<AssistedPersonService>();
 builder.Services.AddScoped<GenerateCaregiverInviteLinkService>();

@@ -80,6 +80,17 @@ public sealed class TransportRequest
         AcceptedAt = at;
     }
 
+    // disdetta dell'associazione dopo l'accettazione: la richiesta torna in attesa, senza associazione assegnata
+    public void ReleaseByAssociation()
+    {
+        if (RequestStatus != ETripRequestStatus.Confirmed)
+            throw new InvalidOperationException("Si può disdire solo un trasporto confermato e non ancora iniziato.");
+
+        RequestStatus = ETripRequestStatus.Pending;
+        AssignedAssociationId = null;
+        AcceptedAt = null;
+    }
+
     public void ChangeSchedule(DateTimeOffset newDepartureDateHour, DateTimeOffset? newReturnDateHour)
     {
         EnsureScheduleConsistency(newDepartureDateHour, newReturnDateHour, ReturnEndAddress);
