@@ -13,15 +13,15 @@ public sealed class UpdateAssociationProfileService(GoCareDbContext db)
         string name,
         Address headquarter,
         List<string> phones,
-        List<string> coveredProvinces,
+        List<string> coveredComuni,
         string? availabilityHours,
         CancellationToken ct)
     {
         var association = await db.Associations.SingleOrDefaultAsync(a => a.Id == accountId && a.DeletedAt == null, ct)
             ?? throw new NotFoundException("Profilo associazione non trovato.");
 
-        association.UpdateProfile(name, headquarter, phones, coveredProvinces, availabilityHours);
-
+        association.UpdateProfile(name, headquarter, phones, availabilityHours);
+        await CoveredComuniWriter.ReplaceAsync(db, association.Id, coveredComuni, ct);
         await db.SaveChangesAsync(ct);
     }
 }

@@ -3,7 +3,7 @@ using FluentValidation;
 using GoCare.Data;
 using GoCare.Dtos.Domain.Requests;
 using GoCare.Dtos.Transport.Validators;
-using GoCare.Models.Domain;
+using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Dtos.Domain.Validators;
 
@@ -27,13 +27,23 @@ public sealed class UpdateAssociationProfileValidator : AbstractValidator<Update
             .NotEmpty()
             .MaximumLength(32);
 
-        RuleFor(x => x.CoveredProvinces)
+        RuleFor(x => x.CoveredComuni)
             .NotEmpty()
-            .WithMessage("Inserire almeno una provincia coperta.");
+            .WithMessage("Inserire almeno un comune coperto.");
 
-        RuleForEach(x => x.CoveredProvinces)
-            .Must(ItalianProvinces.IsValid)
-            .WithMessage("Sigla di provincia non valida.");
+        RuleForEach(x => x.CoveredComuni)
+            .Matches(@"^\d{6}$")
+            .WithMessage("Codice ISTAT non valido.");
+
+        RuleFor(x => x.CoveredComuni)
+            .Cascade(CascadeMode.Stop)   // al primo errore si ferma: con duplicati non serve controllare l'esistenza
+            .Must(codes => codes.Distinct().Count() == codes.Count).WithMessage("Comune ripetuto.")
+            .WithMessage("Comune ripetuto.")
+            // tutti i codici devono esistere nella tabella comuni: una sola query per tutta la lista
+            .MustAsync(async (codes, ct) =>
+                await db.Comuni.CountAsync(c => codes.Contains(c.CodiceIstat), ct) == codes.Count)
+            .WithMessage("Comune non trovato.")
+            .When(x => x.CoveredComuni is { Count: > 0 });
 
         RuleFor(x => x.AvailabilityHours)
             .MaximumLength(500)

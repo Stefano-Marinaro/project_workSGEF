@@ -45,7 +45,7 @@ public sealed class ProfilesController(
                 request.Name,
                 request.Headquarter.ToAddress(),
                 request.Phones,
-                request.CoveredProvinces),
+                request.CoveredComuni),
             ct);
 
         return NoContent();

@@ -18,6 +18,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
     // Transports
     public DbSet<Person> Persons => Set<Person>();
     public DbSet<Association> Associations => Set<Association>();
+    public DbSet<AssociationCoveredComune> AssociationCoveredComuni => Set<AssociationCoveredComune>(); //gestione dei comuni
     public DbSet<AssistedPerson> AssistedPeople => Set<AssistedPerson>();
     public DbSet<CaregiverAssistedLink> CaregiverAssistedLinks => Set<CaregiverAssistedLink>();
     public DbSet<SavedDestination> SavedDestinations => Set<SavedDestination>();
@@ -248,6 +249,25 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
             comune.HasIndex(c => c.NomeComune); // ricerca per nome durante l'autofill
         });
 
+        modelBuilder.Entity<AssociationCoveredComune>(covered =>
+        {
+            covered.HasKey(c => new { c.AssociationId, c.ComuneCodiceIstat });   // PK composta: un comune una volta sola per associazione
+            covered.Property(c => c.ComuneCodiceIstat).HasMaxLength(10);
+
+            covered.HasOne<Association>()
+                .WithMany() //cardinalotà 1 a molti
+                .HasForeignKey(c => c.AssociationId)
+                .OnDelete(DeleteBehavior.Cascade);  // eliminata l'associazione, spariscono i suoi comuni
+
+            covered.HasOne<Comune>()
+                .WithMany()
+                .HasForeignKey(c => c.ComuneCodiceIstat)
+                .HasPrincipalKey(c => c.CodiceIstat)  // FK verso codice_istat, non verso comuni.id
+                .OnDelete(DeleteBehavior.Restrict);
+
+            covered.HasIndex(c => c.ComuneCodiceIstat);  // instradamento: "chi copre questo comune?"
+        });
+
         #endregion
 
         #region "TRANSPORT"
@@ -280,8 +300,6 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
-
-                addr.HasIndex(ad => ad.Province); // indice perchè sarà frequente nelle query filtrare per provincia di provenienza. Quindi velocizzerà
             });
 
             transportReq.OwnsOne(t => t.EndAddress, addr =>

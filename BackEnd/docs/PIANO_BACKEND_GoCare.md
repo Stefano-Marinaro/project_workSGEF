@@ -204,7 +204,7 @@ POST /transports
 
 **Area dominio:**
 - `Person` — `Id` (= `Account.Id`), `Name?`, `Surname?`, `BirthDate?` (`DateOnly?`), `Email`, `Phone?`, `HomeAddress?` (owned type), `DeletedAt`, `AnonymizedAt`. Campi profilo nullable: popolati da `CompleteProfile(...)` dopo la registrazione minima (email+password).
-- `Association` — `Id` (= `Account.Id`), `Name?`, `Headquarter?` (owned type), `Phones?` (`List<string>`), `Email`, `AvailabilityHours?`, `Status` (`EAccreditationStatus`: Pending | Accredited | Rejected), `DeletedAt`, `CoveredProvinces?` (`List<string>`, PA-03). Stessi campi profilo nullable + `CompleteProfile(...)` di `Person`.
+- `Association` — `Id` (= `Account.Id`), `Name?`, `Headquarter?` (owned type), `Phones?` (`List<string>`), `Email`, `AvailabilityHours?`, `Status` (`EAccreditationStatus`: Pending | Accredited | Rejected), `DeletedAt`; comuni coperti nella tabella ponte `AssociationCoveredComune` (`AssociationId`, `ComuneCodiceIstat`, PA-03 — sostituisce `CoveredProvinces`). Stessi campi profilo nullable + `CompleteProfile(...)` di `Person`.
 - `AssistedPerson` — `Id`, `Name`, `Surname`, `BirthDate`, `Phone`, `HomeAddress?`, `CreatedBy` (`Person.Id` del caregiver che l'ha creato), `DeletedAt`, `AnonymizedAt`. Nessun account, nessun login.
 - `CaregiverAssistedLink` — chiave primaria composta (`CaregiverId`, `AssistedPersonId`), nessun `Id` surrogato. `CreatedAt`, `DeletedAt?`. Collegamento **sempre diretto e subito attivo in v0** (nessuna accettazione richiesta, anche per un secondo caregiver) — il flusso di invito con consenso è pianificato per v1 (vedi `Project_GoCare.md` §14).
 - `SavedDestination` — `Id`, `PersonId`, `PlaceName`, `SavedAddress` (owned type), `Note?`.
@@ -295,7 +295,7 @@ Tutti i Validator FluentValidation corrispondenti sono scritti **e registrati** 
   - Verifica che il beneficiario (`AssistedPerson`) sia collegato al caregiver chiamante (`CaregiverAssistedLink`).
   - Copia indirizzi sulla richiesta (il costruttore di `TransportRequest` valida da solo la coerenza direzione↔orari); salva accompagnatori.
   - Se destinazione nuova e confermata → crea `SavedDestination`.
-  - Crea `TransportRequest` `Pending` + `TransportRequestCandidate` per area (PA-03: associazioni accreditate con `CoveredProvinces` che contiene la provincia di partenza).
+  - Crea `TransportRequest` `Pending` + `TransportRequestCandidate` per area (PA-03: associazioni accreditate che includono il comune di partenza fra i propri comuni coperti, tabella `association_covered_comuni` — vedi `RECAP_BACKEND.md` §5).
   - Notifica "nuova richiesta" alle associazioni candidate.
 
 ### UC 3 – Annulla trasporto
@@ -334,7 +334,7 @@ Tutti i Validator FluentValidation corrispondenti sono scritti **e registrati** 
 ### UC 8 – Profilo — `ProfilesController`/`ProfileService`, `SavedDestinationsController`/`SavedDestinationService`
 - [ ] `GetMine` / `UpdateMine` — `GET|PUT /me/profile` (per il caregiver — qui va probabilmente agganciata anche la complementazione profilo di §5.3, da valutare se unificare in un solo endpoint o tenerli separati).
 - [ ] `List`/`Create`/`Update`/`Delete` destinazioni — `GET|POST|PUT|DELETE /me/destinations[/:id]`.
-- [ ] `GetAssociation` / `UpdateAssociation` — `GET|PUT /association/profile` (almeno un telefono e una e-mail obbligatori; include `CoveredProvinces` — PA-03).
+- [ ] `GetAssociation` / `UpdateAssociation` — `GET|PUT /association/profile` (almeno un telefono e una e-mail obbligatori; include l'elenco dei comuni coperti, codici ISTAT — PA-03).
 
 ### UC 9 – Gestione assistiti — `AssistedPeopleController`/`AssistedPersonService`
 - [ ] `Create` — `POST /assisted` → crea `AssistedPerson` + `CaregiverAssistedLink` diretto verso il caregiver chiamante (v0: nessuna accettazione richiesta).
@@ -477,7 +477,7 @@ Numerazione allineata a `Project_GoCare.md` §13 (rinumerata: i punti chiusi o r
 |---|---|---|---|
 | PA-01 | Modello a richiesta vs a slot | Strutturale: entità e flusso principale (già deciso: a richiesta) | UC 1, 4, 5, 6 |
 | PA-02 | Soglia "non coperta" | Regola di `CoverageEvaluator` + `CoverageTimeoutJob` | UC 4, 6 |
-| PA-03 | Visibilità richieste per area | `Association.CoveredProvinces` confrontata con la provincia di partenza + `TransportRequestCandidate` | UC 6, 8 |
+| PA-03 | Visibilità richieste per area | Comuni coperti dell'associazione (`association_covered_comuni`, codice ISTAT) confrontati con il comune di partenza + `TransportRequestCandidate` | UC 6, 8 |
 | PA-04 | Esposizione dati contatto assistito | Dati minimi vs completi + `ContactAccessLog` | UC 6 |
 | PA-05 | Accreditamento associazioni | `Association.Status` (dominio); gate operatività nei Service; aperto se debba bloccare anche il login | Admin, AuthService.LoginAsync, Service di dominio |
 | PA-06 | Retention dati post-eliminazione | Logica di anonimizzazione | `AnonymizeForDeletedAccountAsync` |

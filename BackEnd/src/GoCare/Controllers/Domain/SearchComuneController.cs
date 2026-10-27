@@ -2,13 +2,16 @@ using GoCare.Services.Domain;
 
 using Microsoft.AspNetCore.Mvc;
 
+using Microsoft.AspNetCore.Authorization;
+
 namespace GoCare.Controllers.Domain;
 
-// Controller temporaneo di verifica: vedi SearchComuneService. Nessun [Authorize] di proposito,
-// solo per poterlo chiamare facilmente dal mockup - va protetto prima di diventare definitivo.
-[ApiController]
+// Autocompletamento dei comuni ISTAT (nome o CAP): lo usa il frontend per gli indirizzi
+// e per scegliere i comuni coperti dall'associazione (PA-03). Serve un utente autenticato.
+
 [Route("comuni")]
-[Tags("Comuni (mockup)")]
+[Tags("Comuni")]
+[Authorize]
 public sealed class SearchComuneController(SearchComuneService service) : ControllerBase
 {
     [HttpGet("search")]
