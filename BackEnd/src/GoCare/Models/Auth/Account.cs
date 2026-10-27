@@ -75,6 +75,16 @@ public sealed class Account
         SuspendedAt = null;
     }
 
+    // annulla un'eliminazione: torna attivo se l'email era verificata, altrimenti da verificare
+    public void Restore()
+    {
+        if (Status is not EAccountStatus.Deleted)
+            throw new InvalidOperationException("Si può ripristinare solo un account eliminato.");
+
+        Status = EmailVerifiedAt is null ? EAccountStatus.Unverified : EAccountStatus.Active;
+        DeletedAt = null;
+    }
+
     public void MarkDeleted(DateTimeOffset at)
     {
         if (Status is EAccountStatus.Deleted)

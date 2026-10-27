@@ -62,6 +62,7 @@ builder.Services.AddScoped<ResetPasswordService>();
 builder.Services.AddScoped<ResendVerificationEmailService>();
 builder.Services.AddScoped<ChangeEmailService>();
 builder.Services.AddScoped<ConfirmEmailChangeService>();
+builder.Services.AddScoped<RestoreCaregiverAccountService>();
 builder.Services.AddScoped<ProfileProvisioningService>();
 builder.Services.AddScoped<CreateTransportService>();
 builder.Services.AddScoped<DeleteTransportService>();
