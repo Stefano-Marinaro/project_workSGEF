@@ -68,6 +68,7 @@ builder.Services.AddScoped<DeleteTransportService>();
 builder.Services.AddScoped<TripDetailService>();
 builder.Services.AddScoped<ListTransportsService>();
 builder.Services.AddScoped<GenerateOperatorLinkService>();
+builder.Services.AddScoped<RequesterContactsService>();
 builder.Services.AddScoped<TimelineService>();
 builder.Services.AddScoped<GetTripExecutionStatusService>();
 builder.Services.AddScoped<AdvanceTripStatusService>();
