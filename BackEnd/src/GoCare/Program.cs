@@ -42,6 +42,8 @@ builder.Services.Configure<SmtpOptions>(
     builder.Configuration.GetSection(SmtpOptions.SectionName));
 builder.Services.Configure<OpenRouteServiceOptions>(
     builder.Configuration.GetSection(OpenRouteServiceOptions.SectionName));
+builder.Services.Configure<GraphHopperOptions>(
+    builder.Configuration.GetSection(GraphHopperOptions.SectionName));
 builder.Services.Configure<PricingOptions>(
     builder.Configuration.GetSection(PricingOptions.SectionName));
 builder.Services.Configure<StripeOptions>(
@@ -92,7 +94,10 @@ builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(cli
 {
     client.DefaultRequestHeaders.Add("User-Agent", "GoCare/1.0 (progetto universitario)");
 });
-builder.Services.AddHttpClient<IRoutingService, OpenRouteServiceClient>();
+// GraphHopper al posto di OpenRouteService: ORS è giù per le patch di emergenza PHP di fine
+// ottobre 2026 e la cosa potrebbe durare. Stesso contratto (IRoutingService), per tornare a ORS
+// basta ripristinare questa riga su AddHttpClient<IRoutingService, OpenRouteServiceClient>().
+builder.Services.AddHttpClient<IRoutingService, GraphHopperClient>();
 builder.Services.AddSingleton<Stripe.IStripeClient>(sp =>
     new Stripe.StripeClient(sp.GetRequiredService<IOptions<StripeOptions>>().Value.SecretKey));
 builder.Services.AddScoped<CreateCheckoutSessionService>();

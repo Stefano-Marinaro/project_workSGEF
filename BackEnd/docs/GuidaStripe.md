@@ -1,20 +1,26 @@
 # Guida Stripe — configurazione locale (PA-07)
 
 Questa guida copre cosa serve, dove si prende e dove va messo per far
-funzionare il pagamento del trasporto in locale. Riguarda il branch
-`feature/stripe` (e i servizi `CreateCheckoutSessionService`,
-`StripeWebhookService`, `IRoutingService`/`OpenRouteServiceClient`).
+funzionare il pagamento del trasporto in locale. Riguarda i servizi
+`CreateCheckoutSessionService`, `StripeWebhookService`,
+`IRoutingService`/`GraphHopperClient`.
 
 ## 1. Cosa serve
 
 Due account esterni, entrambi gratuiti per lo sviluppo:
 
 1. **Stripe** — un account sandbox. Serve per `SecretKey` e `WebhookSecret`.
-2. **OpenRouteService** — solo email, nessuna carta. Serve per `ApiKey`
-   (calcolo dei km stradali, usato per il prezzo). *Al momento il servizio
-   può risultare non raggiungibile per via delle patch di emergenza PHP di
-   fine ottobre 2026 (CVE-2026-109618/109619, "PHP2Shell") — se succede,
-   riprovare più tardi, non è un problema del nostro codice.*
+2. **GraphHopper** — solo email, nessuna carta. Serve per `ApiKey`
+   (calcolo dei km stradali, usato per il prezzo).
+
+   *Il routing usava inizialmente OpenRouteService; è stato sostituito con
+   GraphHopper (stesso contratto, `IRoutingService`) perché ORS è diventato
+   irraggiungibile per via delle patch di emergenza PHP di fine ottobre 2026
+   (CVE-2026-109618/109619, "PHP2Shell") e la cosa rischia di durare. Il
+   codice di `OpenRouteServiceClient` resta nel progetto, inutilizzato: per
+   tornare a ORS quando sarà di nuovo affidabile basta ripristinare la
+   registrazione in `Program.cs` (`AddHttpClient<IRoutingService,
+   OpenRouteServiceClient>()` al posto di quella per `GraphHopperClient`).*
 
 Tutte le chiavi vanno in **`src/GoCare/appsettings.Local.json`**, mai in
 `appsettings.json` — quel file non è tracciato da git, ogni sviluppatore
@@ -91,13 +97,14 @@ webhook si configura diversamente: si registra **un** endpoint vero nel
 dashboard Stripe con l'URL pubblico del server, e quello ha un solo
 secret fisso condiviso — la CLI serve solo per lo sviluppo locale.
 
-## 4. OpenRouteService — API Key
+## 4. GraphHopper — API Key
 
-openrouteservice.org → registrazione con email → chiave gratuita.
+graphhopper.com → registrazione con email → chiave gratuita dalla
+dashboard (nessuna carta richiesta, 500 richieste/giorno nel piano free).
 
 ```json
 {
-  "OpenRouteService": {
+  "GraphHopper": {
     "ApiKey": "..."
   }
 }
@@ -118,7 +125,7 @@ openrouteservice.org → registrazione con email → chiave gratuita.
     "SecretKey": "sk_test_...",
     "WebhookSecret": "whsec_..."
   },
-  "OpenRouteService": {
+  "GraphHopper": {
     "ApiKey": "..."
   }
 }
