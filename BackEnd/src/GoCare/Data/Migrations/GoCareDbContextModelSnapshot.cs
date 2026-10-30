@@ -677,6 +677,61 @@ namespace GoCare.Data.Migrations
                     b.ToTable("notifications", (string)null);
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.Payment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<decimal>("Amount")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<string>("Currency")
+                        .IsRequired()
+                        .HasMaxLength(3)
+                        .HasColumnType("character varying(3)")
+                        .HasColumnName("currency");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("paid_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.Property<string>("StripePaymentIntentId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("stripe_payment_intent_id");
+
+                    b.Property<string>("StripeSessionId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("stripe_session_id");
+
+                    b.Property<Guid>("TransportRequestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("transport_request_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_payments");
+
+                    b.HasIndex("StripeSessionId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_payments_stripe_session_id");
+
+                    b.HasIndex("TransportRequestId")
+                        .HasDatabaseName("ix_payments_transport_request_id");
+
+                    b.ToTable("payments", (string)null);
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.Person", b =>
                 {
                     b.Property<Guid>("Id")
@@ -787,6 +842,10 @@ namespace GoCare.Data.Migrations
                     b.Property<DateTimeOffset>("DepartureDateHour")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("departure_date_hour");
+
+                    b.Property<double>("DistanceKm")
+                        .HasColumnType("double precision")
+                        .HasColumnName("distance_km");
 
                     b.Property<DateTimeOffset?>("NotCoveredAt")
                         .HasColumnType("timestamp with time zone")
@@ -1227,6 +1286,16 @@ namespace GoCare.Data.Migrations
                         .HasConstraintName("fk_contact_access_logs_transport_requests_transport_request_id");
                 });
 
+            modelBuilder.Entity("GoCare.Models.Domain.Payment", b =>
+                {
+                    b.HasOne("GoCare.Models.Domain.TransportRequest", null)
+                        .WithMany()
+                        .HasForeignKey("TransportRequestId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_payments_transport_requests_transport_request_id");
+                });
+
             modelBuilder.Entity("GoCare.Models.Domain.Person", b =>
                 {
                     b.HasOne("GoCare.Models.Auth.Account", null)
@@ -1364,7 +1433,7 @@ namespace GoCare.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_transport_requests_persons_requested_by_id");
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "EndAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "EndAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1375,6 +1444,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("end_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("end_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("end_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()
@@ -1409,7 +1486,7 @@ namespace GoCare.Data.Migrations
                                 .HasConstraintName("fk_transport_requests_transport_requests_id");
                         });
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "ReturnEndAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "ReturnEndAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1420,6 +1497,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("return_end_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("return_end_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("return_end_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()
@@ -1454,7 +1539,7 @@ namespace GoCare.Data.Migrations
                                 .HasConstraintName("fk_transport_requests_transport_requests_id");
                         });
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "StartAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "StartAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1465,6 +1550,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("start_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("start_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("start_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()

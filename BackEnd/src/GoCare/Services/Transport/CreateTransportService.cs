@@ -1,13 +1,14 @@
-﻿using GoCare.Data;
+﻿using GoCare.Abstractions;
+using GoCare.Data;
 using GoCare.Models.Enums;
 using GoCare.Models.Domain;
 
 using Microsoft.EntityFrameworkCore;
-using GoCare.Errors; 
+using GoCare.Errors;
 
 namespace GoCare.Services.Transport;
 
-public sealed class CreateTransportService(GoCareDbContext db)
+public sealed class CreateTransportService(GoCareDbContext db, IRoutingService routing)
 {
     public async Task<Guid> CreateTransportAsync(
         Guid requestedById, //Id dell'utente 
@@ -16,9 +17,9 @@ public sealed class CreateTransportService(GoCareDbContext db)
         ETripDirection tripDirection, //direzione del viaggio
         DateTimeOffset departureDateHour, //data e ora di partenza, TimeOffset include anche il fuso orario
         DateTimeOffset? returnDateHour, //data e ora del ritorno, ? lo rende all'occorrenza nullable se è solo andata
-        Address startAddress, // indirizzo di partenza
-        Address endAddress, //indirizzo di destinazione
-        Address? returnEndAddress, //di ritorno, nullable in caso 
+        TripAddress startAddress, // indirizzo di partenza (con coordinate obbligatorie, servono per il calcolo del percorso)
+        TripAddress endAddress, //indirizzo di destinazione
+        TripAddress? returnEndAddress, //di ritorno, nullable in caso
         string referencePhone,
         string? referenceEmail,
         IReadOnlyList<(string Name, string Surname, string Relationship, string Phone)> companion, //lista in sola lettura degli accompagnatori, una tupla con campi dotati di nome
@@ -34,13 +35,26 @@ public sealed class CreateTransportService(GoCareDbContext db)
         if (!isLinked)
             throw new ForbiddenException("Non sei collegato a questo assistito.");
 
+        // CALCOLO DEL PERCORSO (km), serve per il prezzo: andata sempre, + ritorno se RoundTrip
+        // (verso returnEndAddress se indicato, altrimenti verso l'indirizzo di partenza - stessa
+        // regola già usata da NewTransportValidator per il significato di "ritorno assente").
+        var distanceKm = await routing.GetDistanceKmAsync(
+            startAddress.Latitude, startAddress.Longitude, endAddress.Latitude, endAddress.Longitude, ct);
+
+        if (tripDirection == ETripDirection.RoundTrip)
+        {
+            var returnDestination = returnEndAddress ?? startAddress;
+            distanceKm += await routing.GetDistanceKmAsync(
+                endAddress.Latitude, endAddress.Longitude, returnDestination.Latitude, returnDestination.Longitude, ct);
+        }
+
         // CREAZIONE DELLA RICHIESTA
-        var now = DateTimeOffset.UtcNow;    
+        var now = DateTimeOffset.UtcNow;
         var transportId = Guid.NewGuid(); // crea l'Id per il trasporto
 
         var transport = new TransportRequest(
             transportId, requestedById, beneficiaryId, tripType, tripDirection, departureDateHour,
-            returnDateHour, startAddress, endAddress, returnEndAddress, referencePhone, referenceEmail, now);
+            returnDateHour, startAddress, endAddress, returnEndAddress, referencePhone, referenceEmail, distanceKm, now);
 
         db.TransportRequests.Add(transport);
 

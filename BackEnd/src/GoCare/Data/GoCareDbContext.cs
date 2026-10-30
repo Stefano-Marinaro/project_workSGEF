@@ -26,6 +26,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
     public DbSet<TransportRequestCandidate> TransportRequestCandidates => Set<TransportRequestCandidate>();
     public DbSet<TransportRequestRejection> TransportRequestRejections => Set<TransportRequestRejection>();
     public DbSet<Companion> Companions => Set<Companion>();
+    public DbSet<Payment> Payments => Set<Payment>();
     public DbSet<TripStatusTransition> TripStatusTransitions => Set<TripStatusTransition>();
     public DbSet<TripOperatorLink> TripOperatorLinks => Set<TripOperatorLink>();
     public DbSet<CaregiverInviteLink> CaregiverInviteLinks => Set<CaregiverInviteLink>();
@@ -300,6 +301,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
             transportReq.OwnsOne(t => t.EndAddress, addr =>
@@ -309,6 +312,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
             transportReq.OwnsOne(t => t.ReturnEndAddress, addr =>
@@ -318,8 +323,11 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
+            transportReq.Property(t => t.DistanceKm);
             transportReq.Property(t => t.CreatedAt);
 
             transportReq.HasIndex(t => t.RequestStatus);
@@ -376,6 +384,25 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 .WithMany()
                 .HasForeignKey(c => c.TransportRequestId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<Payment>(payment =>
+        {
+            payment.HasKey(p => p.Id);
+            payment.Property(p => p.Amount).HasPrecision(10, 2); // es. fino a 99999999,99 - ampiamente sufficiente
+            payment.Property(p => p.Currency).HasMaxLength(3);   // codice ISO 4217, es. "EUR"
+            payment.Property(p => p.StripeSessionId).HasMaxLength(255);
+            payment.Property(p => p.StripePaymentIntentId).HasMaxLength(255);
+
+            payment.HasOne<TransportRequest>()
+                .WithMany()
+                .HasForeignKey(p => p.TransportRequestId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // un trasporto può avere più tentativi di pagamento (uno fallito, un altro riuscito):
+            // niente indice unico su TransportRequestId, solo su StripeSessionId (il webhook cerca da lì).
+            payment.HasIndex(p => p.StripeSessionId).IsUnique();
+            payment.HasIndex(p => p.TransportRequestId);
         });
 
         modelBuilder.Entity<TripStatusTransition>(transition =>

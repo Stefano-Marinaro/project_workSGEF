@@ -8,9 +8,9 @@ public sealed record NewTransportRequest(
     ETripDirection TripDirection,
     DateTimeOffset DepartureDateHour,
     DateTimeOffset? ReturnDateHour,
-    AddressRequest StartAddress,
-    AddressRequest EndAddress,
-    AddressRequest? ReturnEndAddress,
+    TripAddressRequest StartAddress,
+    TripAddressRequest EndAddress,
+    TripAddressRequest? ReturnEndAddress,
     string ReferencePhone,
     string? ReferenceEmail,
     IReadOnlyList<CompanionRequest>? Companions);
