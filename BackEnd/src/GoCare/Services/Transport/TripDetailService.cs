@@ -20,10 +20,16 @@ public class TripDetailService(GoCareDbContext db)
         if (!isLinked)
             throw new ForbiddenException("Non sei collegato a questo assistito.");
 
+        // I contatti dell'associazione si vedono solo a pagamento confermato (UC 5.2, CG-31):
+        // "solo il webhook, non il ritorno dal browser" segna un pagamento come riuscito, quindi
+        // basta controllare lo stato già salvato, nessuna chiamata a Stripe da qui.
+        var isPaid = await db.Payments.AnyAsync(
+            p => p.TransportRequestId == tripId && p.Status == EPaymentStatus.Succeeded, ct);
+
         string? associationName = null;
         List<string>? associationPhones = null;
 
-        if (trip.AssignedAssociationId is not null)
+        if (trip.AssignedAssociationId is not null && isPaid)
         {
             var association = await db.Associations.SingleOrDefaultAsync(a => a.Id == trip.AssignedAssociationId, ct);
             associationName = association?.Name;
@@ -39,6 +45,7 @@ public class TripDetailService(GoCareDbContext db)
             trip.EndAddress,
             trip.ReturnEndAddress,
             trip.RequestStatus,
+            isPaid,
             associationName,
             associationPhones);
     }

@@ -1,3 +1,4 @@
+using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Models.Domain;
@@ -9,6 +10,17 @@ using Microsoft.EntityFrameworkCore;
 using Xunit;
 
 namespace GoCare.Tests.Services.Transport;
+
+// Finto IRoutingService: nessuna chiamata HTTP reale nei test, ritorna sempre una distanza fissa.
+// Non serve testare qui il calcolo del prezzo (servirà un test dedicato più avanti), solo evitare
+// che CreateTransportService fallisca per mancanza della dipendenza.
+file sealed class FakeRoutingService : IRoutingService
+{
+    public Task<double> GetDistanceKmAsync(
+        double startLatitude, double startLongitude,
+        double endLatitude, double endLongitude,
+        CancellationToken ct = default) => Task.FromResult(10.0);
+}
 
 public class CreateTransportServiceTests
 {
@@ -42,7 +54,7 @@ private static TripAddress TripAddressIn(string province) =>
     public async Task Throws_WhenCaregiverIsNotLinkedToBeneficiary()
     {
         using var db = NewDb();
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         await Assert.ThrowsAsync<ForbiddenException>(() => service.CreateTransportAsync(
             requestedById: Guid.NewGuid(),
@@ -72,7 +84,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.CaregiverAssistedLinks.Add(link);
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         await Assert.ThrowsAsync<ForbiddenException>(() => service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -90,7 +102,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -113,7 +125,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var companions = new[]
         {
@@ -142,7 +154,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.CaregiverAssistedLinks.Add(new CaregiverAssistedLink(caregiverId, beneficiaryId, DateTimeOffset.UtcNow));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -165,7 +177,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.Associations.Add(MakeAssociation(db, associationId, EAccreditationStatus.Accredited, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -188,7 +200,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Pending, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -210,7 +222,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: true, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -232,7 +244,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, comuni: ["054001"]));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
@@ -255,7 +267,7 @@ private static TripAddress TripAddressIn(string province) =>
         db.Associations.Add(MakeAssociation(db, Guid.NewGuid(), EAccreditationStatus.Accredited, deleted: false, comuni: ["054039"]));
         await db.SaveChangesAsync();
 
-        var service = new CreateTransportService(db);
+        var service = new CreateTransportService(db, new FakeRoutingService());
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,

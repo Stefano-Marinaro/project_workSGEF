@@ -12,6 +12,7 @@ public sealed record TripDetailResponse(
                             TripAddress EndAddress,
                             TripAddress? ReturnEndAddress,
                             ETripRequestStatus RequestStatus,
+                            bool IsPaid,
                             string? AssociationName,
                             List<string>? AssociationPhones);
 

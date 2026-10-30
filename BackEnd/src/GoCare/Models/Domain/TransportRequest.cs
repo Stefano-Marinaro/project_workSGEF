@@ -11,7 +11,7 @@ public sealed class TransportRequest
     public TransportRequest(
         Guid id, Guid requestedById, Guid beneficiaryId, ETripType tripType, ETripDirection tripDirection,
         DateTimeOffset departureDateHour, DateTimeOffset? returnDateHour, TripAddress startAddress, TripAddress endAddress, TripAddress? returnEndAddress,
-        string referencePhone, string? referenceEmail, DateTimeOffset createdAt)
+        string referencePhone, string? referenceEmail, double distanceKm, DateTimeOffset createdAt)
     {
         Id = id;
         RequestedById = requestedById;
@@ -25,6 +25,7 @@ public sealed class TransportRequest
         ReturnEndAddress = returnEndAddress;
         ReferencePhone = referencePhone;
         ReferenceEmail = referenceEmail;
+        DistanceKm = distanceKm;
         CreatedAt = createdAt;
 
         EnsureScheduleConsistency(departureDateHour, returnDateHour, returnEndAddress);
@@ -43,6 +44,7 @@ public sealed class TransportRequest
     public TripAddress? ReturnEndAddress { get; private set; }
     public string ReferencePhone { get; private set; } = null!;
     public string? ReferenceEmail { get; private set; }
+    public double DistanceKm { get; private set; } // andata+ritorno se RoundTrip; calcolato una sola volta alla creazione, usato per il prezzo (vedi Punto 2 del piano Stripe)
     public ETripRequestStatus RequestStatus { get; private set; } = ETripRequestStatus.Pending;
     public Guid? AssignedAssociationId { get; private set; }
     public Guid? DeletedBy { get; private set; }

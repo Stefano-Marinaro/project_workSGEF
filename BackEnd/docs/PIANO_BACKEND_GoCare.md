@@ -444,6 +444,8 @@ Tutti i Validator FluentValidation corrispondenti sono scritti **e registrati** 
 | Dominio | `GET /transports/:id` | Caregiver | ⬜ da fare |
 | Dominio | `POST /transports/:id/cancel` | Caregiver | ⬜ da fare |
 | Dominio | `GET /transports/:id/status-timeline` | Caregiver | ⬜ da fare |
+| Dominio | `POST /transports/:id/payment-session` | Caregiver | ✅ fatto (PA-07) |
+| Dominio | `POST /payments/stripe/webhook` | Stripe (firma verificata) | ✅ fatto (PA-07) |
 | Dominio | `GET /association/requests` | Associazione | ⬜ da fare |
 | Dominio | `GET /association/requests/:id` | Associazione | ⬜ da fare |
 | Dominio | `POST /association/requests/:id/accept` | Associazione | ⬜ da fare |
@@ -481,6 +483,9 @@ Numerazione allineata a `Project_GoCare.md` §13 (rinumerata: i punti chiusi o r
 | PA-04 | Esposizione dati contatto assistito | Dati minimi vs completi + `ContactAccessLog` | UC 6 |
 | PA-05 | Accreditamento associazioni | `Association.Status` (dominio); gate operatività nei Service; aperto se debba bloccare anche il login | Admin, AuthService.LoginAsync, Service di dominio |
 | PA-06 | Retention dati post-eliminazione | Logica di anonimizzazione | `AnonymizeForDeletedAccountAsync` |
+| PA-07 | Pagamento del trasporto con Stripe | Sblocca i contatti dell'associazione solo a pagamento confermato (UC 5.2, CG-31) | `CreateCheckoutSessionService`, `StripeWebhookService`, `TripDetailService`, `DeleteTransportService` |
+
+**PA-07 risolto:** importo = `max(km_totali × 0,80€, 5€)` (km_totali include andata+ritorno se RoundTrip, calcolati da `IRoutingService`/OpenRouteService e salvati su `TransportRequest.DistanceKm` alla creazione); incasso **Standard Checkout** (GoCare, non Stripe Connect — scelta v0, la Connect resta un'opzione per la v1 se il volume lo giustificherà); rimborso **automatico e integrale** se il caregiver annulla un trasporto già pagato (`DeleteTransportService`). Manca ancora: lo stesso rimborso quando sarà l'**associazione** a disdire un trasporto pagato — quel percorso di cancellazione lato associazione non esiste ancora nel codice (visto solo come nome di branch, `feature/association-cancel-transport`, non mergiato); quando verrà scritto, andrà aggiunta la stessa chiamata di rimborso già presente in `DeleteTransportService`.
 
 **Punti chiusi durante questa fase** (non più aperti): chi aggiorna lo stato viaggio e come accede (`TripOperatorLink`, niente account operatore) — ruoli/permessi nel gruppo cura (non più applicabile: `CareGroup` è stato sostituito da `AssistedPerson`/`CaregiverAssistedLink`, collegamento diretto in v0, senza ruoli amministrativi) — gestione guasti in corsa (`Suspended` nell'enum, non più opzionale).
 
