@@ -48,15 +48,15 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
 
         RuleFor(t => t.StartAddress)
             .NotNull().WithMessage("L'indirizzo di partenza è obbligatorio.")
-            .SetValidator(new AddressValidator(db));
+            .SetValidator(new TripAddressValidator(db));
 
         RuleFor(t => t.EndAddress)
             .NotNull().WithMessage("L'indirizzo di destinazione è obbligatorio.")
-            .SetValidator(new AddressValidator(db));
+            .SetValidator(new TripAddressValidator(db));
 
         // facoltativo: se assente il ritorno è verso l'indirizzo di partenza
         RuleFor(t => t.ReturnEndAddress)
-            .SetValidator(new AddressValidator(db)!)
+            .SetValidator(new TripAddressValidator(db)!)
             .When(t => t.ReturnEndAddress is not null);
 
         RuleFor(t => t.ReferencePhone)

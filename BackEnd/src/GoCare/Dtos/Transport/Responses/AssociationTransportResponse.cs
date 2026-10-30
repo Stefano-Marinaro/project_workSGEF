@@ -9,6 +9,6 @@ public sealed record AssociationTransportResponse(
     ETripDirection TripDirection,
     DateTimeOffset DepartureDateHour,
     DateTimeOffset? ReturnDateHour,
-    Address StartAddress,
-    Address EndAddress,
+    TripAddress StartAddress,
+    TripAddress EndAddress,
     ETripRequestStatus RequestStatus);

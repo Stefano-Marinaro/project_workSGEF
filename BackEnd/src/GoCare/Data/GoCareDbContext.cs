@@ -300,6 +300,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
             transportReq.OwnsOne(t => t.EndAddress, addr =>
@@ -309,6 +311,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
             transportReq.OwnsOne(t => t.ReturnEndAddress, addr =>
@@ -318,6 +322,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
 
             transportReq.Property(t => t.CreatedAt);

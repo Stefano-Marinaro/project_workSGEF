@@ -16,9 +16,9 @@ public sealed class CreateTransportService(GoCareDbContext db)
         ETripDirection tripDirection, //direzione del viaggio
         DateTimeOffset departureDateHour, //data e ora di partenza, TimeOffset include anche il fuso orario
         DateTimeOffset? returnDateHour, //data e ora del ritorno, ? lo rende all'occorrenza nullable se è solo andata
-        Address startAddress, // indirizzo di partenza
-        Address endAddress, //indirizzo di destinazione
-        Address? returnEndAddress, //di ritorno, nullable in caso 
+        TripAddress startAddress, // indirizzo di partenza (con coordinate obbligatorie, servono per il calcolo del percorso)
+        TripAddress endAddress, //indirizzo di destinazione
+        TripAddress? returnEndAddress, //di ritorno, nullable in caso
         string referencePhone,
         string? referenceEmail,
         IReadOnlyList<(string Name, string Surname, string Relationship, string Phone)> companion, //lista in sola lettura degli accompagnatori, una tupla con campi dotati di nome

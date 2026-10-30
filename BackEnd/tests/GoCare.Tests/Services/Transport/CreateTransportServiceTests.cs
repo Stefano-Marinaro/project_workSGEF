@@ -31,6 +31,13 @@ private static GoCareDbContext NewDb()
 private static Address AddressIn(string province) =>
     new("Via Test", "1", "06100", province == "RM" ? "Roma" : "Perugia", province);
 
+// TripAddress: come AddressIn, ma con le coordinate obbligatorie richieste da CreateTransportAsync
+// (partenza/destinazione/ritorno di un trasporto, serve per il calcolo del percorso).
+private static TripAddress TripAddressIn(string province) =>
+    province == "RM"
+        ? new("Via Test", "1", "06100", "Roma", "RM", 41.9028, 12.4964)
+        : new("Via Test", "1", "06100", "Perugia", "PG", 43.1122, 12.3888);
+
     [Fact]
     public async Task Throws_WhenCaregiverIsNotLinkedToBeneficiary()
     {
@@ -44,8 +51,8 @@ private static Address AddressIn(string province) =>
             ETripDirection.OneWay,
             DateTimeOffset.UtcNow.AddDays(1),
             returnDateHour: null,
-            AddressIn("PG"),
-            AddressIn("PG"),
+            TripAddressIn("PG"),
+            TripAddressIn("PG"),
             returnEndAddress: null,
             referencePhone: "333123456",
             referenceEmail: null,
@@ -69,7 +76,7 @@ private static Address AddressIn(string province) =>
 
         await Assert.ThrowsAsync<ForbiddenException>(() => service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None));
     }
 
@@ -87,7 +94,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var transport = await db.TransportRequests.SingleAsync(t => t.Id == transportId);
@@ -116,7 +123,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, companions, CancellationToken.None);
 
         var saved = await db.Companions.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -139,7 +146,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -162,7 +169,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -185,7 +192,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -207,7 +214,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -229,7 +236,7 @@ private static Address AddressIn(string province) =>
 
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(1), null, AddressIn("PG"), AddressIn("PG"), null,
+            DateTimeOffset.UtcNow.AddDays(1), null, TripAddressIn("PG"), TripAddressIn("PG"), null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();
@@ -253,7 +260,7 @@ private static Address AddressIn(string province) =>
         var transportId = await service.CreateTransportAsync(
             caregiverId, beneficiaryId, ETripType.Visit, ETripDirection.OneWay,
             DateTimeOffset.UtcNow.AddDays(1), null,
-            startAddress: AddressIn("RM"), endAddress: AddressIn("PG"), returnEndAddress: null,
+            startAddress: TripAddressIn("RM"), endAddress: TripAddressIn("PG"), returnEndAddress: null,
             "333123456", null, [], CancellationToken.None);
 
         var candidates = await db.TransportRequestCandidates.Where(c => c.TransportRequestId == transportId).ToListAsync();

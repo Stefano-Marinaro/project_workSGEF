@@ -1364,7 +1364,7 @@ namespace GoCare.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_transport_requests_persons_requested_by_id");
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "EndAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "EndAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1375,6 +1375,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("end_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("end_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("end_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()
@@ -1409,7 +1417,7 @@ namespace GoCare.Data.Migrations
                                 .HasConstraintName("fk_transport_requests_transport_requests_id");
                         });
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "ReturnEndAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "ReturnEndAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1420,6 +1428,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("return_end_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("return_end_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("return_end_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()
@@ -1454,7 +1470,7 @@ namespace GoCare.Data.Migrations
                                 .HasConstraintName("fk_transport_requests_transport_requests_id");
                         });
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "StartAddress", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "StartAddress", b1 =>
                         {
                             b1.Property<Guid>("TransportRequestId")
                                 .HasColumnType("uuid")
@@ -1465,6 +1481,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("start_address_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("start_address_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("start_address_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()

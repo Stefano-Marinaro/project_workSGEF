@@ -21,9 +21,9 @@ public sealed class CreateTransportController(CreateTransportService transportSe
     {
         var requestedById = Guid.Parse(User.FindFirstValue("sub")!);
 
-        var startAddress = request.StartAddress.ToAddress();
-        var endAddress = request.EndAddress.ToAddress();
-        var returnEndAddress = request.ReturnEndAddress?.ToAddress();
+        var startAddress = request.StartAddress.ToTripAddress();
+        var endAddress = request.EndAddress.ToTripAddress();
+        var returnEndAddress = request.ReturnEndAddress?.ToTripAddress();
 
         var companions = (request.Companions ?? [])
             .Select(c => (c.Name, c.Surname, c.Relationship, c.Phone))
