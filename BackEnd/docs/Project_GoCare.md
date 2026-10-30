@@ -106,7 +106,7 @@ Profilo associazione:
 
 ## UC 9 – GESTIONE ASSISTITI
 
-L'assistito non è un account: è un'anagrafica gestita dal caregiver, senza login e senza possibilità di interazione propria. Un assistito può essere collegato a più caregiver; ogni caregiver con un collegamento attivo vede tutti i dati e tutti i viaggi dell'assistito, indipendentemente da chi lo ha originariamente aggiunto. **In v0 il collegamento è sempre diretto e immediato**, anche quando riguarda un secondo caregiver: non è richiesta nessuna accettazione. Un flusso di invito con consenso esplicito (link condivisibile via e-mail/WhatsApp) è previsto per la v1 — vedi §14 "Roadmap v1".
+L'assistito non è un account: è un'anagrafica gestita dal caregiver, senza login e senza possibilità di interazione propria. Un assistito può essere collegato a più caregiver; ogni caregiver con un collegamento attivo vede tutti i dati e tutti i viaggi dell'assistito, indipendentemente da chi lo ha originariamente aggiunto. **In v0 il collegamento è sempre diretto e immediato**, anche quando riguarda un secondo caregiver: non è richiesta nessuna accettazione. Un flusso di invito con consenso esplicito (link condivisibile via e-mail/WhatsApp) è previsto per la v1 — vedi §13 "Roadmap v1".
 
 - 9.1 Aggiunta di un assistito da parte del caregiver.
 - 9.2 Visualizzazione dell'elenco dei propri assistiti.
@@ -287,14 +287,15 @@ Il tipo di viaggio determina il valore di default della direzione nel form dell'
 - Le disponibilità delle associazioni non sono gestite dalla piattaforma: le associazioni accettano le richieste secondo la propria disponibilità.
 - Flusso API bidirezionale in V.1: tutte le chiamate sono in scrittura e ogni chiamata corrisponde a un cambio di stato.
 - Colonne Trello: To do, Ready for development, In progress (una sola card alla volta), Ready for testing, In testing, Tested, Released.
-- Il calcolo dei km previsti è rinviato alla v1: la richiesta non porta un campo km e le dashboard dell'associazione non hanno filtri né colonne per i km.
 - Solo i caregiver si registrano come account autonomi. L'assistito non ha un account: è un'anagrafica creata da un caregiver, senza login e senza possibilità di interazione propria. Il collegamento caregiver↔assistito è diretto e molti-a-molti (un caregiver può seguire più assistiti, un assistito può avere più caregiver), senza nessun concetto di "gruppo cura" a mediarlo. Aggiungere un assistito crea il collegamento subito attivo, senza consenso da richiedere (l'assistito non può darlo); collegare un **secondo caregiver** a un assistito già esistente richiede invece l'accettazione del caregiver invitato, perché a differenza dell'assistito è un utente con un proprio account. Un caregiver con un collegamento attivo verso un assistito vede tutti i suoi dati e tutti i suoi viaggi; se più caregiver sono collegati allo stesso assistito, vedono tutti tutto, senza distinzione fra chi lo ha aggiunto e chi può solo vedere. La registrazione pubblica è riservata ai caregiver; gli account associazione sono creati dall'amministratore.
 - Il viaggio non è modificabile dopo la creazione (niente più UC "Modifica trasporto"): l'unica azione disponibile su un viaggio già registrato è l'annullamento. Se le condizioni del viaggio cambiano, il caregiver annulla e invia una nuova richiesta.
 - Il rifiuto di una singola associazione non è uno stato della richiesta: la richiesta resta "in attesa" e visibile alle altre associazioni destinatarie. L'esito negativo aggregato è sempre "non coperta".
 - Ogni evento genera una sola notifica, con i canali (push, e-mail) combinati sulla stessa voce: il centro notifiche non mostra righe duplicate per lo stesso evento.
-- Gli indirizzi sono strutturati (via, civico, CAP, città, provincia) e vengono copiati sulla richiesta al momento della creazione: modificare o eliminare una destinazione salvata non altera i viaggi già registrati.
+- Gli indirizzi sono strutturati (via, civico, CAP, città, provincia) e vengono copiati sulla richiesta al momento della creazione: modificare o eliminare una destinazione salvata non altera i viaggi già registrati. Gli indirizzi di partenza, destinazione ed eventuale ritorno di un trasporto (`TripAddress`) portano in più latitudine e longitudine obbligatorie, necessarie al calcolo dei km (vedi sotto); gli altri indirizzi del dominio (domicilio, destinazioni salvate, sede dell'associazione) restano senza coordinate.
+- Il calcolo dei km previsti è in v0: la richiesta porta un campo `DistanceKm`, calcolato tramite un servizio esterno di instradamento (GraphHopper, dietro l'interfaccia `IRoutingService`) a partire dalle coordinate di partenza e destinazione, con la tratta di rientro aggiunta per i viaggi "andata e ritorno". Resta rinviato alla v1 solo un filtro/colonna dedicato ai km nelle dashboard dell'associazione (vedi Roadmap v1).
+- L'importo del pagamento del trasporto (UC 5.2) è calcolato automaticamente come `DistanceKm × 0,80 €/km`, con un minimo di 5 €: non è stabilito dall'associazione né negoziabile. L'incasso avviene sull'unico account Stripe di GoCare (Checkout standard), non su un account per associazione (Stripe Connect): la ridistribuzione dei fondi alle singole associazioni resta fuori dalla piattaforma ed è rinviata alla v1. Se il caregiver annulla un viaggio già pagato, il sistema rimborsa automaticamente l'intero importo tramite Stripe.
 - L'instradamento delle richieste avviene per comune, non per provincia: ogni associazione dichiara l'elenco esplicito dei comuni che copre (il proprio e quelli limitrofi in cui è disposta a operare) e riceve solo le richieste con partenza in uno di essi. I comuni si scelgono dall'elenco ufficiale ISTAT e sono identificati dal codice ISTAT; il comune di partenza si ricava dall'indirizzo di partenza (città e provincia) della richiesta (vedi PA-03).
-- Il pagamento del trasporto avviene tramite Stripe (pagina di pagamento ospitata da Stripe, esito confermato al backend via webhook). I contatti dell'associazione assegnataria diventano visibili al caregiver solo dopo l'avvenuto pagamento (CG-31).
+- Il pagamento del trasporto avviene tramite Stripe Checkout (pagina di pagamento ospitata da Stripe, esito confermato al backend solo via webhook, mai dal semplice ritorno dal browser). I contatti dell'associazione assegnataria diventano visibili al caregiver solo dopo l'avvenuto pagamento (CG-31).
 - Le associazioni non si registrano autonomamente: sono associazioni partner registrate, modificate ed eliminate dall'amministratore GoCare (UC 11). La verifica dell'ente avviene fuori dalla piattaforma, prima della registrazione.
 - Autenticazione e dominio vivono nello stesso database; l'account e il profilo caregiver sono due entità distinte che **condividono lo stesso identificatore**, con una foreign key reale fra loro (`Person.Id`/`Association.Id` → `Account.Id`, `OnDelete(Cascade)`). L'assistito non ha invece un account e non ha identificatore condiviso, perché non fa mai login. In v0 ogni caregiver di dominio ha esattamente un account: non si opera con caregiver non registrati.
 
@@ -308,6 +309,7 @@ Il tipo di viaggio determina il valore di default della direzione nel form dell'
 - Struttura della soluzione: un unico progetto (`GoCare`), non più tre progetti separati. Organizzato per cartelle a livello tecnico anziché per feature: `Controllers/`, `Dtos/`, `Models/`, `Services/`, `Data/`, più `Abstractions/`, `Errors/`, `Pagination/`, `Validation/` per il kernel trasversale. Dentro `Models/`, `Services/` e `Dtos/` resta la separazione fra area autenticazione e area dominio, come sottocartelle (`Auth/`, `Domain/`). Le interfacce di servizio sono state mantenute solo dove esiste più di un'implementazione o è pianificato uno swap concreto (es. l'invio e-mail); dove c'era un'unica implementazione senza swap previsto (servizi applicativi, orologio di sistema, utente corrente) sono state rimosse a favore della classe concreta.
 - Notifiche: push applicative + e-mail di conferma
 - Pagamenti: Stripe (Checkout + webhook)
+- Instradamento/calcolo km: servizio esterno dietro interfaccia (`IRoutingService`), implementazione attuale GraphHopper
 
 ---
 
@@ -335,736 +337,9 @@ Note dalla riunione Discord del 03/08/26:
 
 ---
 
-# 9. SPRINT – dettaglio Frontend / Backend per Use Case
+# 9. Tabella delle Route
 
-Ogni voce riporta la user story di riferimento (ID della sezione 3) e il breakdown FRONTEND/BACKEND. L'identificativo UC 2 (Modifica trasporto) non è usato in questo elenco, coerentemente con l'assenza della funzione in v0.
-
-## UC 1 – RICHIEDI TRASPORTO
-
-**1.1 Come caregiver voglio poter registrare il trasporto di un assistito. (CG-14)**
-
-FRONTEND:
-
-- Pagina con form di aggiunta di un nuovo trasporto.
-- Campi: per quale assistito, data, orario, indirizzo di partenza, destinazione, tipo di viaggio, direzione, contatti.
-- Selezione con tendina delle destinazioni già salvate, in alternativa bottone di aggiunta con comparsa del form di aggiunta destinazione.
-- Validazione lato client dei campi obbligatori e della data (non nel passato).
-- Pop-up di conferma invio: "La tua richiesta è stata inviata alle associazioni. Riceverai una notifica appena verrà presa in carico."
-
-BACKEND:
-
-- Validazione dati e form.
-- Creazione della richiesta in stato "in attesa", con doppio riferimento a richiedente (il caregiver) e beneficiario (l'assistito).
-- Copia sulla richiesta degli indirizzi (via, civico, CAP, città, provincia) e dei contatti di riferimento: sono uno scatto al momento della richiesta e non seguono le modifiche successive dell'anagrafica.
-- Congelamento della lista delle associazioni destinatarie: al momento della creazione vengono selezionate le associazioni partner attive il cui elenco di comuni coperti contiene il comune di partenza, e l'elenco resta immutabile per tutta la vita della richiesta.
-- Invio della notifica di nuova richiesta alle associazioni destinatarie (UC 4.7).
-
-**1.2 Come caregiver voglio poter registrare il prossimo trasporto del mio assistito. (CG-14)**
-
-FRONTEND:
-
-- Selezione con tendina dell'assistito ricevente del trasporto, tra quelli collegati al caregiver.
-- La tendina è visibile solo se il caregiver ha almeno un assistito collegato.
-- Precompilazione dei dati di contatto e dell'indirizzo abituale dell'assistito selezionato.
-
-BACKEND:
-
-- Verifica che il richiedente abbia un collegamento attivo con l'assistito indicato (autorizzazione).
-- Salvataggio della richiesta con doppio riferimento: richiedente (caregiver) e beneficiario (assistito) — alimenta l'UC 9.3.
-
-**1.3 Come caregiver voglio poter scegliere la direzione del viaggio. (CG-14)**
-
-FRONTEND:
-
-- Selettore a tre opzioni: andata e ritorno / solo andata / solo ritorno.
-- In caso di "andata e ritorno" compare il campo orario di ritorno.
-
-BACKEND:
-
-- Validazione della coerenza fra direzione, orari e indirizzi: un "andata e ritorno" richiede obbligatoriamente l'orario di ritorno; le altre due direzioni non possono avere né orario né indirizzo di ritorno; l'orario di ritorno deve essere successivo a quello di partenza. La regola vale alla creazione (non ci sono più modifiche successive: il viaggio non è modificabile una volta registrato).
-- Persistenza della direzione sulla richiesta: determina gli stati attraversati dal viaggio (UC 4.1).
-
-**1.4 Come caregiver voglio poter indicare il tipo di viaggio. (CG-14)**
-
-FRONTEND:
-
-- Tendina con i tipi di viaggio previsti (visita medica, ricovero, dimissione, trasferimento).
-- La selezione imposta il valore di default della direzione, che resta modificabile in fase di creazione.
-
-BACKEND:
-
-- Validazione del valore rispetto alla lista dei tipi ammessi.
-- Salvataggio del tipo sulla richiesta (dato visibile all'associazione nell'UC 6.2).
-
-**1.6 Come caregiver voglio poter scegliere una destinazione diversa dall'indirizzo abituale dell'assistito. (CG-17)**
-
-FRONTEND:
-
-- Form di aggiunta nuova destinazione, con bottone "aggiungi destinazione".
-- Comparsa del pop-up "Vuoi aggiungere questa destinazione alla tua lista destinazioni? SI/NO".
-
-BACKEND:
-
-- Validazione dati e form.
-- Se l'utente conferma, salvataggio della destinazione nella lista personale (UC 8.4).
-
-**1.7 Come caregiver voglio poter registrare un trasporto ricorrente. (CG-33)** _[RINVIATA a v1 – vedi Punti aperti]_
-
-La raccomandazione è escluderla dalla v0: la ricorrenza implica generazione automatica di richieste, gestione delle eccezioni sulle singole occorrenze e annullamento in blocco, con un impatto sul modello dati sproporzionato rispetto al valore in fase di validazione del prodotto.
-
-**1.8 Come caregiver voglio poter indicare per il ritorno una destinazione diversa da quella da cui sono partito. (CG-38)**
-
-FRONTEND:
-
-- Nel form di nuovo trasporto, solo con direzione "andata e ritorno", checkbox "il ritorno è verso un indirizzo diverso".
-- Se selezionata, compare un terzo campo indirizzo, con la stessa tendina delle destinazioni salvate.
-- Se non selezionata, il ritorno è verso l'indirizzo di partenza dell'andata.
-
-BACKEND:
-
-- Terzo indirizzo facoltativo sulla richiesta, valorizzabile solo con direzione "andata e ritorno"; se assente, il ritorno si intende verso l'indirizzo di partenza.
-- Stessa validazione di coerenza direzione/indirizzi della 1.3.
-- L'indirizzo di ritorno è visibile all'associazione nel dettaglio della richiesta (UC 6.2). Non è più un campo modificabile dopo l'invio: la richiesta di modifica (ex UC 2.1) non esiste più.
-
-## UC 3 – ANNULLA TRASPORTO
-
-**3.1 Come caregiver voglio poter annullare il viaggio, indicando il motivo. (CG-23)**
-
-FRONTEND:
-
-- Bottone di annullamento del viaggio.
-- Pop-up di conferma dell'annullamento: "Sei sicuro di voler eliminare questo trasporto? Una volta eliminato si dovrà effettuare una nuova richiesta per richiedere un nuovo trasporto."
-- Tendina con le causali più frequenti + campo di testo libero opzionale.
-
-BACKEND:
-
-- Soft delete dal database (il viaggio resta nello storico con stato "annullato"), con registrazione di chi ha annullato e quando.
-- Salvataggio della causale.
-- Notifica all'associazione (UC 4.10), se il viaggio era già stato preso in carico.
-
-**3.2 Come associazione voglio poter disdire un trasporto specificando la causa. (AS-17)**
-
-FRONTEND:
-
-- Apertura del form con area di testo per scrivere il motivo, o tendina a scomparsa per sceglierlo.
-- Pop-up di conferma.
-
-BACKEND:
-
-- Validazione del form (causale obbligatoria).
-- Registrazione della disdetta come rifiuto post-accettazione di quella associazione, distinto dal semplice declino di una richiesta pendente: per la disdetta la causale è obbligatoria, per il declino è facoltativa.
-- Il viaggio torna in stato "in attesa" e rientra nella dashboard delle richieste pendenti delle altre associazioni destinatarie, così da consentire una copertura alternativa.
-- Invio della notifica all'utente con il testo della causale (UC 4.6).
-
-_[DA VALIDARE] Il rientro automatico del viaggio fra le richieste pendenti è la risposta al problema n.3 dichiarato in apertura del documento ("deve essere trovata una soluzione per assicurare un'alternativa"). Va confermato che sia il comportamento desiderato e con quale anticipo minimo rispetto alla data del viaggio._
-
-## UC 4 – STATO E NOTIFICHE
-
-**4.1 Come caregiver voglio sapere se il viaggio non può essere coperto. (CG-25)**
-
-FRONTEND:
-
-- Pop-up con messaggio di esito negativo e mancanza di soluzioni.
-- Badge "non coperto" sulla card del viaggio in "I miei viaggi".
-
-BACKEND:
-
-- Notifica ed e-mail con esito negativo.
-- Regola di scatto dell'esito negativo: nessuna associazione destinataria ha accettato entro la soglia definita (vedi Punti aperti), valutata da un job schedulato che confronta i rifiuti registrati con la lista congelata delle associazioni destinatarie.
-- Il passaggio a "non coperta" registra la data dell'esito.
-
-**4.2 Come caregiver voglio ricevere notifica quando il viaggio è preso in carico. (CG-26)**
-
-FRONTEND:
-
-- Apertura del pop-up con avviso di conferma del viaggio al login, con link alla scheda del viaggio.
-- Aggiornamento del badge di stato sulla card.
-
-BACKEND:
-
-- Notifica ed e-mail di conferma, con nome e contatti dell'associazione.
-
-**4.3 Come caregiver voglio essere avvisato se un viaggio già preso in carico viene annullato dall'associazione. (CG-27)**
-
-FRONTEND:
-
-- Pop-up al login con avviso e testo del motivo della disdetta.
-- Bottone "cerca un'alternativa" che riporta il viaggio in stato di richiesta.
-
-BACKEND:
-
-- Notifica ed e-mail.
-- Registrazione della causale nello storico del viaggio.
-
-**4.4 Come caregiver voglio sapere l'esito della mia richiesta. (CG-25, CG-26)**
-
-FRONTEND:
-
-- Badge sulla card del viaggio: "in attesa / confermata / non coperta".
-- Pop-up di notifica all'esito.
-
-BACKEND:
-
-- Notifica ed e-mail all'esito della valutazione delle associazioni destinatarie.
-
-**4.6 Come caregiver voglio poter vedere lo stato in tempo reale del viaggio dell'assistito. (CG-29)**
-
-FRONTEND:
-
-- Stato mostrato nella card del viaggio, nella pagina dell'assistito e nella pagina "I miei viaggi".
-- Timeline degli stati attraversati con l'orario di ciascun passaggio.
-- Pagina/schermata in cui l'operatore gestisce lo stato dell'assistito.
-
-BACKEND:
-
-- Persistenza dei cambi di stato in un registro append-only: ogni riga porta stato, timestamp, associazione che l'ha effettuato ed etichetta testuale dell'operatore. Lo stato corrente è la riga più recente.
-- Cambio di stato gestito dall'operatore dall'account dell'associazione (modello di accesso da confermare: vedi Punti aperti).
-- Ogni cambio di stato genera la notifica dell'UC 4.2.
-
-_[DA VALIDARE] La visualizzazione della posizione GPS del mezzo è esclusa dalla v0: richiede tracciamento continuo, consenso esplicito dell'operatore e trattamento di dati di geolocalizzazione. Lo stato testuale copre l'esigenza dichiarata nel problema n.2 (evitare le ripetute chiamate all'associazione)._
-
-**4.7 Come caregiver voglio ricevere notifica a ogni cambio di stato del viaggio. (CG-29)**
-
-FRONTEND:
-
-- Notifica push con il nuovo stato, es. "Il tuo assistito è stato preso in carico", "Viaggio concluso".
-
-BACKEND:
-
-- Invio della notifica push a tutti i caregiver collegati all'assistito interessato dal viaggio.
-- Nessuna e-mail per i cambi di stato intermedi, per non generare rumore.
-- L'invio push richiede che il dispositivo sia registrato: ogni caregiver e ogni associazione registra i propri token push, con la piattaforma di provenienza (iOS, Android, Web); i token possono essere disattivati al logout o alla disinstallazione.
-
-**4.8 Come caregiver voglio ricevere notifica dei prossimi trasporti programmati. (CG-28)**
-
-FRONTEND:
-
-- Pop-up: "Ricordati il trasporto di domani alle 17:25 da X a Y".
-
-BACKEND:
-
-- Notifica ed e-mail il giorno precedente il viaggio.
-- Job schedulato giornaliero che seleziona i viaggi confermati con data uguale a domani.
-
-**4.9 Come associazione voglio ricevere notifica se un utente invia una richiesta di trasporto. (AS-06)**
-
-FRONTEND:
-
-- Notifica "Ci sono nuove richieste, entra nell'app per visualizzarle".
-- Badge con contatore sulla voce di header "Richieste".
-
-BACKEND:
-
-- Notifica ed e-mail a tutte le associazioni destinatarie della richiesta, cioè quelle congelate nella lista dei candidati alla creazione.
-
-**4.10 Come associazione voglio ricevere notifica se un trasporto viene annullato dall'utente. (AS-18)**
-
-FRONTEND:
-
-- Pop-up al login: "Il viaggio del [data e ora] è stato disdetto."
-- Bottone "cerca un nuovo viaggio" che porta alla pagina delle richieste di trasporto.
-
-BACKEND:
-
-- Notifica ed e-mail.
-- Rimozione del viaggio dalla lista dei trasporti accettati e spostamento nello storico con stato "annullato".
-
-**4.11 Come operatore dell'associazione voglio poter aggiornare lo stato del viaggio. (AS-19)**
-
-FRONTEND (associazione):
-
-- Nella pagina del trasporto accettato, bottone "genera link operatore".
-- Il link generato è mostrato con un bottone "copia" per inoltrarlo all'operatore con il canale che preferisce (SMS, WhatsApp, ecc.) — GoCare non lo spedisce automaticamente.
-- Possibilità di rigenerare il link in qualunque momento (es. se il primo va perso); il precedente resta comunque valido finché non scade.
-
-FRONTEND (operatore, nessun login):
-
-- Aprendo il link, schermata minima e isolata dal resto dell'app: solo i pulsanti di avanzamento di stato, uno per volta e in sequenza: preso in carico → in arrivo → in visita → in ritorno → concluso, più "sospeso" disponibile durante l'esecuzione (guasto/imprevisto).
-- Il pulsante mostra sempre e solo lo stato successivo (o "sospeso"), per ridurre gli errori di inserimento.
-- Campo con il nome dell'operatore, da compilare al primo utilizzo del link.
-- Pop-up di conferma sul passaggio a "concluso", che chiude il viaggio e rende il link non più utilizzabile.
-
-BACKEND:
-
-- Il link (`TripOperatorLink`) è scoped a un solo trasporto, con scadenza calcolata automaticamente su `DepartureDateHour + 24 ore`; nessun account individuale per l'operatore (sostituisce sia l'ipotesi "dall'account associazione" sia quella "account per operatore").
-- Ogni richiesta di cambio stato è autenticata tramite il token del link, non tramite login.
-- Validazione della transizione rispetto alla macchina a stati (UC 4.1) e alla direzione del viaggio: un viaggio "solo andata" non attraversa lo stato "in ritorno", un viaggio "solo ritorno" non attraversa lo stato "in visita"; "sospeso" è raggiungibile da qualunque stato di esecuzione attivo e da esso si riprende dallo stato in cui ci si era fermati.
-- Registrazione di stato, timestamp, associazione ed etichetta dell'operatore in una nuova riga del registro delle transizioni; nessuna riga viene mai modificata o cancellata.
-- Allineamento dello stato della richiesta: alla prima transizione la richiesta passa in "in esecuzione", con il passaggio a "concluso" passa in "conclusa".
-- "Sospeso" genera notifica push immediata ai caregiver collegati più e-mail (trattato come evento di esito, data la criticità); gli altri cambi di stato solo push (UC 4.7).
-
-## UC 5 – VISUALIZZAZIONE "I MIEI VIAGGI"
-
-**5.1 Come caregiver voglio vedere l'elenco dei miei viaggi. (CG-30, CG-32)**
-
-FRONTEND:
-
-- Bottone "aggiungi" per aprire il form di aggiunta viaggio (rimanda all'UC 1).
-- Lista di tutti i viaggi in forma di card.
-- Contenuto della card: data e ora, associazione, contatto dell'associazione, indirizzo di partenza, indirizzo di destinazione, eventuale indirizzo di ritorno, badge di stato, stato del pagamento.
-- Separazione fra "prossimi viaggi" e "storico".
-
-BACKEND:
-
-- Lettura dei viaggi richiesti dal caregiver, relativi a tutti gli assistiti a lui collegati.
-- Ordinamento per data crescente sui prossimi viaggi, decrescente sullo storico.
-- Paginazione dello storico.
-
-_[DA VALIDARE] Va deciso se esporre il contatto generico dell'associazione e, durante il viaggio, quello dell'operatore, oppure solo quello generico. Ripreso nella sezione Punti aperti._
-
-**5.2 Come caregiver voglio vedere i contatti dell'associazione che ha preso in carico il mio viaggio, solamente dopo l'avvenuto pagamento. (CG-31)**
-
-FRONTEND:
-
-- Dopo la presa in carico, nella card e nel dettaglio del viaggio compare il bottone "Paga il trasporto", che apre la pagina di pagamento Stripe.
-- Al rientro dalla pagina Stripe, messaggio di esito (pagamento riuscito / annullato) e aggiornamento della card.
-- Contatto riportato nella card del viaggio e contatti completi nella pagina dell'associazione, raggiungibile dalla card: visibili solo a pagamento confermato.
-- Prima del pagamento, al posto dei contatti compare l'avviso "I contatti saranno visibili dopo il pagamento".
-
-BACKEND:
-
-- Creazione della sessione di pagamento Stripe per un viaggio in stato "confermato" assegnato a un'associazione, richiesta da un caregiver collegato all'assistito; restituzione dell'URL della pagina di pagamento.
-- Ricezione del webhook di Stripe con verifica della firma: solo il webhook (non il ritorno dal browser) segna il viaggio come pagato, registrando importo, identificativo del pagamento Stripe e istante.
-- Esposizione dei dati di contatto dell'associazione assegnataria (telefoni, e-mail, orari di reperibilità) solo per i viaggi pagati; nessun contatto per i viaggi "in attesa" o non ancora pagati.
-- Il pagamento è un dato separato dallo stato della richiesta: non introduce nuovi stati in §12.7.
-
-_[DA VALIDARE] Importo e chi lo stabilisce, destinatario dei fondi (GoCare o direttamente l'associazione, es. Stripe Connect), rimborso in caso di annullamento o disdetta dopo il pagamento. Ripreso in "Punti aperti" (PA-07)._
-
-**5.3 Come caregiver voglio poter avere uno storico delle visite fatte. (CG-32)**
-
-FRONTEND:
-
-- Pagina/sezione "Storico viaggi".
-- Lista di card in sola lettura, con stato finale (concluso / annullato / non coperto).
-- Filtro per assistito e per periodo.
-
-BACKEND:
-
-- Query sui viaggi in stato terminale, con paginazione.
-- I viaggi soft-deleted restano visibili nello storico con stato "annullato".
-
-**5.4 Come caregiver voglio vedere lo stato di avanzamento del viaggio in corso. (CG-29)**
-
-FRONTEND:
-
-- Card del viaggio in corso in evidenza in cima alla lista, con la timeline degli stati.
-- Aggiornamento della card alla ricezione della notifica di cambio stato.
-
-BACKEND:
-
-- Esposizione dello stato corrente e della cronologia dei passaggi, letta dal registro delle transizioni ordinato per timestamp.
-- Lettura in polling alla riapertura della schermata (il push copre l'aggiornamento immediato).
-
-## UC 6 – RICHIESTE PENDENTI (associazione)
-
-**6.1 Come associazione voglio vedere tutte le richieste pendenti nella mia dashboard, con filtri. (AS-07)**
-
-FRONTEND:
-
-- Dashboard con lista delle richieste in stato "in attesa", in forma di card o righe di tabella.
-- Barra filtri: data, fascia oraria, destinazione, tipo di viaggio.
-- Ordinamento per data del viaggio.
-- Stato vuoto: "Non ci sono richieste al momento".
-
-BACKEND:
-
-- Query delle richieste in stato "in attesa" per cui l'associazione compare fra i candidati congelati alla creazione e non ha già rifiutato.
-- Applicazione dei filtri lato server e paginazione.
-- Nessun dato esposto alle associazioni non destinatarie.
-
-**6.2 Come associazione voglio vedere il dettaglio di una richiesta. (AS-07)**
-
-FRONTEND:
-
-- Pagina o pannello di dettaglio: dati dell'assistito, data e ora, indirizzo di partenza, destinazione, eventuale indirizzo di ritorno, tipo di viaggio, direzione, note.
-- Bottoni "accetta" e "rifiuta" in fondo al dettaglio.
-
-BACKEND:
-
-- Lettura completa della richiesta.
-- Verifica che la richiesta sia ancora disponibile prima di mostrare le azioni.
-
-**6.3 Come associazione voglio poter accettare una richiesta di trasporto pendente. (AS-08)**
-
-FRONTEND:
-
-- Bottone "accetta" con pop-up di conferma.
-- Al termine, la richiesta esce dalla dashboard delle pendenti e compare fra i trasporti accettati.
-- Messaggio di errore dedicato se la richiesta è stata nel frattempo presa da un'altra associazione.
-
-BACKEND:
-
-- Passaggio di stato della richiesta da "in attesa" a "confermata", con assegnazione all'associazione e registrazione della data di accettazione. Il passaggio è ammesso solo da "in attesa".
-- Controllo di concorrenza ottimistico sulla richiesta: la prima accettazione vince, le successive ricevono un errore gestito.
-- Notifica di presa in carico all'utente (UC 4.2).
-
-_[DA VALIDARE] Il modello "prima accettazione vince" discende dalla decisione consolidata che le disponibilità non sono gestite dalla piattaforma. Va confermato il criterio con cui si compone l'area di competenza: in v0 la richiesta è visibile alle sole associazioni che coprono il comune di partenza._
-
-**6.4 Come associazione voglio poter rifiutare o declinare una richiesta pendente. (AS-09)**
-
-FRONTEND:
-
-- Bottone "rifiuta" con pop-up di conferma e causale facoltativa.
-- La richiesta scompare dalla dashboard dell'associazione che ha rifiutato.
-
-BACKEND:
-
-- Registrazione del rifiuto per quella associazione, come declino pre-accettazione con causale facoltativa: la richiesta resta "in attesa" e visibile alle altre destinatarie.
-- Se tutte le associazioni destinatarie hanno rifiutato, o è scaduta la soglia temporale, la richiesta passa in stato "non coperta" e scatta la notifica dell'UC 4.1.
-
-**6.5 Come associazione voglio poter contattare la persona che ha prenotato un trasporto. (AS-10)**
-
-FRONTEND:
-
-- Contatto telefonico visibile nel dettaglio della richiesta, con azione "chiama".
-
-BACKEND:
-
-- Esposizione dei dati di contatto solo alle associazioni destinatarie della richiesta.
-- Tracciamento degli accessi ai dati di contatto, distinguendo i recapiti del richiedente da quelli del beneficiario: ogni accesso registra richiesta, associazione, tipo di dato e istante.
-
-_[DA VALIDARE] Il recapito della persona che ha prenotato è un dato sensibile. Raccomandazione: mostrare il recapito completo solo dopo l'accettazione, e limitarsi al nome e alla fascia oraria nella fase di valutazione della richiesta. Punto ripreso in "Cosa manca / Punti aperti"._
-
-## UC 7 – TRASPORTI ACCETTATI (associazione)
-
-**7.1 Come associazione voglio vedere tutti i trasporti in carico nella mia dashboard. (AS-11)**
-
-FRONTEND:
-
-- Lista dei trasporti accettati e non ancora conclusi, in forma di card.
-- Contenuto della card: data e ora, assistito, contatti, partenza, destinazione, eventuale indirizzo di ritorno, stato corrente.
-- Filtri per data e per stato; ordinamento per data crescente.
-- Accesso alla schermata di aggiornamento stato (UC 4.11) dalla card.
-
-BACKEND:
-
-- Query dei viaggi assegnati all'associazione in stato "confermato" o "in esecuzione".
-- Esposizione dello stato corrente.
-
-**7.3 Come associazione voglio poter vedere uno storico dei trasporti effettuati. (AS-12)**
-
-FRONTEND:
-
-- Sezione "Storico" con lista in sola lettura dei viaggi conclusi, annullati e rifiutati.
-- Filtri per periodo e per esito.
-- Riepilogo numerico dei viaggi conclusi nel periodo selezionato.
-
-BACKEND:
-
-- Query sui viaggi in stato terminale assegnati all'associazione, con paginazione.
-- Conservazione dei dati anche dopo il soft delete del viaggio.
-
-## UC 8 – GESTIONE INFORMAZIONI PROFILO
-
-**8.1 Come caregiver voglio visualizzare le mie informazioni personali. (CG-03)**
-
-FRONTEND:
-
-- Pagina "Profilo" con i dati personali in sola lettura: nome, cognome, data di nascita, indirizzo di domicilio, telefono, e-mail.
-- Bottone "modifica" che attiva la modalità di editing.
-- Sezione separata con i dati di accesso (e-mail di login) e l'elenco degli assistiti collegati.
-
-BACKEND:
-
-- Lettura dei dati dell'utente autenticato.
-- L'indirizzo di domicilio è facoltativo e strutturato in via, civico, CAP, città e provincia.
-- Nessun dato di altri utenti esposto su questo endpoint.
-
-**8.2 Come caregiver voglio modificare le mie informazioni personali e di contatto. (CG-03)**
-
-FRONTEND:
-
-- Form di modifica precompilato, con i campi non modificabili disabilitati.
-- Validazione lato client di telefono ed e-mail.
-- Pop-up di conferma "Vuoi salvare le modifiche? SI/NO" e messaggio di esito.
-- Se viene modificata l'e-mail, avviso che sarà necessaria una nuova verifica.
-
-BACKEND:
-
-- Validazione dei dati e del form.
-- Aggiornamento dell'anagrafica utente.
-- Se cambia l'e-mail di login: invio dell'e-mail di verifica al nuovo indirizzo e conferma del cambio solo dopo la validazione. L'e-mail di accesso vive nell'area autenticazione, l'e-mail di contatto nel profilo di dominio: le due modifiche sono distinte.
-- I viaggi già registrati mantengono i contatti indicati al momento della richiesta.
-
-_[DA VALIDARE] Se un contatto cambia mentre un viaggio è in corso, va deciso se l'associazione debba vedere il contatto aggiornato o quello registrato con la richiesta._
-
-**8.3 Come caregiver voglio gestire le mie destinazioni salvate. (CG-18)**
-
-FRONTEND:
-
-- Sezione della pagina profilo (o pagina dedicata) "Le mie destinazioni".
-- Lista di tutte le destinazioni salvate, con bottoni di modifica ed eliminazione accanto a ciascuna.
-- Form di aggiunta/modifica: etichetta (es. "Ospedale Sant'Anna"), indirizzo completo, note.
-- Pop-up di conferma per l'eliminazione.
-- Le destinazioni salvate alimentano la tendina del form di nuovo trasporto (UC 1.6).
-
-BACKEND:
-
-- CRUD delle destinazioni collegate al caregiver.
-- Validazione dell'indirizzo (via, civico, CAP, città, provincia) e dei campi obbligatori.
-- L'eliminazione di una destinazione non modifica i viaggi già registrati che la utilizzano (l'indirizzo è copiato sulla richiesta).
-
-**8.4 Come associazione voglio visualizzare e modificare le informazioni della mia associazione. (AS-05)**
-
-FRONTEND:
-
-- Pagina informazioni associazione in sola lettura: denominazione, sede, comuni coperti, recapiti telefonici, e-mail, orari di reperibilità.
-- Pagina di modifica delle informazioni, con form precompilato e pop-up di conferma.
-- I comuni coperti si gestiscono come elenco, con aggiunta e rimozione delle singole voci. Ogni comune si aggiunge cercandolo per nome con l'autocompletamento sull'elenco ufficiale dei comuni (nome e sigla della provincia, per distinguere i comuni omonimi): non si scrive testo libero.
-- Anteprima di come i contatti vengono visti dagli utenti (UC 5.2).
-
-BACKEND:
-
-- Lettura e aggiornamento dei dati dell'associazione autenticata: denominazione, sede (indirizzo strutturato, obbligatoria), elenco dei telefoni, una e-mail, orari di reperibilità facoltativi, elenco dei comuni coperti.
-- Validazione dei recapiti (almeno un telefono e una e-mail obbligatori, perché esposti agli utenti) e di almeno un comune coperto, perché da esso dipende l'instradamento delle richieste.
-- I comuni coperti sono identificati dal codice ISTAT: ogni codice deve esistere nell'elenco ufficiale dei comuni, i duplicati vengono rifiutati. In lettura il backend restituisce per ogni comune codice, nome e sigla della provincia.
-- La modifica dei contatti si riflette immediatamente sui viaggi in carico.
-- La modifica dei comuni coperti vale per le richieste future: le liste di destinatari già congelate non vengono ricalcolate.
-
-## UC 9 – GESTIONE ASSISTITI
-
-**9.1 Come caregiver voglio poter aggiungere un assistito di cui mi prendo cura. (CG-39)**
-
-FRONTEND:
-
-- Bottone "aggiungi assistito" nella pagina principale caregiver.
-- Form: nome, cognome, data di nascita, telefono, indirizzo abituale (facoltativo).
-- Al salvataggio, l'assistito compare come nuova card nella pagina principale.
-
-BACKEND:
-
-- Creazione dell'anagrafica dell'assistito e del collegamento caregiver↔assistito, entrambi nello stesso passaggio: nessun invito da accettare, l'assistito non ha modo di dare o negare il proprio consenso.
-- Validazione dei dati obbligatori (nome, cognome, data di nascita, telefono).
-
-**9.2 Come caregiver voglio poter visualizzare l'elenco degli assistiti di cui mi occupo. (CG-40)**
-
-FRONTEND:
-
-- Pagina principale con una card per ogni assistito collegato.
-- La card mostra: nome, prossimo viaggio in programma.
-- Stato vuoto con invito ad aggiungere il primo assistito.
-
-BACKEND:
-
-- Lettura degli assistiti collegati al caregiver autenticato, tramite i collegamenti attivi.
-- Aggregazione del prossimo viaggio per ciascun assistito.
-
-**9.3 Come caregiver voglio poter visualizzare i dati e i viaggi di un assistito che seguo. (CG-41)**
-
-FRONTEND:
-
-- Pagina di dettaglio dell'assistito: dati anagrafici, elenco degli altri caregiver collegati, prossimi viaggi e storico.
-- Card dei viaggi con evidenza di chi li ha prenotati, se collegato più di un caregiver.
-
-BACKEND:
-
-- Verifica che il richiedente abbia un collegamento attivo con l'assistito prima di esporre qualunque dato (autorizzazione).
-- Se l'assistito ha più caregiver collegati, ciascuno vede tutti i dati e tutti i viaggi, senza distinzione fra chi lo ha aggiunto e gli altri collegati.
-
-**9.4 Come caregiver voglio poter modificare i dati di un assistito che seguo. (CG-42)**
-
-FRONTEND:
-
-- Form di modifica precompilato con i dati attuali dell'assistito, raggiungibile dalla pagina di dettaglio.
-- Pop-up di conferma sul salvataggio.
-
-BACKEND:
-
-- Verifica del collegamento attivo tra il richiedente e l'assistito.
-- Validazione e aggiornamento dei dati anagrafici.
-
-**9.5 Come caregiver voglio poter collegare direttamente un altro caregiver a un assistito che già seguo. (CG-43)**
-
-FRONTEND:
-
-- Bottone "aggiungi caregiver" nella pagina di dettaglio dell'assistito.
-- Form con l'e-mail del caregiver da collegare.
-- Il nuovo caregiver compare nella lista dei collegati non appena l'operazione va a buon fine.
-
-BACKEND:
-
-- Verifica che chi effettua l'operazione abbia già un collegamento attivo con l'assistito.
-- Verifica che l'e-mail indicata corrisponda a un account caregiver esistente.
-- Creazione diretta del nuovo collegamento: in v0 nessun invito da accettare, per lo stesso motivo della 9.1 — è una semplificazione deliberata, non una necessità (il caregiver invitato è un utente con un proprio account e potrebbe voler rifiutare). Il flusso di invito con consenso è rinviato alla v1 (§14).
-- Un caregiver non può comparire due volte come collegato allo stesso assistito.
-
-**9.6 Come caregiver voglio poter rimuovere un collegamento caregiver↔assistito. (CG-44)**
-
-FRONTEND:
-
-- Bottone di rimozione accanto a ciascun caregiver collegato, nella pagina di dettaglio dell'assistito.
-- Pop-up di conferma: "Vuoi rimuovere [nome] come caregiver di [assistito]? SI/NO".
-- Un caregiver può sempre rimuovere il proprio collegamento; la rimozione del collegamento di un altro caregiver richiede una conferma esplicita più marcata.
-
-BACKEND:
-
-- Il collegamento viene disattivato, non cancellato.
-- Blocco della rimozione se è l'unico caregiver collegato all'assistito, o richiesta di conferma esplicita che l'assistito resterebbe senza nessun caregiver.
-- I viaggi passati restano nello storico dell'assistito, visibili agli eventuali caregiver rimasti collegati.
-
-## UC 10 – ACCOUNT
-
-**10.1 Come caregiver voglio potermi registrare in GoCare. (CG-01)**
-
-FRONTEND:
-
-- Pagina di registrazione senza header, riservata ai caregiver (le associazioni non si registrano da qui: vengono registrate dall'amministratore, UC 11.1).
-- Form caregiver: nome, cognome, data di nascita, indirizzo, telefono, e-mail, password, conferma password.
-- Indicatore di robustezza della password e checkbox di accettazione dell'informativa privacy.
-- Messaggio finale: "Ti abbiamo inviato un'e-mail di verifica".
-
-BACKEND:
-
-- Validazione dei dati e del form; controllo di unicità dell'e-mail.
-- Hashing della password.
-- Creazione dell'account caregiver in stato "non verificato" e invio dell'e-mail di verifica con token a scadenza.
-- Creazione contestuale del profilo caregiver con lo **stesso identificatore** dell'account. L'assistito non ha un profilo di questo tipo: nasce solo con l'UC 9.1, senza account.
-- Attivazione dell'account al click sul link di verifica.
-
-**10.2 Come utente voglio poter effettuare il login. (CG-02, AS-02)**
-
-FRONTEND:
-
-- Pagina di login senza header: e-mail, password, "ricordami", link "password dimenticata", link alla registrazione.
-- Messaggio di errore generico in caso di credenziali errate.
-- Dopo l'accesso, reindirizzamento alla pagina principale del ruolo: dashboard richieste per l'associazione, elenco assistiti per il caregiver.
-- Al login vengono mostrati gli eventuali pop-up di notifica pendenti (UC 4).
-
-BACKEND:
-
-- Verifica delle credenziali ed emissione del token di sessione, con token di rinnovo revocabile.
-- Blocco dell'accesso agli account non verificati, con messaggio dedicato.
-- Limitazione dei tentativi di accesso falliti, con blocco temporaneo.
-- Restituzione del ruolo, che determina la navigazione e le voci di header. Il ruolo distingue solo caregiver e associazione: l'assistito non è un ruolo di account.
-
-**10.3 Come utente voglio poter recuperare la password in caso di smarrimento. (CG-04, AS-03)**
-
-FRONTEND:
-
-- Pagina "Password dimenticata" senza header, con il solo campo e-mail.
-- Messaggio neutro: "Se l'indirizzo è registrato, riceverai un'e-mail con le istruzioni".
-- Pagina di impostazione della nuova password, raggiunta dal link ricevuto via e-mail.
-- Messaggio di esito e reindirizzamento al login.
-
-BACKEND:
-
-- Generazione di un token di reset a scadenza, monouso.
-- Invio dell'e-mail con il link di reset.
-- Nessuna informazione sull'esistenza dell'account nella risposta.
-- Aggiornamento della password e invalidazione delle sessioni attive.
-
-**10.4 Come utente voglio poter eliminare il mio account. (CG-05, AS-04)**
-
-FRONTEND:
-
-- Bottone "elimina account" in fondo alla pagina di gestione dati personali.
-- Pop-up di conferma con reinserimento della password e avviso sulle conseguenze (perdita dell'accesso allo storico; gli assistiti collegati solo a questo caregiver restano senza nessun caregiver).
-- Blocco con messaggio esplicativo se esistono viaggi futuri confermati.
-- Per l'associazione: blocco se esistono trasporti accettati non ancora conclusi.
-
-BACKEND:
-
-- Soft delete dell'account e del profilo caregiver, e anonimizzazione dei dati personali con registrazione della data di anonimizzazione.
-- Verifica dell'assenza di viaggi futuri attivi prima di procedere.
-- Disattivazione dei collegamenti caregiver↔assistito di cui l'account era parte. Se un assistito resta senza nessun caregiver collegato, l'anagrafica resta nel database ma non è più raggiungibile da nessun account: da valutare se serva un avviso esplicito prima di procedere (vedi Punti aperti).
-- Invalidazione di tutte le sessioni e invio dell'e-mail di conferma.
-
-_[DA VALIDARE] Va definita la politica di conservazione dei dati dopo l'eliminazione dell'account: i viaggi conclusi restano nello storico dell'associazione anche dopo l'anonimizzazione dell'utente? E cosa succede a un assistito che resta senza nessun caregiver collegato?_
-
-## UC 11 – AMMINISTRAZIONE GOCARE
-
-Le associazioni non si registrano autonomamente: sono **associazioni partner**, verificate da GoCare fuori dalla piattaforma e poi registrate dall'amministratore. Un'associazione registrata è subito operativa: non esiste più uno stato di accreditamento separato (PA-05 superato). Tutte le funzioni di questo UC sono riservate al ruolo amministratore.
-
-**11.1 Come amministratore GoCare voglio poter registrare l'associazione partner. (AD-01)**
-
-FRONTEND:
-
-- Form di nuova associazione partner: denominazione, sede (indirizzo strutturato), comuni coperti, telefoni, e-mail, orari di reperibilità facoltativi.
-- Pop-up di conferma e messaggio finale: "Abbiamo inviato all'associazione l'e-mail per impostare la password".
-
-BACKEND:
-
-- Validazione dei dati con le stesse regole dell'UC 8.4 (almeno un telefono, una e-mail, almeno un comune coperto e valido secondo l'elenco ISTAT); controllo di unicità dell'e-mail.
-- Creazione nello stesso passaggio dell'account (ruolo associazione) e del profilo associazione con lo stesso identificatore.
-- L'account nasce senza password: viene inviata all'associazione un'e-mail di invito con un token monouso a scadenza per impostarla (stesso meccanismo del reset password). Impostata la password, l'account è attivo e l'e-mail è considerata verificata.
-- Da quel momento l'associazione entra nelle liste di destinatari delle nuove richieste che partono da uno dei suoi comuni.
-
-**11.2 Come amministratore GoCare voglio poter modificare i dati dell'associazione partner. (AD-02)**
-
-FRONTEND:
-
-- Dal dettaglio dell'associazione (11.6), bottone "modifica" con form precompilato e pop-up di conferma.
-
-BACKEND:
-
-- Aggiornamento degli stessi campi dell'UC 8.4, con le stesse validazioni.
-- La modifica dei comuni coperti vale per le richieste future: le liste di destinatari già congelate non vengono ricalcolate.
-- La modifica dei contatti si riflette immediatamente sui viaggi in carico (UC 5.2).
-- Il cambio dell'e-mail di accesso dell'associazione invia la conferma al nuovo indirizzo, come per il cambio e-mail dell'utente.
-
-**11.3 Come amministratore GoCare voglio poter monitorare le richieste all'associazione partner. (AD-03)**
-
-FRONTEND:
-
-- Nel dettaglio dell'associazione, sezione "Richieste" con l'elenco delle richieste di cui è destinataria e il relativo esito per quell'associazione: in attesa, accettata, rifiutata, disdetta, non coperta, annullata dall'utente.
-- Filtri per periodo ed esito; indicatori sintetici: numero di richieste ricevute, accettate, rifiutate e disdette, tempo medio di presa in carico.
-- Sola lettura: l'amministratore non accetta né rifiuta richieste per conto dell'associazione.
-
-BACKEND:
-
-- Query delle richieste in cui l'associazione compare fra le destinatarie, unite ai rifiuti/disdette registrati e all'eventuale assegnazione.
-- Calcolo degli indicatori sul periodo richiesto, con paginazione dell'elenco.
-- Esposizione dei soli dati di servizio (data, tratta, tipo di viaggio, esito): nessun recapito di caregiver o assistito (PA-04).
-
-**11.4 Come amministratore GoCare voglio poter eliminare l'associazione partner al termine della collaborazione. (AD-04)**
-
-FRONTEND:
-
-- Bottone "elimina associazione" nel dettaglio, con pop-up di conferma che riepiloga le conseguenze.
-- Blocco con messaggio esplicativo se l'associazione ha trasporti accettati non ancora conclusi.
-
-BACKEND:
-
-- Verifica dell'assenza di trasporti in stato "confermato" o "in esecuzione" assegnati all'associazione.
-- Soft delete dell'account e del profilo, invalidazione di tutte le sessioni e dei link operatore ancora validi.
-- L'associazione esce dalle liste di destinatari delle nuove richieste e non vede più le richieste pendenti; se era l'ultima destinataria ancora in grado di rispondere, la richiesta viene valutata per la mancata copertura (PA-02).
-- I viaggi conclusi restano nello storico con i soli dati di servizio.
-
-**11.5 Come amministratore GoCare voglio poter gestire gli account CareGiver: ripristino account. (AD-05)**
-
-FRONTEND:
-
-- Pagina di ricerca dei caregiver per e-mail o nome, con lo stato dell'account (non verificato, attivo, bloccato, eliminato).
-- Nel dettaglio dell'account, azioni disponibili in base allo stato: "riattiva account", "reinvia e-mail di verifica", "invia link di reimpostazione password", con pop-up di conferma.
-
-BACKEND:
-
-- Riattivazione di un account sospeso o bloccato per troppi tentativi di accesso falliti (azzeramento del conteggio).
-- Reinvio dell'e-mail di verifica per gli account non verificati.
-- Invio dell'e-mail di reimpostazione password, con invalidazione delle sessioni attive.
-- Ripristino di un account eliminato solo se i dati personali non sono ancora stati anonimizzati; dopo l'anonimizzazione il ripristino non è possibile.
-- Registrazione di ogni azione amministrativa (chi, cosa, quando) per tracciabilità.
-
-_[DA VALIDARE] Va confermato il perimetro del "ripristino": in particolare se includere il recupero di account eliminati e per quanto tempo prima dell'anonimizzazione (legato a PA-06)._
-
-**11.6 Come amministratore GoCare voglio poter visualizzare le associazioni partner e le rispettive informazioni (dati, stato account, trasporti). (AD-06)**
-
-FRONTEND:
-
-- Pagina principale dell'amministratore: elenco delle associazioni partner con denominazione, comuni coperti, stato dell'account (invito in attesa, attivo, eliminato) e numero di trasporti in carico.
-- Ricerca per denominazione e filtri per stato e comune coperto (selezionato con l'autocompletamento sull'elenco ufficiale dei comuni).
-- Dettaglio dell'associazione: dati e contatti, stato dell'account, trasporti in carico e storico, accesso alle sezioni 11.2, 11.3 e 11.4.
-
-BACKEND:
-
-- Elenco paginato delle associazioni con i dati del profilo, lo stato dell'account e i conteggi dei trasporti per stato.
-- Dettaglio di una singola associazione con l'elenco dei trasporti assegnati (in carico e storico), solo dati di servizio.
-
----
-
-# 10. Tabella delle Route
-
-## 10.1 Pagine dell'applicazione
+## 9.1 Pagine dell'applicazione
 
 Elenco completo delle pagine dell'applicazione, con path proposto, ruoli abilitati e presenza dell'header. Le pagine di autenticazione sono le uniche prive di header.
 
@@ -1103,9 +378,9 @@ Elenco completo delle pagine dell'applicazione, con path proposto, ruoli abilita
 | Gestione account caregiver                                                             | /admin/caregiver                  | Amministratore           | SÌ     | 11.5               |
 | Impostazione password associazione (link di invito)                                    | /set-password/:token              | Pubblico                 | NO     | 11.1               |
 
-Note sulle scelte: (a) "Reimposta password" e "Verifica e-mail" sono pagine pubbliche raggiunte da link e-mail, necessarie perché i flussi di registrazione e recupero credenziali si concludano; (b) la pagina "gestione stato viaggio" è dove l'**associazione** genera/rigenera il link per l'operatore, non dove l'operatore stesso lavora: l'operatore ha una schermata separata (`/operatore/:token`), pubblica ma utilizzabile solo con il link ricevuto, senza login e senza accesso al resto dell'app; (c) "Storico viaggi" e "Storico trasporti" possono essere realizzate come tab della pagina principale corrispondente anziché come route autonome: la scelta è indifferente sul piano funzionale; (d) il centro notifiche raccoglie lo storico delle notifiche dell'UC 4, che altrimenti sarebbero consultabili solo al momento della ricezione; (e) non esistono più pagine di modifica del viaggio né di gestione di un gruppo cura: la gestione degli assistiti si concentra nella pagina di dettaglio (UC 9), con collegamento diretto in v0 (l'invito con accettazione è previsto per la v1, §14).
+Note sulle scelte: (a) "Reimposta password" e "Verifica e-mail" sono pagine pubbliche raggiunte da link e-mail, necessarie perché i flussi di registrazione e recupero credenziali si concludano; (b) la pagina "gestione stato viaggio" è dove l'**associazione** genera/rigenera il link per l'operatore, non dove l'operatore stesso lavora: l'operatore ha una schermata separata (`/operatore/:token`), pubblica ma utilizzabile solo con il link ricevuto, senza login e senza accesso al resto dell'app; (c) "Storico viaggi" e "Storico trasporti" possono essere realizzate come tab della pagina principale corrispondente anziché come route autonome: la scelta è indifferente sul piano funzionale; (d) il centro notifiche raccoglie lo storico delle notifiche dell'UC 4, che altrimenti sarebbero consultabili solo al momento della ricezione; (e) non esistono più pagine di modifica del viaggio né di gestione di un gruppo cura: la gestione degli assistiti si concentra nella pagina di dettaglio (UC 9), con collegamento diretto in v0 (l'invito con accettazione è previsto per la v1, §13).
 
-## 10.2 Endpoint di back-end
+## 9.2 Endpoint di back-end
 
 Elenco degli endpoint che servono le pagine della tabella precedente, con il ruolo abilitato e lo Use Case di riferimento.
 
@@ -1152,7 +427,7 @@ Elenco degli endpoint che servono le pagine della tabella precedente, con il ruo
 | Dominio | `DELETE /assisted/:id/caregivers/:caregiverId`                  | Caregiver                             | 9.6       |
 | Dominio | `GET /notifications`                                            | Tutti                                 | UC 4      |
 | Dominio | `POST /notifications/:id/read` · `POST /notifications/read-all` | Tutti                                 | UC 4      |
-| Dominio | `GET /notifications/counters`                                   | Tutti                                 | §11.5     |
+| Dominio | `GET /notifications/counters`                                   | Tutti                                 | §10.5     |
 | Dominio | `POST /devices` · `DELETE /devices/:id`                         | Tutti                                 | UC 4      |
 | Admin   | `POST /admin/associations`                                      | Amministratore GoCare                 | 11.1      |
 | Auth    | `POST /auth/set-password`                                       | Pubblico (token di invito)            | 11.1      |
@@ -1167,20 +442,20 @@ Elenco degli endpoint che servono le pagine della tabella precedente, con il ruo
 
 ---
 
-# 11. Definizione dell'Header
+# 10. Definizione dell'Header
 
 L'header è presente su tutte le pagine successive all'autenticazione. La struttura è la stessa per tutti i ruoli; cambiano le voci di navigazione centrali.
 
-## 11.1 Struttura comune
+## 10.1 Struttura comune
 
 | Posizione | Elemento                           | Comportamento                                                           |
 | --------- | ---------------------------------- | ----------------------------------------------------------------------- |
 | Sinistra  | Logo "GoCare"                      | Riporta alla pagina principale del ruolo.                               |
-| Centro    | Voci di navigazione                | Variabili per ruolo (vedi 11.2 e 11.3).                                 |
+| Centro    | Voci di navigazione                | Variabili per ruolo (vedi 10.2 e 10.3).                                 |
 | Destra    | Icona notifiche con badge numerico | Apre il centro notifiche. Il badge conta le notifiche non lette (UC 4). |
 | Destra    | Avatar / menu utente               | Menu a tendina: Profilo, Impostazioni, Logout.                          |
 
-## 11.2 Voci di navigazione – Caregiver
+## 10.2 Voci di navigazione – Caregiver
 
 | Voce             | Route         | UC che la giustifica | Motivazione                                                           |
 | ---------------- | ------------- | -------------------- | --------------------------------------------------------------------- |
@@ -1191,7 +466,7 @@ L'header è presente su tutte le pagine successive all'autenticazione. La strutt
 
 "Nuovo trasporto" può essere realizzata come pulsante di azione in evidenza anziché come voce di navigazione: è la funzione più frequente e sarebbe penalizzata se raggiungibile solo dalla pagina "I miei viaggi".
 
-## 11.3 Voci di navigazione – Associazione
+## 10.3 Voci di navigazione – Associazione
 
 | Voce                 | Route                   | UC che la giustifica | Motivazione                                                                                                                                                                                            |
 | -------------------- | ----------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -1202,14 +477,14 @@ L'header è presente su tutte le pagine successive all'autenticazione. La strutt
 
 Le quattro voci del ruolo Associazione sono derivate dagli Use Case 6, 7 e 8: senza "Richieste" e "Trasporti accettati" le due dashboard previste dagli UC 6 e 7 non sarebbero raggiungibili.
 
-## 11.4 Voci di navigazione – Amministratore
+## 10.4 Voci di navigazione – Amministratore
 
 | Voce                 | Route               | UC che la giustifica | Motivazione                                                                       |
 | -------------------- | ------------------- | -------------------- | --------------------------------------------------------------------------------- |
 | Associazioni partner | /admin/associazioni | 11.1 – 11.4, 11.6    | Pagina principale del ruolo: elenco, registrazione, dettaglio e gestione partner. |
 | Caregiver            | /admin/caregiver    | 11.5                 | Ricerca degli account caregiver e azioni di ripristino.                           |
 
-## 11.5 Badge e contatori
+## 10.5 Badge e contatori
 
 | Elemento             | Ruolo        | Cosa conta                                                 | UC        |
 | -------------------- | ------------ | ---------------------------------------------------------- | --------- |
@@ -1221,11 +496,11 @@ _Rimossa la riga sul contatore delle richieste di modifica pendenti su "Trasport
 
 ---
 
-# 12. Flussi
+# 11. Flussi
 
 Sequenza logica dei processi principali. I flussi descrivono solo la successione dei passi e i cambi di stato, senza indicazioni grafiche.
 
-## 12.1 Registrazione
+## 11.1 Registrazione
 
 Registrazione del caregiver:
 
@@ -1250,7 +525,7 @@ Casi alternativi:
 - Login con account non verificato → accesso negato con invito a verificare l'e-mail.
 - Creazione dell'account riuscita ma creazione del profilo fallita → l'incoerenza (stesso database, due scritture separate non nella stessa transazione) viene recuperata da una riconciliazione, non lasciata all'utente.
 
-## 12.2 Login
+## 11.2 Login
 
 1. L'utente apre /login e inserisce e-mail e password.
 2. Il sistema verifica le credenziali e lo stato dell'account.
@@ -1264,7 +539,7 @@ Casi alternativi:
 - Superamento del numero di tentativi → blocco temporaneo dell'accesso.
 - Associazione eliminata dall'amministratore → accesso negato.
 
-## 12.3 Recupero password
+## 11.3 Recupero password
 
 1. Dalla pagina di login l'utente apre /forgot-password e inserisce la propria e-mail.
 2. Il sistema mostra sempre lo stesso messaggio neutro, indipendentemente dall'esistenza dell'account.
@@ -1273,7 +548,7 @@ Casi alternativi:
 5. Il sistema aggiorna la password, invalida il token e tutte le sessioni attive.
 6. L'utente viene reindirizzato al login.
 
-## 12.4 Richiesta di un nuovo trasporto
+## 11.4 Richiesta di un nuovo trasporto
 
 1. Il caregiver apre /viaggi/nuovo.
 2. Seleziona l'assistito beneficiario del trasporto tra quelli a lui collegati.
@@ -1299,7 +574,7 @@ Casi alternativi:
 
 Il viaggio, una volta creato, non è più modificabile: se qualcosa cambia, il caregiver lo annulla (UC 3) e invia una nuova richiesta.
 
-## 12.6 Annullamento del trasporto
+## 11.6 Annullamento del trasporto
 
 Annullamento da parte dell'utente:
 
@@ -1318,7 +593,7 @@ Annullamento da parte dell'associazione (disdetta):
 5. Il sistema notifica l'utente con il testo della causale (UC 4.3) e gli propone l'azione "cerca un'alternativa".
 6. Se nessun'altra associazione accetta entro la soglia, il viaggio passa in stato "non coperto" e l'utente riceve la notifica di esito negativo.
 
-## 12.7 Ciclo di stato del viaggio
+## 11.7 Ciclo di stato del viaggio
 
 Stati della richiesta (dalla creazione alla presa in carico):
 
@@ -1351,7 +626,7 @@ Regole di transizione:
 - Il passaggio a "concluso" chiude il viaggio e lo rende non più modificabile (non che lo fosse comunque: il viaggio non è mai modificabile dopo la creazione, in nessuno stato).
 - Le notifiche di cambio stato sono solo push, salvo "sospeso" (push + e-mail, trattato come evento di esito data la sua criticità): le altre e-mail restano riservate a presa in carico, disdetta, mancata copertura.
 
-## 12.8 Gestione degli assistiti
+## 11.8 Gestione degli assistiti
 
 Aggiunta di un assistito:
 
@@ -1360,7 +635,7 @@ Aggiunta di un assistito:
 3. Il sistema crea l'anagrafica dell'assistito e il collegamento con il caregiver nello stesso passaggio: nessun invito, nessuna accettazione.
 4. L'assistito compare come nuova card nella pagina principale.
 
-Collegamento di un ulteriore caregiver (v0, diretto — vedi §14 per il flusso a invito previsto in v1):
+Collegamento di un ulteriore caregiver (v0, diretto — vedi §13 per il flusso a invito previsto in v1):
 
 1. Un caregiver già collegato apre il dettaglio dell'assistito e preme "aggiungi caregiver".
 2. Indica l'e-mail dell'account caregiver da collegare e conferma.
@@ -1382,7 +657,7 @@ Rimozione di un collegamento:
 
 ---
 
-# 13. Cosa manca / Punti aperti
+# 12. Cosa manca / Punti aperti
 
 Per ciascun punto è indicata un'opzione consigliata, che resta da validare con il team prima dello sviluppo. Dove l'opzione consigliata è già stata recepita dal modello dati della v0 il punto lo dichiara, ma la decisione non è per questo chiusa: dove incide sui flussi resta segnalata con l'etichetta [DA VALIDARE].
 
@@ -1396,11 +671,11 @@ Riepilogo:
 | PA-04 | Esposizione dei dati di contatto dell'assistito all'associazione | Alto    | Aperto             |
 | PA-05 | Accreditamento delle associazioni                                | Medio   | Superato (UC 11)   |
 | PA-06 | Politica di conservazione dei dati dopo l'eliminazione account   | Basso   | Aperto             |
-| PA-07 | Pagamento con Stripe: importo, destinatario fondi, rimborsi      | Alto    | Aperto             |
+| PA-07 | Pagamento con Stripe: importo, destinatario fondi, rimborsi      | Alto    | Deciso (UC 5.2)    |
 
 ## PA-01 Modello di prenotazione: richiesta dell'utente o slot offerti dalle associazioni
 
-Problema: È aperta la domanda "l'utente richiede il trasporto, o le associazioni offrono disponibilità e l'utente seleziona lo slot?". È la decisione più strutturante del prodotto: cambia il modello dati, il flusso principale (12.4), il contenuto della dashboard associazione e il significato stesso degli stati della richiesta.
+Problema: È aperta la domanda "l'utente richiede il trasporto, o le associazioni offrono disponibilità e l'utente seleziona lo slot?". È la decisione più strutturante del prodotto: cambia il modello dati, il flusso principale (11.4), il contenuto della dashboard associazione e il significato stesso degli stati della richiesta.
 
 Opzione consigliata: Mantenere il modello a richiesta, coerente con l'intero documento e con la decisione che GoCare non gestisce le disponibilità delle associazioni. Il modello a slot richiederebbe alle associazioni di pubblicare in anticipo i turni disponibili, un onere organizzativo che la maggior parte delle associazioni di volontariato non è in grado di sostenere. Tutto il documento è scritto assumendo il modello a richiesta: se il team scegliesse il modello a slot, gli UC 1, 4, 5 e 6 andrebbero riscritti.
 
@@ -1429,7 +704,7 @@ Regole:
 - I comuni si scelgono dall'elenco ufficiale ISTAT già presente nella piattaforma e sono identificati dal **codice ISTAT** (ad esempio Assisi `054001`), non dal nome: il nome non è univoco (esistono comuni omonimi in province diverse) e può essere scritto in modi diversi.
 - Il comune di partenza della richiesta si ricava dall'indirizzo di partenza (città e sigla della provincia), già validato contro lo stesso elenco ufficiale.
 - L'elenco delle destinatarie viene congelato sulla richiesta alla creazione: modificare i comuni coperti vale solo per le richieste future.
-- Nessuna associazione copre il comune di partenza → la richiesta nasce senza destinatarie ed è "non coperta" (12.4).
+- Nessuna associazione copre il comune di partenza → la richiesta nasce senza destinatarie ed è "non coperta" (11.4).
 
 Stato in v0: decisione presa; il modello dati usa ancora le province (`CoveredProvinces`) ed è in corso di adeguamento. Il dettaglio tecnico (tabella dei comuni coperti, contratto delle API, migrazione dei dati esistenti) è in `RECAP_BACKEND.md`, §5.
 
@@ -1459,11 +734,11 @@ Stato in v0: Il modello dati recepisce parzialmente l'opzione consigliata — il
 
 ## PA-07 Pagamento del trasporto con Stripe
 
-Problema: La story CG-31 rende visibili i contatti dell'associazione solo dopo l'avvenuto pagamento, ma non sono ancora definiti l'importo, chi lo stabilisce, chi riceve i fondi e cosa succede in caso di annullamento.
+Problema: La story CG-31 rende visibili i contatti dell'associazione solo dopo l'avvenuto pagamento; andavano definiti l'importo, chi lo stabilisce, chi riceve i fondi e cosa succede in caso di annullamento.
 
-Opzione consigliata: Pagamento tramite Stripe Checkout dopo la presa in carico, con conferma solo via webhook. Da decidere: importo fisso per tipo di viaggio o stabilito dall'associazione; incasso da parte di GoCare o direttamente dell'associazione (Stripe Connect); rimborso automatico se l'associazione disdice dopo il pagamento e politica di rimborso se annulla il caregiver.
+Decisione: Pagamento tramite Stripe Checkout dopo la presa in carico, con conferma solo via webhook. Importo automatico, calcolato come `DistanceKm × 0,80 €/km` con un minimo di 5 €: non è stabilito dall'associazione né negoziabile. I fondi affluiscono sull'unico account Stripe di GoCare (Checkout standard): la ridistribuzione diretta alle associazioni (Stripe Connect) è rinviata alla v1. Se il caregiver annulla un viaggio già pagato, il sistema rimborsa automaticamente l'intero importo; il percorso di rimborso per la disdetta dell'associazione dopo il pagamento resta da realizzare con la stessa logica.
 
-Stato in v0: Aperto. Nel modello dati non esiste ancora nessuna entità di pagamento.
+Stato in v0: Deciso e implementato. Il modello dati include l'entità `Payment` (importo, identificativo Stripe, stato, data), collegata al trasporto; il calcolo della distanza avviene tramite un servizio esterno di instradamento (GraphHopper) dietro un'interfaccia (`IRoutingService`) che permette di cambiare fornitore senza impatti sul resto del codice.
 
 ---
 
@@ -1484,9 +759,9 @@ Stato in v0: Aperto. Nel modello dati non esiste ancora nessuna entità di pagam
 - modifica trasporto
 -
 
-# 14. Roadmap v1
+# 13. Roadmap v1
 
-Punti valutati e deliberatamente rinviati oltre la v0, raccolti qui in un solo posto invece che sparsi fra i singoli Use Case. Nessuno di questi introduce debito tecnico nella v0: sono funzionalità assenti, non abbozzate a metà. Non in questa lista perché **decisi per la v0** (non rinviati): lo stato "sospeso" per guasti/imprevisti e il link scoped al trasporto per l'operatore — entrambi fanno parte del modello v0 (UC 4.11, §12.7).
+Punti valutati e deliberatamente rinviati oltre la v0, raccolti qui in un solo posto invece che sparsi fra i singoli Use Case. Nessuno di questi introduce debito tecnico nella v0: sono funzionalità assenti, non abbozzate a metà. Non in questa lista perché **decisi per la v0** (non rinviati): lo stato "sospeso" per guasti/imprevisti e il link scoped al trasporto per l'operatore — entrambi fanno parte del modello v0 (UC 4.11, §11.7).
 
 ## Invito con consenso per il collegamento di un secondo caregiver
 
@@ -1496,9 +771,9 @@ Il modello v0 collega un secondo caregiver a un assistito in modo diretto e imme
 
 L'UC "Modifica trasporto" non è presente in v0: dopo la creazione, l'unica azione su un viaggio è l'annullamento. Semplificazione deliberata per lanciare prima, non un giudizio definitivo sulla necessità della funzione. In v1 il disegno riparte da zero: una possibile base di partenza è una richiesta di modifica a data/orario/destinazione, con approvazione dell'associazione se il viaggio è già confermato — ma va valutata alla luce dell'uso reale della v0: potrebbe bastare annullamento+nuova richiesta, o servire una versione più snella senza approvazione per i cambi minori. Se questo punto viene ripreso, va affrontata anche la domanda su cosa succede quando l'associazione rifiuta una modifica proposta (esito, opzioni per l'utente).
 
-## Calcolo dei km previsti
+## Filtri per chilometraggio nelle dashboard associazione
 
-La richiesta guadagna un campo km; le dashboard dell'associazione un filtro/colonna dedicati. Rinviato perché il calcolo richiede un servizio esterno di geocoding/instradamento, non solo un campo aggiunto al form (§6 "Decisioni consolidate").
+Le dashboard dell'associazione (UC 6, UC 7) non hanno ancora un filtro o una colonna dedicata ai km del viaggio, pur essendo il campo (`DistanceKm`) già presente nel modello dati dalla v0 (vedi §6 "Decisioni consolidate" e PA-07).
 
 ## Trasporto sociale
 
