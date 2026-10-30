@@ -486,6 +486,22 @@ Numerazione allineata a `Project_GoCare.md` §13 (rinumerata: i punti chiusi o r
 
 **Fuori scope v0, pianificati per v1** (`Project_GoCare.md` §14): invito con consenso per il secondo caregiver, modifica della richiesta di viaggio, calcolo km previsti, trasporto sociale, trasporti ricorrenti, posizione GPS del mezzo, flusso API bidirezionale.
 
+**Lavoro già scritto ma non mergiato** — branch `feature/transport-caregiver-contacts`
+(pushato su origin, mai aperta la PR, non rebasato sul main attuale dopo i
+merge di fine ottobre: contiene ancora `Companion`/accompagnatore, che nel
+frattempo `main` ha mantenuto). Contenuto, da recuperare/riportare quando si
+decide di riprenderlo (dettagli completi in `docs/MODIFICHE_MOCKUP_TRASPORTI.md`):
+- Rimozione del concetto di accompagnatore (`Companion`) — era un errore di
+  pianificazione del mockup "Nuovo trasporto": nel dominio reale esisteva
+  già ed era cablato in `CreateTransportService`.
+- `TransportRequest.PreferredContactPersonId` (caregiver scelto come
+  contatto principale per la singola richiesta) + nuova entità
+  `AlternativeContact` (numeri di telefono extra facoltativi).
+- Trasferimento (`ETripType.Transfer`) che forza OneWay come Ricovero e
+  Dimissione.
+- Filtro `?when=Upcoming|Past` su `GET /transports` per "Prossimi"/"Passati".
+- `Phone` aggiunto a `CaregiverResponse` (`GET /assisted/{id}`).
+
 ---
 
 ## 16. Ordine di esecuzione consigliato (milestone)
