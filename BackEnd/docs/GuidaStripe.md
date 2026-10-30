@@ -99,8 +99,12 @@ secret fisso condiviso — la CLI serve solo per lo sviluppo locale.
 
 ## 4. GraphHopper — API Key
 
-graphhopper.com → registrazione con email → chiave gratuita dalla
-dashboard (nessuna carta richiesta, 500 richieste/giorno nel piano free).
+A differenza del webhook secret di Stripe, qui **non serve un account
+personale**: l'API key di GraphHopper è una chiave piatta, condivisa,
+uguale per chiunque la usi (non è legata alla macchina di chi la usa,
+come invece il webhook secret). Basta chiederla a chi l'ha già creata
+(Francesco) — su un canale privato, mai in chat di gruppo o in un commit
+— e incollarla nel proprio `appsettings.Local.json`:
 
 ```json
 {
