@@ -62,6 +62,7 @@ builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<TokenIssuer>();
 builder.Services.AddScoped<LoginService>();
+builder.Services.AddScoped<AdminPasswordResetService>();
 builder.Services.AddScoped<RefreshService>();
 builder.Services.AddScoped<RegisterUserService>();
 builder.Services.AddScoped<RegisterAssociationService>();
