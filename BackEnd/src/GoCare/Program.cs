@@ -8,6 +8,7 @@ using GoCare.Services.Destinations;
 using GoCare.Services.Devices;
 using GoCare.Services.Domain;
 using GoCare.Services.Notifications;
+using GoCare.Services.Payments;
 using GoCare.Services.Profile;
 using GoCare.Services.Provisioning;
 using GoCare.Services.Transport;
@@ -18,6 +19,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using Microsoft.OpenApi;
 using GoCare.Services.Admin;
+using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -38,6 +40,14 @@ builder.Services.Configure<FrontendOptions>(
     builder.Configuration.GetSection(FrontendOptions.SectionName));
 builder.Services.Configure<SmtpOptions>(
     builder.Configuration.GetSection(SmtpOptions.SectionName));
+builder.Services.Configure<OpenRouteServiceOptions>(
+    builder.Configuration.GetSection(OpenRouteServiceOptions.SectionName));
+builder.Services.Configure<GraphHopperOptions>(
+    builder.Configuration.GetSection(GraphHopperOptions.SectionName));
+builder.Services.Configure<PricingOptions>(
+    builder.Configuration.GetSection(PricingOptions.SectionName));
+builder.Services.Configure<StripeOptions>(
+    builder.Configuration.GetSection(StripeOptions.SectionName));
 
 // --- Database
 var connectionString = builder.Configuration.GetConnectionString("GoCareDb")
@@ -84,6 +94,14 @@ builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(cli
 {
     client.DefaultRequestHeaders.Add("User-Agent", "GoCare/1.0 (progetto universitario)");
 });
+// GraphHopper al posto di OpenRouteService: ORS è giù per le patch di emergenza PHP di fine
+// ottobre 2026 e la cosa potrebbe durare. Stesso contratto (IRoutingService), per tornare a ORS
+// basta ripristinare questa riga su AddHttpClient<IRoutingService, OpenRouteServiceClient>().
+builder.Services.AddHttpClient<IRoutingService, GraphHopperClient>();
+builder.Services.AddSingleton<Stripe.IStripeClient>(sp =>
+    new Stripe.StripeClient(sp.GetRequiredService<IOptions<StripeOptions>>().Value.SecretKey));
+builder.Services.AddScoped<CreateCheckoutSessionService>();
+builder.Services.AddScoped<StripeWebhookService>();
 builder.Services.AddScoped<GetPersonProfileService>();
 builder.Services.AddScoped<UpdatePersonProfileService>();
 builder.Services.AddScoped<GetAssociationProfileService>();

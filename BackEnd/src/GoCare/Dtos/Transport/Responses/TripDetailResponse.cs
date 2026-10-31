@@ -8,10 +8,11 @@ public sealed record TripDetailResponse(
                             ETripDirection TripDirection,
                             DateTimeOffset DepartureDateHour,
                             DateTimeOffset? ReturnDateHour,
-                            Address StartAddress,
-                            Address EndAddress,
-                            Address? ReturnEndAddress,
+                            TripAddress StartAddress,
+                            TripAddress EndAddress,
+                            TripAddress? ReturnEndAddress,
                             ETripRequestStatus RequestStatus,
+                            bool IsPaid,
                             string? AssociationName,
                             List<string>? AssociationPhones);
 

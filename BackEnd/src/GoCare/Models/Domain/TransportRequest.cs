@@ -10,8 +10,8 @@ public sealed class TransportRequest
     // Costruttore vero, usato dall'applicazione.
     public TransportRequest(
         Guid id, Guid requestedById, Guid beneficiaryId, ETripType tripType, ETripDirection tripDirection,
-        DateTimeOffset departureDateHour, DateTimeOffset? returnDateHour, Address startAddress, Address endAddress, Address? returnEndAddress,
-        string referencePhone, string? referenceEmail, DateTimeOffset createdAt)
+        DateTimeOffset departureDateHour, DateTimeOffset? returnDateHour, TripAddress startAddress, TripAddress endAddress, TripAddress? returnEndAddress,
+        string referencePhone, string? referenceEmail, double distanceKm, DateTimeOffset createdAt)
     {
         Id = id;
         RequestedById = requestedById;
@@ -25,6 +25,7 @@ public sealed class TransportRequest
         ReturnEndAddress = returnEndAddress;
         ReferencePhone = referencePhone;
         ReferenceEmail = referenceEmail;
+        DistanceKm = distanceKm;
         CreatedAt = createdAt;
 
         EnsureScheduleConsistency(departureDateHour, returnDateHour, returnEndAddress);
@@ -38,11 +39,12 @@ public sealed class TransportRequest
     public ETripDirection TripDirection { get; private set; }
     public DateTimeOffset DepartureDateHour { get; private set; }
     public DateTimeOffset? ReturnDateHour { get; private set; }
-    public Address StartAddress { get; private set; } = null!;
-    public Address EndAddress { get; private set; } = null!;
-    public Address? ReturnEndAddress { get; private set; }
+    public TripAddress StartAddress { get; private set; } = null!;
+    public TripAddress EndAddress { get; private set; } = null!;
+    public TripAddress? ReturnEndAddress { get; private set; }
     public string ReferencePhone { get; private set; } = null!;
     public string? ReferenceEmail { get; private set; }
+    public double DistanceKm { get; private set; } // andata+ritorno se RoundTrip; calcolato una sola volta alla creazione, usato per il prezzo (vedi Punto 2 del piano Stripe)
     public ETripRequestStatus RequestStatus { get; private set; } = ETripRequestStatus.Pending;
     public Guid? AssignedAssociationId { get; private set; }
     public Guid? DeletedBy { get; private set; }
@@ -53,7 +55,7 @@ public sealed class TransportRequest
     private void EnsureScheduleConsistency(
         DateTimeOffset departure,
         DateTimeOffset? returnDateHour,
-        Address? returnEndAddress)
+        TripAddress? returnEndAddress)
     {
         var isRoundTrip = TripDirection == ETripDirection.RoundTrip;
 
@@ -88,7 +90,7 @@ public sealed class TransportRequest
         ReturnDateHour = newReturnDateHour;
     }
 
-    public void ChangeDestination(Address newEndAddress, Address? newReturnEndAddress)
+    public void ChangeDestination(TripAddress newEndAddress, TripAddress? newReturnEndAddress)
     {
         EnsureScheduleConsistency(DepartureDateHour, ReturnDateHour, newReturnEndAddress);
 

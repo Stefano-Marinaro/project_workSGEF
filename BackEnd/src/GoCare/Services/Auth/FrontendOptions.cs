@@ -10,4 +10,6 @@ public sealed class FrontendOptions
     public string OperatorUrl { get; set; } = null!;
     public string CaregiverInviteUrl { get; set; } = null!;
     public string SetPasswordUrl { get; set; } = null!;
+    public string PaymentSuccessUrl { get; set; } = null!;
+    public string PaymentCancelUrl { get; set; } = null!;
 }

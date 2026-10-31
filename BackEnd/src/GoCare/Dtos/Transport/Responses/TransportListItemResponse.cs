@@ -9,8 +9,8 @@ public sealed record TransportListItemResponse(
     ETripDirection TripDirection,
     DateTimeOffset DepartureDateHour,
     DateTimeOffset? ReturnDateHour,
-    Address StartAddress,
-    Address EndAddress,
+    TripAddress StartAddress,
+    TripAddress EndAddress,
     ETripRequestStatus RequestStatus,
     Guid? AssociationId,
     string? AssociationName);

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Services.Transport;
 
-public sealed class DeleteTransportService(GoCareDbContext db)
+public sealed class DeleteTransportService(GoCareDbContext db, Stripe.IStripeClient stripeClient)
 {
     public async Task DeleteTransport(Guid id, Guid deletedBy, CancellationToken ct)
     {
@@ -25,6 +25,20 @@ public sealed class DeleteTransportService(GoCareDbContext db)
         var now = DateTimeOffset.UtcNow;
 
         transport.Cancel(deletedBy, now);
+
+        // Se il viaggio era già stato pagato, rimborso automatico e integrale (politica v0).
+        var payment = await db.Payments.SingleOrDefaultAsync(
+            p => p.TransportRequestId == id && p.Status == EPaymentStatus.Succeeded, ct);
+
+        if (payment is not null)
+        {
+            var refundService = new Stripe.RefundService(stripeClient);
+            await refundService.CreateAsync(
+                new Stripe.RefundCreateOptions { PaymentIntent = payment.StripePaymentIntentId },
+                cancellationToken: ct);
+
+            payment.MarkRefunded();
+        }
 
         await db.SaveChangesAsync(ct);
     }
