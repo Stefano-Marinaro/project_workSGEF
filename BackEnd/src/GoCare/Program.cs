@@ -90,6 +90,7 @@ builder.Services.AddScoped<GetCaregiverInvitePreviewService>();
 builder.Services.AddScoped<AcceptCaregiverInviteService>();
 builder.Services.AddScoped<SearchComuneService>(); 
 builder.Services.AddScoped<SearchAddressService>();
+builder.Services.AddScoped<PartnerAssociationDetailService>();
 builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(client =>
 {
     client.DefaultRequestHeaders.Add("User-Agent", "GoCare/1.0 (progetto universitario)");
