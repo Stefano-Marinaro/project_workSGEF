@@ -123,6 +123,8 @@ builder.Services.AddScoped<NotificationCountersService>();
 builder.Services.AddScoped<RegisterDeviceService>();
 builder.Services.AddScoped<UnregisterDeviceService>();
 builder.Services.AddScoped<CreateDestinationService>();
+builder.Services.AddScoped<ListCaregiverAccountsService>();
+builder.Services.AddScoped<CaregiverAccountDetailService>();
 builder.Services.AddScoped<ListDestinationsService>();
 builder.Services.AddScoped<UpdateDestinationService>();
 builder.Services.AddScoped<DeleteDestinationService>();
