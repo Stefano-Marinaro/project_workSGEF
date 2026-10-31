@@ -120,6 +120,7 @@ builder.Services.AddScoped<PartnerAssociationRequestsService>();
 builder.Services.AddScoped<MarkNotificationReadService>();
 builder.Services.AddScoped<MarkAllNotificationsReadService>();
 builder.Services.AddScoped<NotificationCountersService>();
+builder.Services.AddScoped<DeletePartnerAssociationService>();
 builder.Services.AddScoped<RegisterDeviceService>();
 builder.Services.AddScoped<UnregisterDeviceService>();
 builder.Services.AddScoped<CreateDestinationService>();
