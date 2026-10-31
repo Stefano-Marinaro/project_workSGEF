@@ -115,6 +115,7 @@ builder.Services.AddScoped<DeclineTransportRequestService>();
 builder.Services.AddScoped<AcceptedTransportDetailService>();
 builder.Services.AddScoped<AssociationHistoryService>();
 builder.Services.AddScoped<ListNotificationsService>();
+builder.Services.AddScoped<PartnerAssociationRequestsService>();
 builder.Services.AddScoped<MarkNotificationReadService>();
 builder.Services.AddScoped<MarkAllNotificationsReadService>();
 builder.Services.AddScoped<NotificationCountersService>();
