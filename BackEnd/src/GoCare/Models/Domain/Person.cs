@@ -48,4 +48,13 @@ public sealed class Person
     {
         Email = newEmail;
     }
+
+    // un profilo anonimizzato non ha più i dati personali: non si può ripristinare
+    public void Restore()
+    {
+        if (AnonymizedAt is not null)
+            throw new InvalidOperationException("Il profilo è stato anonimizzato e non può essere ripristinato.");
+
+        DeletedAt = null;
+    }
 }
