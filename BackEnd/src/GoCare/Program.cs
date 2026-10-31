@@ -66,6 +66,7 @@ builder.Services.AddScoped<AdminPasswordResetService>();
 builder.Services.AddScoped<RefreshService>();
 builder.Services.AddScoped<RegisterUserService>();
 builder.Services.AddScoped<RegisterAssociationService>();
+builder.Services.AddScoped<AdminResendVerificationService>();
 builder.Services.AddScoped<VerifyEmailService>();
 builder.Services.AddScoped<LogoutService>();
 builder.Services.AddScoped<ForgotPasswordService>();
