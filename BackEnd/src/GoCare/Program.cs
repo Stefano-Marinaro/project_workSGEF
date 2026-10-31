@@ -130,6 +130,7 @@ builder.Services.AddScoped<UpdateDestinationService>();
 builder.Services.AddScoped<DeleteDestinationService>();
 builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 builder.Services.AddScoped<ListPartnerAssociationsService>();
+builder.Services.AddScoped<CreatePartnerAssociationService>();
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
 // (il ValidationFilter salta i tipi di request senza un validator)
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
