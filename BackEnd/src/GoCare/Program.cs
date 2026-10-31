@@ -108,6 +108,7 @@ builder.Services.AddScoped<CreateCheckoutSessionService>();
 builder.Services.AddScoped<StripeWebhookService>();
 builder.Services.AddScoped<GetPersonProfileService>();
 builder.Services.AddScoped<UpdatePersonProfileService>();
+builder.Services.AddScoped<UpdatePartnerAssociationService>();
 builder.Services.AddScoped<GetAssociationProfileService>();
 builder.Services.AddScoped<UpdateAssociationProfileService>();
 builder.Services.AddScoped<ListAcceptedTransportsService>();
