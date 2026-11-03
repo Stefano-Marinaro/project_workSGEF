@@ -14,5 +14,6 @@ public sealed record TripDetailResponse(
                             ETripRequestStatus RequestStatus,
                             bool IsPaid,
                             string? AssociationName,
+                            string? AssociationComune,
                             List<string>? AssociationPhones);
 

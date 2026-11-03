@@ -27,13 +27,21 @@ public class TripDetailService(GoCareDbContext db)
             p => p.TransportRequestId == tripId && p.Status == EPaymentStatus.Succeeded, ct);
 
         string? associationName = null;
+        string? associationComune = null;
         List<string>? associationPhones = null;
 
-        if (trip.AssignedAssociationId is not null && isPaid)
+        if (trip.AssignedAssociationId is not null)
         {
             var association = await db.Associations.SingleOrDefaultAsync(a => a.Id == trip.AssignedAssociationId, ct);
+
+            // Nome e comune non sono dati sensibili e non permettono di aggirare il pagamento
+            // (a differenza dei telefoni, che restano dietro al gate): si vedono appena l'associazione
+            // prende in carico il viaggio, non solo a pagamento avvenuto.
             associationName = association?.Name;
-            associationPhones = association?.Phones;
+            associationComune = association?.Headquarter?.City;
+
+            if (isPaid)
+                associationPhones = association?.Phones;
         }
 
         return new TripDetailResponse(
@@ -47,6 +55,7 @@ public class TripDetailService(GoCareDbContext db)
             trip.RequestStatus,
             isPaid,
             associationName,
+            associationComune,
             associationPhones);
     }
 }

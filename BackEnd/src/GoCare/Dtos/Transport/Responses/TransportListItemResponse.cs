@@ -13,4 +13,5 @@ public sealed record TransportListItemResponse(
     TripAddress EndAddress,
     ETripRequestStatus RequestStatus,
     Guid? AssociationId,
-    string? AssociationName);
+    string? AssociationName,
+    string? AssociationComune);

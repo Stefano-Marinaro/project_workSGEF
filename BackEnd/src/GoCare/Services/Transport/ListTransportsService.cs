@@ -27,7 +27,10 @@ public sealed class ListTransportsService(GoCareDbContext db)
                 t.AssignedAssociationId,
                 t.AssignedAssociationId == null
                     ? null
-                    : db.Associations.Where(a => a.Id == t.AssignedAssociationId).Select(a => a.Name).FirstOrDefault()))
+                    : db.Associations.Where(a => a.Id == t.AssignedAssociationId).Select(a => a.Name).FirstOrDefault(),
+                t.AssignedAssociationId == null
+                    ? null
+                    : db.Associations.Where(a => a.Id == t.AssignedAssociationId).Select(a => a.Headquarter!.City).FirstOrDefault()))
             .ToListAsync(ct);
     }
 }
