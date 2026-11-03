@@ -11,7 +11,7 @@ public sealed class UpdateAssociationProfileService(GoCareDbContext db)
     public async Task UpdateAsync(
         Guid accountId,
         string name,
-        Address headquarter,
+        TripAddress headquarter,
         List<string> phones,
         List<string> coveredComuni,
         string? availabilityHours,

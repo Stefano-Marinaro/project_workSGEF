@@ -69,17 +69,27 @@ public sealed class CreateTransportService(GoCareDbContext db, IRoutingService r
                 .Select(c => c.CodiceIstat)
                 .SingleAsync(ct);
 
-            // associazioni attive che hanno quel comune fra i propri comuni coperti
-            var candidateAssociationIds = await db.Associations
+            // associazioni attive, con profilo completo (serve la sede per calcolare la distanza),
+            // che hanno quel comune fra i propri comuni coperti
+            var candidateAssociations = await db.Associations
                 .Where(a => a.Status == EAccreditationStatus.Accredited
                         && a.DeletedAt == null
+                        && a.Headquarter != null
                         && db.AssociationCoveredComuni.Any(c => c.AssociationId == a.Id && c.ComuneCodiceIstat == startCodiceIstat))
-                .Select(a => a.Id)
+                .Select(a => new { a.Id, a.Headquarter!.Latitude, a.Headquarter.Longitude })
                 .ToListAsync(ct);
 
-        // Per ogni associazione trovata registra una riga TransportRequestCandidate, permetterà a ciascuna associazione di vedere l'elenco delle richieste pendenti nella propria zona
-        foreach (var associationId in candidateAssociationIds)
-            db.TransportRequestCandidates.Add(new TransportRequestCandidate(transportId, associationId));
+        // Per ogni associazione trovata registra una riga TransportRequestCandidate, con i km che
+        // dovrebbe percorrere dalla propria sede per raggiungere il punto di partenza: calcolati qui,
+        // una sola volta, invece che a ogni apertura della dashboard dell'associazione (UC 6.1).
+        foreach (var association in candidateAssociations)
+        {
+            var distanceToReachKm = await routing.GetDistanceKmAsync(
+                association.Latitude, association.Longitude, startAddress.Latitude, startAddress.Longitude, ct);
+
+            db.TransportRequestCandidates.Add(
+                new TransportRequestCandidate(transportId, association.Id, distanceToReachKm));
+        }
 
         await db.SaveChangesAsync(ct); //genera tutte le INSERT
 

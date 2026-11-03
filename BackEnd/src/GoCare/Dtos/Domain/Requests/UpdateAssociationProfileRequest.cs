@@ -4,7 +4,7 @@ namespace GoCare.Dtos.Domain.Requests;
 
 public sealed record UpdateAssociationProfileRequest(
     string Name,
-    AddressRequest Headquarter,
+    TripAddressRequest Headquarter,
     List<string> Phones,
     List<string> CoveredComuni,          // codici ISTAT, es. "054001"
     string? AvailabilityHours

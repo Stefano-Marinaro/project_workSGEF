@@ -18,7 +18,7 @@ public sealed class Association
 
     public Guid Id { get; }
     public string? Name { get; private set; }
-    public Address? Headquarter { get; private set; }
+    public TripAddress? Headquarter { get; private set; }
     public List<string>? Phones { get; private set; }
     public string Email { get; private set; } = null!;
     public string? AvailabilityHours { get; private set; }
@@ -32,7 +32,7 @@ public sealed class Association
     public bool CanOperate =>
         IsProfileComplete && Status is EAccreditationStatus.Accredited;
 
-    public void CompleteProfile(string name, Address headquarter, List<string> phones)
+    public void CompleteProfile(string name, TripAddress headquarter, List<string> phones)
     {
         Name = name;
         Headquarter = headquarter;
@@ -43,7 +43,7 @@ public sealed class Association
     // l'associazione non può accreditarsi da sola.
     public void UpdateProfile(
         string name,
-        Address headquarter,
+        TripAddress headquarter,
         List<string> phones,
         string? availabilityHours)
     {

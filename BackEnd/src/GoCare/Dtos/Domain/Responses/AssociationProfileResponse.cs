@@ -5,7 +5,7 @@ namespace GoCare.Dtos.Domain.Responses;
 
 public sealed record AssociationProfileResponse(
     string? Name,
-    Address? Headquarter,
+    TripAddress? Headquarter,
     List<string>? Phones,
     List<CoveredComuneResponse> CoveredComuni,
     string? AvailabilityHours,

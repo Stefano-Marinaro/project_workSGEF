@@ -919,6 +919,10 @@ namespace GoCare.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("association_id");
 
+                    b.Property<double>("DistanceToReachKm")
+                        .HasColumnType("double precision")
+                        .HasColumnName("distance_to_reach_km");
+
                     b.HasKey("TransportRequestId", "AssociationId")
                         .HasName("pk_transport_request_candidates");
 
@@ -1140,7 +1144,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("AssistedPersonId");
 
-                            b1.ToTable("assisted_people");
+                            b1.ToTable("assisted_people", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("AssistedPersonId")
@@ -1159,7 +1163,7 @@ namespace GoCare.Data.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_associations_accounts_id");
 
-                    b.OwnsOne("GoCare.Models.Domain.Address", "Headquarter", b1 =>
+                    b.OwnsOne("GoCare.Models.Domain.TripAddress", "Headquarter", b1 =>
                         {
                             b1.Property<Guid>("AssociationId")
                                 .HasColumnType("uuid")
@@ -1170,6 +1174,14 @@ namespace GoCare.Data.Migrations
                                 .HasMaxLength(120)
                                 .HasColumnType("character varying(120)")
                                 .HasColumnName("headquarter_city");
+
+                            b1.Property<double>("Latitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("headquarter_latitude");
+
+                            b1.Property<double>("Longitude")
+                                .HasColumnType("double precision")
+                                .HasColumnName("headquarter_longitude");
 
                             b1.Property<string>("Number")
                                 .IsRequired()
@@ -1197,7 +1209,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("AssociationId");
 
-                            b1.ToTable("associations");
+                            b1.ToTable("associations", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("AssociationId")
@@ -1343,7 +1355,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("PersonId");
 
-                            b1.ToTable("persons");
+                            b1.ToTable("persons", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("PersonId")
@@ -1400,7 +1412,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("SavedDestinationId");
 
-                            b1.ToTable("saved_destinations");
+                            b1.ToTable("saved_destinations", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("SavedDestinationId")
@@ -1479,7 +1491,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("TransportRequestId");
 
-                            b1.ToTable("transport_requests");
+                            b1.ToTable("transport_requests", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TransportRequestId")
@@ -1532,7 +1544,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("TransportRequestId");
 
-                            b1.ToTable("transport_requests");
+                            b1.ToTable("transport_requests", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TransportRequestId")
@@ -1585,7 +1597,7 @@ namespace GoCare.Data.Migrations
 
                             b1.HasKey("TransportRequestId");
 
-                            b1.ToTable("transport_requests");
+                            b1.ToTable("transport_requests", (string)null);
 
                             b1.WithOwner()
                                 .HasForeignKey("TransportRequestId")

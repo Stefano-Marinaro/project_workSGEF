@@ -46,6 +46,8 @@ builder.Services.Configure<GraphHopperOptions>(
     builder.Configuration.GetSection(GraphHopperOptions.SectionName));
 builder.Services.Configure<PricingOptions>(
     builder.Configuration.GetSection(PricingOptions.SectionName));
+builder.Services.Configure<CoverageOptions>(
+    builder.Configuration.GetSection(CoverageOptions.SectionName));
 builder.Services.Configure<StripeOptions>(
     builder.Configuration.GetSection(StripeOptions.SectionName));
 
@@ -83,6 +85,7 @@ builder.Services.AddScoped<GetTripExecutionStatusService>();
 builder.Services.AddScoped<AdvanceTripStatusService>();
 builder.Services.AddScoped<NotificationDispatcher>();
 builder.Services.AddScoped<AcceptTransportRequestService>();
+builder.Services.AddScoped<DeclineTransportRequestService>();
 builder.Services.AddScoped<IPushSender, ConsolePushSender>();
 builder.Services.AddScoped<AssistedPersonService>();
 builder.Services.AddScoped<GenerateCaregiverInviteLinkService>();
@@ -108,6 +111,9 @@ builder.Services.AddScoped<GetAssociationProfileService>();
 builder.Services.AddScoped<UpdateAssociationProfileService>();
 builder.Services.AddScoped<ListAcceptedTransportsService>();
 builder.Services.AddScoped<ListPendingRequestsService>();
+builder.Services.AddScoped<PendingRequestDetailService>();
+builder.Services.AddScoped<RequesterContactsService>();
+builder.Services.AddHostedService<CoverageTimeoutJob>();
 builder.Services.AddScoped<AcceptedTransportDetailService>();
 builder.Services.AddScoped<AssociationHistoryService>();
 builder.Services.AddScoped<ListNotificationsService>();

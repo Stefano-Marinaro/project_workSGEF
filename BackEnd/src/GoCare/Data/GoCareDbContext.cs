@@ -173,6 +173,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
                 addr.Property(ad => ad.PostalCode).HasMaxLength(10);
                 addr.Property(ad => ad.City).HasMaxLength(120);
                 addr.Property(ad => ad.Province).HasMaxLength(120);
+                addr.Property(ad => ad.Latitude);
+                addr.Property(ad => ad.Longitude);
             });
         });
 
@@ -342,6 +344,7 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
         modelBuilder.Entity<TransportRequestCandidate>(candidate =>
         {
             candidate.HasKey(c => new { c.TransportRequestId, c.AssociationId });
+            candidate.Property(c => c.DistanceToReachKm);
 
             candidate.HasOne<Association>()
                 .WithMany()

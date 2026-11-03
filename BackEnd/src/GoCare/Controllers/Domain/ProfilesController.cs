@@ -43,7 +43,7 @@ public sealed class ProfilesController(
             GetAccountId(),
             new AssociationProfileData(
                 request.Name,
-                request.Headquarter.ToAddress(),
+                request.Headquarter.ToTripAddress(),
                 request.Phones,
                 request.CoveredComuni),
             ct);

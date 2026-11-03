@@ -17,7 +17,7 @@ public sealed class UpdateAssociationProfileValidator : AbstractValidator<Update
 
         RuleFor(x => x.Headquarter)
             .NotNull()
-            .SetValidator(new AddressValidator(db));
+            .SetValidator(new TripAddressValidator(db));
 
         RuleFor(x => x.Phones)
             .NotEmpty()

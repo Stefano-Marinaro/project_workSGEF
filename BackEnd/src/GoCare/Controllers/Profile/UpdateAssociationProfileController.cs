@@ -24,7 +24,7 @@ public sealed class UpdateAssociationProfileController(UpdateAssociationProfileS
         await service.UpdateAsync(
             accountId,
             request.Name,
-            request.Headquarter.ToAddress(),
+            request.Headquarter.ToTripAddress(),
             request.Phones,
             request.CoveredComuni,
             request.AvailabilityHours,

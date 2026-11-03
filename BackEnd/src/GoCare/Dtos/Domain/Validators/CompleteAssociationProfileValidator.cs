@@ -17,7 +17,7 @@ public sealed class CompleteAssociationProfileValidator
 
         RuleFor(x => x.Headquarter)
             .NotNull()
-            .SetValidator(new AddressValidator(db));
+            .SetValidator(new TripAddressValidator(db));
 
         RuleFor(x => x.Phones)
             .NotEmpty()

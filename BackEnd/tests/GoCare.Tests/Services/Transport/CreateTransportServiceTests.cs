@@ -40,10 +40,7 @@ private static GoCareDbContext NewDb()
     return db;
 }
 
-private static Address AddressIn(string province) =>
-    new("Via Test", "1", "06100", province == "RM" ? "Roma" : "Perugia", province);
-
-// TripAddress: come AddressIn, ma con le coordinate obbligatorie richieste da CreateTransportAsync
+// TripAddress: indirizzo con le coordinate obbligatorie richieste da CreateTransportAsync
 // (partenza/destinazione/ritorno di un trasporto, serve per il calcolo del percorso).
 private static TripAddress TripAddressIn(string province) =>
     province == "RM"
@@ -282,7 +279,7 @@ private static TripAddress TripAddressIn(string province) =>
 private static Association MakeAssociation(GoCareDbContext db, Guid id, EAccreditationStatus status, bool deleted, List<string> comuni)
 {
     var association = new Association(id, $"{id}@associazione.test");
-    association.CompleteProfile("Associazione Test", AddressIn("PG"), ["0751234567"]);
+    association.CompleteProfile("Associazione Test", TripAddressIn("PG"), ["0751234567"]);
 
     // i comuni coperti stanno nella tabella ponte
     foreach (var codice in comuni)

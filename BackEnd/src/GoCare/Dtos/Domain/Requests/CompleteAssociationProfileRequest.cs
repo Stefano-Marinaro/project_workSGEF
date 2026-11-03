@@ -4,6 +4,6 @@ namespace GoCare.Dtos.Domain.Requests;
 
 public sealed record CompleteAssociationProfileRequest(
     string Name,
-    AddressRequest Headquarter,
+    TripAddressRequest Headquarter,
     List<string> Phones,
     List<string> CoveredComuni);
