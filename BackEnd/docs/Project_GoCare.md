@@ -49,6 +49,7 @@ Elenco dei macro Use Case e delle relative sotto-voci. L'identificativo UC 2 non
 - 3.1 Annullamento del trasporto da parte del caregiver.
 - 3.2 Annullamento del trasporto da parte dell'associazione.
 - 3.3 Specifica della causale di annullamento.
+- 3.4 Rimborso automatico del pagamento se il viaggio annullato era già stato pagato.
 
 ## UC 4 – STATO E NOTIFICHE
 
@@ -76,6 +77,7 @@ Gestione operativa dello stato:
 - 5.3 Visualizzazione del nome e del comune dell'associazione che ha preso in carico il viaggio (visibili appena presa in carico), con i recapiti completi visibili solo dopo l'avvenuto pagamento (Stripe).
 - 5.4 Visualizzazione dello storico dei viaggi conclusi.
 - 5.5 Visualizzazione dello stato di avanzamento del viaggio in corso.
+- 5.6 Pagamento del trasporto, con importo calcolato automaticamente in base ai km percorsi, per sbloccare i contatti dell'associazione.
 
 ## UC 6 – VISUALIZZAZIONE E GESTIONE RICHIESTE PENDENTI (associazione)
 
@@ -106,13 +108,13 @@ Profilo associazione:
 
 ## UC 9 – GESTIONE ASSISTITI
 
-L'assistito non è un account: è un'anagrafica gestita dal caregiver, senza login e senza possibilità di interazione propria. Un assistito può essere collegato a più caregiver; ogni caregiver con un collegamento attivo vede tutti i dati e tutti i viaggi dell'assistito, indipendentemente da chi lo ha originariamente aggiunto. **In v0 il collegamento è sempre diretto e immediato**, anche quando riguarda un secondo caregiver: non è richiesta nessuna accettazione. Un flusso di invito con consenso esplicito (link condivisibile via e-mail/WhatsApp) è previsto per la v1 — vedi "Roadmap to v1 → 1 Feature possibile implementazione".
+L'assistito non è un account: è un'anagrafica gestita dal caregiver, senza login e senza possibilità di interazione propria. Un assistito può essere collegato a più caregiver; ogni caregiver con un collegamento attivo vede tutti i dati e tutti i viaggi dell'assistito, indipendentemente da chi lo ha originariamente aggiunto. Il collegamento di un **ulteriore** caregiver avviene tramite un link di invito, condivisibile anche fuori dall'app (e-mail, WhatsApp): il caregiver invitato deve accettarlo esplicitamente con il proprio account, a differenza dell'assistito (che non ha un account e non può comunque esprimere consenso). Nel codice resta presente anche la via diretta per e-mail, senza accettazione, pensata originariamente come unico meccanismo di v0: le due coesistono, va deciso quale tenere come unico percorso.
 
 - 9.1 Aggiunta di un assistito da parte del caregiver.
 - 9.2 Visualizzazione dell'elenco dei propri assistiti.
 - 9.3 Visualizzazione del dettaglio di un assistito (dati anagrafici e viaggi).
 - 9.4 Modifica dei dati di un assistito.
-- 9.5 Collegamento diretto di un ulteriore caregiver a un assistito già esistente.
+- 9.5 Collegamento di un ulteriore caregiver a un assistito già esistente, tramite link di invito da accettare esplicitamente.
 - 9.6 Rimozione di un collegamento caregiver↔assistito (il proprio o quello di un altro caregiver collegato).
 
 ## UC 10 – ACCOUNT
@@ -164,8 +166,10 @@ Le user story sono riportate con il riferimento allo Use Case (e alla sotto-voce
 | CG-40 | Come caregiver voglio poter visualizzare l'elenco degli assistiti di cui mi occupo.                                                                                                                                      | 9.2                |
 | CG-41 | Come caregiver voglio poter visualizzare i dati e i viaggi di un assistito che seguo.                                                                                                                                    | 9.3                |
 | CG-42 | Come caregiver voglio poter modificare i dati di un assistito che seguo, dato che non può farlo da solo.                                                                                                                 | 9.4                |
-| CG-43 | Come caregiver voglio poter collegare direttamente un altro caregiver a un assistito che già seguo, così che possa vederne dati e viaggi.                                                                                | 9.5                |
+| CG-43 | Come caregiver voglio poter invitare un altro caregiver a collegarsi a un assistito che già seguo, così che possa vederne dati e viaggi previa sua accettazione.                                                         | 9.5                |
 | CG-44 | Come caregiver voglio poter rimuovere un collegamento caregiver↔assistito, il mio o quello di un altro caregiver collegato.                                                                                              | 9.6                |
+| CG-45 | Come caregiver voglio che l'importo del trasporto sia calcolato automaticamente in base ai km, senza doverlo concordare con l'associazione.                                                                             | 5.6                |
+| CG-46 | Come caregiver voglio essere rimborsato automaticamente se annullo un viaggio che avevo già pagato.                                                                                                                      | 3.4                |
 
 ## 3.2 Stories associazione
 
@@ -179,7 +183,7 @@ Le user story sono riportate con il riferimento allo Use Case (e alla sotto-voce
 | AS-07 | Come associazione voglio poter vedere tutte le richieste di trasporto pendenti a me destinate nella mia dashboard, con filtri (data, orario, destinazione, tipo di viaggio). | 6.1, 6.2 |
 | AS-08 | Come associazione voglio poter accettare una richiesta di trasporto pendente.                                                                                                | 6.3      |
 | AS-09 | Come associazione voglio poter rifiutare/declinare una richiesta di trasporto pendente.                                                                                      | 6.4      |
-| AS-10 | Come associazione voglio poter contattare la persona che ha prenotato un trasporto (contatto visibile solo dopo il pagamento). Trattamento di dati sensibili, vedi Punti aperti (PA-04). | 6.5      |
+| AS-10 | Come associazione voglio poter contattare la persona che ha prenotato un trasporto (contatto visibile solo dopo il pagamento). Trattamento di dati sensibili, ogni accesso viene tracciato. | 6.5      |
 | AS-11 | Come associazione voglio poter vedere tutti i trasporti in carico nella mia dashboard.                                                                                       | 7.1      |
 | AS-12 | Come associazione voglio poter vedere uno storico dei trasporti effettuati.                                                                                                  | 7.2      |
 | AS-17 | Come associazione voglio poter disdire un trasporto specificando la causa.                                                                                                   | 3.2, 3.3 |
@@ -212,6 +216,7 @@ Verifica che ogni sotto-voce di Use Case abbia almeno una user story associata.
 | 3.1             | CG-23        | Coperto |
 | 3.2             | AS-17        | Coperto |
 | 3.3             | CG-23, AS-17 | Coperto |
+| 3.4             | CG-46        | Coperto |
 | 4.1             | CG-29        | Coperto |
 | 4.2             | CG-29        | Coperto |
 | 4.3             | CG-28        | Coperto |
@@ -225,6 +230,7 @@ Verifica che ogni sotto-voce di Use Case abbia almeno una user story associata.
 | 5.3             | CG-31        | Coperto |
 | 5.4             | CG-32        | Coperto |
 | 5.5             | CG-29        | Coperto |
+| 5.6             | CG-45        | Coperto |
 | 6.1             | AS-07        | Coperto |
 | 6.2             | AS-07        | Coperto |
 | 6.3             | AS-08        | Coperto |
@@ -289,13 +295,13 @@ Il tipo di viaggio determina il valore di default della direzione nel form dell'
 - Colonne Trello: To do, Ready for development, In progress (una sola card alla volta), Ready for testing, In testing, Tested, Released.
 - Solo i caregiver si registrano come account autonomi. L'assistito non ha un account: è un'anagrafica creata da un caregiver, senza login e senza possibilità di interazione propria. Il collegamento caregiver↔assistito è diretto e molti-a-molti (un caregiver può seguire più assistiti, un assistito può avere più caregiver), senza nessun concetto di "gruppo cura" a mediarlo. Aggiungere un assistito crea il collegamento subito attivo, senza consenso da richiedere (l'assistito non può darlo); collegare un **secondo caregiver** a un assistito già esistente richiede invece l'accettazione del caregiver invitato, perché a differenza dell'assistito è un utente con un proprio account. Un caregiver con un collegamento attivo verso un assistito vede tutti i suoi dati e tutti i suoi viaggi; se più caregiver sono collegati allo stesso assistito, vedono tutti tutto, senza distinzione fra chi lo ha aggiunto e chi può solo vedere. La registrazione pubblica è riservata ai caregiver; gli account associazione sono creati dall'amministratore.
 - Il viaggio non è modificabile dopo la creazione (niente più UC "Modifica trasporto"): l'unica azione disponibile su un viaggio già registrato è l'annullamento. Se le condizioni del viaggio cambiano, il caregiver annulla e invia una nuova richiesta.
-- Il rifiuto di una singola associazione non è uno stato della richiesta: la richiesta resta "in attesa" e visibile alle altre associazioni destinatarie. L'esito negativo aggregato è sempre "non coperta".
+- Il rifiuto di una singola associazione non è uno stato della richiesta: la richiesta resta "in attesa" e visibile alle altre associazioni destinatarie. L'esito negativo aggregato "non coperta" scatta alla prima delle due condizioni: tutte le candidate hanno rifiutato (subito, nel servizio di rifiuto UC 6.4), oppure mancano meno di 48 ore alla partenza e nessuna ha ancora accettato (`CoverageTimeoutJob`, in background, ogni 15 minuti più un primo giro all'avvio). Stessa logica di valutazione in entrambi i casi (`CoverageEvaluator`), soglia configurabile (`Coverage.NotCoveredThresholdHours`).
 - Ogni evento genera una sola notifica, con i canali (push, e-mail) combinati sulla stessa voce: il centro notifiche non mostra righe duplicate per lo stesso evento.
-- Gli indirizzi sono strutturati (via, civico, CAP, città, provincia) e vengono copiati sulla richiesta al momento della creazione: modificare o eliminare una destinazione salvata non altera i viaggi già registrati. Gli indirizzi di partenza, destinazione ed eventuale ritorno di un trasporto (`TripAddress`) portano in più latitudine e longitudine obbligatorie, necessarie al calcolo dei km (vedi sotto); gli altri indirizzi del dominio (domicilio, destinazioni salvate, sede dell'associazione) restano senza coordinate.
+- Gli indirizzi sono strutturati (via, civico, CAP, città, provincia) e vengono copiati sulla richiesta al momento della creazione: modificare o eliminare una destinazione salvata non altera i viaggi già registrati. Gli indirizzi di partenza, destinazione ed eventuale ritorno di un trasporto, e la sede di un'associazione (`TripAddress`), portano in più latitudine e longitudine obbligatorie, necessarie al calcolo dei km (vedi sotto); gli altri indirizzi del dominio (domicilio del caregiver, dell'assistito, destinazioni salvate) restano senza coordinate.
 - Il calcolo dei km previsti è in v0: la richiesta porta un campo `DistanceKm`, calcolato tramite un servizio esterno di instradamento (GraphHopper, dietro l'interfaccia `IRoutingService`) a partire dalle coordinate di partenza e destinazione, con la tratta di rientro aggiunta per i viaggi "andata e ritorno". Resta rinviato alla v1 solo un filtro/colonna dedicato ai km nelle dashboard dell'associazione (vedi "Roadmap to v1 → 1 Feature possibile implementazione").
-- L'importo del pagamento del trasporto (UC 5.2) è calcolato automaticamente come `DistanceKm × 0,80 €/km`, con un minimo di 5 €: non è stabilito dall'associazione né negoziabile. L'incasso avviene sull'unico account Stripe di GoCare (Checkout standard), non su un account per associazione (Stripe Connect): la ridistribuzione dei fondi alle singole associazioni resta fuori dalla piattaforma ed è rinviata alla v1. Se il caregiver annulla un viaggio già pagato, il sistema rimborsa automaticamente l'intero importo tramite Stripe.
-- L'instradamento delle richieste avviene per comune, non per provincia: ogni associazione dichiara l'elenco esplicito dei comuni che copre (il proprio e quelli limitrofi in cui è disposta a operare) e riceve solo le richieste con partenza in uno di essi. I comuni si scelgono dall'elenco ufficiale ISTAT e sono identificati dal codice ISTAT; il comune di partenza si ricava dall'indirizzo di partenza (città e provincia) della richiesta (vedi PA-03).
-- Il pagamento del trasporto avviene tramite Stripe Checkout (pagina di pagamento ospitata da Stripe, esito confermato al backend solo via webhook, mai dal semplice ritorno dal browser). Nome e comune dell'associazione assegnataria sono visibili al caregiver non appena il viaggio è preso in carico (non sono dati sensibili né permettono di aggirare il pagamento); i recapiti completi (telefoni) diventano visibili solo dopo l'avvenuto pagamento (CG-31).
+- L'importo del pagamento del trasporto (UC 5.6, CG-45) è calcolato automaticamente come `DistanceKm × 0,80 €/km`, con un minimo di 5 €: non è stabilito dall'associazione né negoziabile. L'incasso avviene sull'unico account Stripe di GoCare (Checkout standard), non su un account per associazione (Stripe Connect): la ridistribuzione dei fondi alle singole associazioni resta fuori dalla piattaforma ed è rinviata alla v1. Se il caregiver annulla un viaggio già pagato, il sistema rimborsa automaticamente l'intero importo tramite Stripe (UC 3.4, CG-46).
+- L'instradamento delle richieste avviene per comune, non per provincia: un'associazione con sede ad Assisi non opera su tutta la provincia di Perugia, ma sul proprio comune e su quelli limitrofi. Ogni associazione dichiara un **elenco esplicito** dei comuni che copre (il proprio e quelli limitrofi in cui è disposta a operare; esempio: Assisi, Bastia Umbra, Perugia, Foligno, Valfabbrica) e riceve solo le richieste con partenza in uno di essi — non c'è un calcolo automatico per distanza o confini, la scelta resta all'associazione o all'amministratore (UC 11.1, 11.2). I comuni si scelgono dall'elenco ufficiale ISTAT e sono identificati dal **codice ISTAT** (es. Assisi `054001`), non dal nome, che non è univoco; il comune di partenza si ricava dall'indirizzo di partenza (città e provincia) della richiesta, già validato contro lo stesso elenco. L'elenco delle destinatarie viene congelato alla creazione della richiesta: modificare i comuni coperti vale solo per le richieste future. Nessuna associazione copre il comune di partenza → la richiesta nasce senza destinatarie ed è "non coperta" (10.4).
+- Il pagamento del trasporto avviene tramite Stripe Checkout (pagina di pagamento ospitata da Stripe, esito confermato al backend solo via webhook, mai dal semplice ritorno dal browser). Nome e comune dell'associazione assegnataria sono visibili al caregiver non appena il viaggio è preso in carico (non sono dati sensibili né permettono di aggirare il pagamento); i recapiti completi (telefoni) diventano visibili solo dopo l'avvenuto pagamento (CG-31). Vale anche al contrario: in fase di valutazione (UC 6.1, 6.2) l'associazione vede solo nome del beneficiario, via di partenza, data, direzione e km; i recapiti completi del richiedente (UC 6.5) si sbloccano solo a pagamento confermato, e ogni accesso viene tracciato (`ContactAccessLog`). Resta da redigere l'informativa privacy richiamata in fase di registrazione (UC 10.1).
 - Le associazioni non si registrano autonomamente: sono associazioni partner registrate, modificate ed eliminate dall'amministratore GoCare (UC 11). La verifica dell'ente avviene fuori dalla piattaforma, prima della registrazione.
 - Autenticazione e dominio vivono nello stesso database; l'account e il profilo caregiver sono due entità distinte che **condividono lo stesso identificatore**, con una foreign key reale fra loro (`Person.Id`/`Association.Id` → `Account.Id`, `OnDelete(Cascade)`). L'assistito non ha invece un account e non ha identificatore condiviso, perché non fa mai login. In v0 ogni caregiver di dominio ha esattamente un account: non si opera con caregiver non registrati.
 
@@ -423,7 +429,10 @@ Elenco degli endpoint che servono le pagine della tabella precedente, con il ruo
 | Dominio | `GET /assisted`                                                 | Caregiver                             | 9.2       |
 | Dominio | `GET /assisted/:id`                                             | Caregiver                             | 9.3       |
 | Dominio | `PUT /assisted/:id`                                             | Caregiver                             | 9.4       |
-| Dominio | `POST /assisted/:id/caregivers`                                 | Caregiver                             | 9.5       |
+| Dominio | `POST /assisted/:id/caregiver-invite-link`                      | Caregiver                             | 9.5       |
+| Dominio | `GET /caregiver-invites/:token`                                 | Caregiver                             | 9.5       |
+| Dominio | `POST /caregiver-invites/:token/accept`                         | Caregiver                             | 9.5       |
+| Dominio | `POST /assisted/:id/caregivers` (via diretta, senza accettazione — da dismettere, vedi UC 9) | Caregiver                             | 9.5       |
 | Dominio | `DELETE /assisted/:id/caregivers/:caregiverId`                  | Caregiver                             | 9.6       |
 | Dominio | `GET /notifications`                                            | Tutti                                 | UC 4      |
 | Dominio | `POST /notifications/:id/read` · `POST /notifications/read-all` | Tutti                                 | UC 4      |
@@ -507,7 +516,7 @@ Casi alternativi:
 9. La richiesta compare nella dashboard /associazione/richieste di ciascuna destinataria, con i relativi filtri.
 10. Un'associazione apre il dettaglio e accetta: la richiesta passa in stato "confermata" e le viene assegnata l'associazione.
 11. Il sistema notifica l'utente della presa in carico (UC 4.2) e abilita il pagamento.
-12. Il caregiver paga il trasporto tramite Stripe; alla conferma del pagamento (webhook) il sistema rende visibili i contatti dell'associazione al caregiver (UC 5.2) e, simmetricamente, i contatti completi del richiedente/beneficiario all'associazione (UC 6.5, PA-04).
+12. Il caregiver paga il trasporto tramite Stripe; alla conferma del pagamento (webhook) il sistema rende visibili i contatti dell'associazione al caregiver (UC 5.2) e, simmetricamente, i contatti completi del richiedente/beneficiario all'associazione (UC 6.5).
 13. La richiesta esce dalla dashboard delle pendenti di tutte le associazioni e compare in /associazione/trasporti dell'associazione assegnataria.
 
 Casi alternativi:
@@ -515,7 +524,7 @@ Casi alternativi:
 - Un'associazione rifiuta: il rifiuto viene registrato per quella sola associazione, la richiesta resta "in attesa" e continua a essere visibile alle altre destinatarie.
 - Il pagamento non va a buon fine o viene annullato: il viaggio resta confermato ma i contatti restano nascosti in entrambe le direzioni (associazione per il caregiver, richiedente/beneficiario per l'associazione); il caregiver può riprovare.
 - Due associazioni accettano contemporaneamente: vince la prima, la seconda riceve un messaggio di errore gestito dal controllo di concorrenza sulla richiesta.
-- Nessuna associazione accetta entro la soglia definita _[DA VALIDARE]_: la richiesta passa in stato "non coperta" e l'utente riceve la notifica di esito negativo (UC 4.1).
+- Nessuna associazione accetta entro 48 ore dalla partenza (o tutte rifiutano prima): la richiesta passa in stato "non coperta" e l'utente riceve la notifica di esito negativo (UC 4.1).
 - Nessuna associazione partner copre il comune di partenza: la richiesta nasce senza destinatari e viene dichiarata "non coperta".
 
 Il viaggio, una volta creato, non è più modificabile: se qualcosa cambia, il caregiver lo annulla (UC 3) e invia una nuova richiesta.
@@ -611,47 +620,9 @@ Riepilogo:
 
 | ID    | Punto aperto                                                     | Impatto | Stato              |
 | ----- | ---------------------------------------------------------------- | ------- | ------------------ |
-| PA-02 | Soglia oltre la quale una richiesta è "non coperta"              | Alto    | Aperto             |
-| PA-03 | Visibilità delle richieste: tutte le associazioni o per area     | Alto    | Deciso: per comune |
-| PA-04 | Esposizione dei dati di contatto dell'assistito all'associazione | Alto    | Deciso: dopo il pagamento |
-| PA-06 | Politica di conservazione dei dati dopo l'eliminazione account   | Basso   | Aperto             |
+| PA-01 | Politica di conservazione dei dati dopo l'eliminazione account   | Basso   | Aperto             |
 
-## PA-02 Soglia oltre la quale una richiesta è considerata "non coperta"
-
-Problema: La story CG-25 ("voglio sapere se il viaggio non può essere coperto") e la notifica dell'UC 4.4 presuppongono un momento in cui il sistema dichiara fallita la ricerca di copertura, ma nessuna regola lo definisce. Senza questa regola l'utente resta indefinitamente in attesa e non può cercare alternative.
-
-Opzione consigliata: Dichiarare la richiesta "non coperta" al verificarsi della prima delle due condizioni: tutte le associazioni destinatarie hanno rifiutato, oppure mancano meno di 24 ore alla data del viaggio e nessuna l'ha accettata. La seconda condizione è quella che conta davvero: lascia all'utente il tempo di organizzarsi diversamente.
-
-Stato in v0: Aperto. Il modello dati registra i rifiuti per associazione e la lista congelata delle destinatarie, quindi entrambe le condizioni sono calcolabili; manca la scelta della soglia.
-
-## PA-03 Visibilità delle richieste: tutte le associazioni o per area geografica
-
-Problema: La dashboard dell'UC 6 mostra "tutte le richieste di trasporto dei caregiver", ma non è specificato se ogni associazione veda tutte le richieste della piattaforma o solo quelle del proprio territorio.
-
-Opzione consigliata: Introdurre un'area di operatività nel profilo dell'associazione (UC 8.5) e mostrare a ciascuna associazione solo le richieste con partenza entro la propria area. In fase di test, con poche associazioni pilota, la regola può essere disattivata; senza di essa, però, il prodotto non è scalabile oltre una singola città.
-
-Decisione (rivista con il docente): l'area di operatività è definita per **comune**, non per provincia. La provincia si è rivelata troppo ampia: un'associazione con sede ad Assisi non opera su tutta la provincia di Perugia, ma sul proprio comune e su quelli limitrofi.
-
-Regole:
-
-- L'associazione dichiara un **elenco esplicito** di comuni coperti: il proprio e quelli limitrofi in cui è disposta a operare. Esempio: un'associazione di Assisi può coprire Assisi, Bastia Umbra, Perugia, Foligno e Valfabbrica; una richiesta con partenza da uno di questi comuni le arriva, una con partenza da Spoleto no.
-- Non c'è un calcolo automatico per distanza o per confini: la scelta resta all'associazione (o all'amministratore, UC 11.1 e 11.2), che conosce il proprio territorio e i propri mezzi.
-- I comuni si scelgono dall'elenco ufficiale ISTAT già presente nella piattaforma e sono identificati dal **codice ISTAT** (ad esempio Assisi `054001`), non dal nome: il nome non è univoco (esistono comuni omonimi in province diverse) e può essere scritto in modi diversi.
-- Il comune di partenza della richiesta si ricava dall'indirizzo di partenza (città e sigla della provincia), già validato contro lo stesso elenco ufficiale.
-- L'elenco delle destinatarie viene congelato sulla richiesta alla creazione: modificare i comuni coperti vale solo per le richieste future.
-- Nessuna associazione copre il comune di partenza → la richiesta nasce senza destinatarie ed è "non coperta" (10.4).
-
-Stato in v0: decisione presa; il modello dati usa ancora le province (`CoveredProvinces`) ed è in corso di adeguamento. Il dettaglio tecnico (tabella dei comuni coperti, contratto delle API, migrazione dei dati esistenti) è in `RECAP_BACKEND.md`, §5.
-
-## PA-04 Esposizione dei dati di contatto dell'assistito all'associazione
-
-Problema: L'associazione deve poter contattare chi ha prenotato, ma non è definito a quali dati acceda, da quale momento e con quale base giuridica. Il tema riguarda persone fragili e dati sanitari indiretti (il tipo di viaggio rivela la natura della prestazione).
-
-Decisione: Nella fase di valutazione della richiesta (UC 6.1, 6.2) l'associazione vede solo i dati necessari a decidere: iniziali o nome, fascia oraria, indirizzo di partenza a livello di via, destinazione, esigenze di mobilità. I recapiti completi (UC 6.5) diventano visibili solo dopo l'avvenuto pagamento del trasporto, non alla semplice accettazione: lo stesso evento — conferma del webhook Stripe — che sblocca i contatti dell'associazione per il caregiver (UC 5.2, CG-31) sblocca anche i contatti del richiedente/beneficiario per l'associazione. Lo stesso principio vale al contrario: il caregiver vede nome e comune dell'associazione assegnataria appena il viaggio è preso in carico (dati non sensibili, non sufficienti a raggiungerla direttamente), i telefoni solo dopo il pagamento. Ogni accesso resta tracciato. Va inoltre redatta un'informativa privacy, richiamata in fase di registrazione (UC 10.1).
-
-Stato in v0: Lato caregiver (UC 5.2/5.3) implementato: `GET /transports/:id` espone nome e comune dell'associazione indipendentemente dal pagamento, i telefoni solo a pagamento confermato. Lato associazione (UC 6) resta da implementare — UC 6 non è ancora scritto nel codice — ma andrà applicato lo stesso principio fin dall'inizio. Il modello dati recepisce già la parte di tracciamento — ogni accesso ai contatti registra richiesta, associazione, tipo di dato (richiedente o beneficiario) e istante — mentre la soglia esatta dei dati minimi mostrati in fase di valutazione resta da definire.
-
-## PA-06 Conservazione dei dati dopo l'eliminazione dell'account
+## PA-01 Conservazione dei dati dopo l'eliminazione dell'account
 
 Problema: L'UC 10 prevede l'eliminazione dell'account ma non dice cosa accada ai viaggi conclusi presenti nello storico dell'associazione, che potrebbe averne bisogno per rendicontazione, né a un assistito che resta senza nessun caregiver collegato.
 
@@ -664,11 +635,6 @@ Stato in v0: Il modello dati recepisce parzialmente l'opzione consigliata — il
 # Roadmap to v1
 
 ## 1 FEAUTURE POSSIBILE IMPLEMENTAZIONE
-
-### feature *Invito con consenso per il collegamento di un secondo caregiver*
-
-- **A cosa serve:** evitare che un caregiver venga collegato a un assistito senza poterlo accettare o rifiutare, quando il collegamento riguarda un secondo caregiver (che ha un proprio account, a differenza dell'assistito).
-- **Come si potrebbe implementare:** sostituire il collegamento diretto attuale (UC 9.5) con un invito da accettare/rifiutare, condivisibile anche fuori dall'app (e-mail, WhatsApp); il link userebbe l'`Id` di `AssistedPerson` (già un Guid non indovinabile) invece di un token dedicato, e il server verificherebbe che l'utente autenticato corrisponda al collegamento in attesa.
 
 ### feature *Modifica della richiesta di viaggio*
 
