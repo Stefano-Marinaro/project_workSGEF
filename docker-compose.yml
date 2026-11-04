@@ -1,3 +1,13 @@
+# Avvio dell'intero progetto GoCare con un solo comando:
+#   docker compose up --build
+#
+#   Frontend (web)  -> http://localhost:8081
+#   Backend (API)   -> http://localhost:5161   (Swagger: http://localhost:5161/swagger)
+#   PostgreSQL      -> localhost:5433          (porta 5433 per non scontrarsi con un Postgres locale)
+#
+# Le chiavi segrete (Stripe, GraphHopper, ...) si mettono in un file .env accanto a questo,
+# copiandolo da .env.example. Il file .env non va mai committato.
+
 services:
   db:
     image: postgres:16
@@ -6,7 +16,7 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - gocare_db_data:/var/lib/postgresql/data
     healthcheck:
@@ -20,16 +30,43 @@ services:
       context: ./BackEnd
       dockerfile: Dockerfile
     ports:
-      - "5000:8080"
+      - "5161:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+      # Dentro la rete di Docker il database si raggiunge col nome del servizio ("db"), non con localhost.
       ConnectionStrings__GoCareDb: "Host=db;Port=5432;Database=gocare;Username=postgres;Password=postgres"
-      Frontend__VerifyEmailUrl: "http://localhost:3000/verifica-email"
-      Frontend__ResetPasswordUrl: "http://localhost:3000/reimposta-password"
-      Frontend__ChangeEmailUrl: "http://localhost:3000/conferma-cambio-email"
+      # I link nelle e-mail puntano al frontend servito dal container "frontend".
+      Frontend__VerifyEmailUrl: "http://localhost:8081/verify_email"
+      Frontend__ResetPasswordUrl: "http://localhost:8081/reset_password"
+      Frontend__ChangeEmailUrl: "http://localhost:8081/conferma-cambio-email"
+      Frontend__OperatorUrl: "http://localhost:8081/operatore"
+      Frontend__CaregiverInviteUrl: "http://localhost:8081/invito-caregiver"
+      Frontend__SetPasswordUrl: "http://localhost:8081/set_password"
+      Frontend__PaymentSuccessUrl: "http://localhost:8081/pagamento-riuscito"
+      Frontend__PaymentCancelUrl: "http://localhost:8081/pagamento-annullato"
+      # Segreti letti dal file .env (vuoti se non impostati).
+      Jwt__SigningKey: "${JWT_SIGNING_KEY:-sviluppo-solo-chiave-lunga-almeno-32-caratteri}"
+      GraphHopper__ApiKey: "${GRAPHHOPPER_API_KEY:-}"
+      OpenRouteService__ApiKey: "${OPENROUTESERVICE_API_KEY:-}"
+      Stripe__SecretKey: "${STRIPE_SECRET_KEY:-}"
+      Stripe__WebhookSecret: "${STRIPE_WEBHOOK_SECRET:-}"
+      Smtp__Username: "${SMTP_USERNAME:-}"
+      Smtp__Password: "${SMTP_PASSWORD:-}"
     depends_on:
       db:
         condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Indirizzo dell'API come lo vede il browser dell'utente.
+        EXPO_PUBLIC_API_URL: "${API_PUBLIC_URL:-http://localhost:5161}"
+    ports:
+      - "8081:80"
+    depends_on:
+      - backend
 
 volumes:
   gocare_db_data:
