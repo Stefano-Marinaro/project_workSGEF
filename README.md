@@ -47,6 +47,13 @@ docker compose down -v     # ferma tutto e CANCELLA il database
 docker compose logs -f backend
 ```
 
+### E-mail
+
+Senza credenziali SMTP le e-mail **non partono**: il backend le scrive nel log
+(`docker compose logs backend`), compresi i link di verifica, reset password e invito associazione.
+Per l'invio vero compila le variabili `SMTP_*` nel file `.env` (istruzioni per Mailtrap e Gmail in `.env.example`);
+senza Docker, la sezione `Smtp` di `appsettings.Local.json` (vedi `appsettings.Local.json.example`).
+
 Note:
 
 - Il frontend in Docker è la versione web. Per provare l'app sul telefono con Expo Go si continua a usare `npx expo start` dentro `frontend/` (il backend può restare in Docker: usa l'IP di LAN del PC e la porta 5161).

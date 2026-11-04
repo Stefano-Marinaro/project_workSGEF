@@ -135,7 +135,13 @@ builder.Services.AddScoped<CaregiverAccountDetailService>();
 builder.Services.AddScoped<ListDestinationsService>();
 builder.Services.AddScoped<UpdateDestinationService>();
 builder.Services.AddScoped<DeleteDestinationService>();
-builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
+// Invio e-mail: se ci sono le credenziali SMTP (appsettings.Local.json o variabili d'ambiente / .env di Docker)
+// le e-mail partono davvero con SmtpEmailSender; altrimenti ConsoleEmailSender le scrive solo nel log,
+// così chi non ha credenziali può continuare a lavorare (e trova i link di verifica/reset/invito nel log).
+if (!string.IsNullOrWhiteSpace(builder.Configuration["Smtp:Username"]))
+    builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();
+else
+    builder.Services.AddScoped<IEmailSender, ConsoleEmailSender>();
 builder.Services.AddScoped<ListPartnerAssociationsService>();
 builder.Services.AddScoped<CreatePartnerAssociationService>();
 // --- Validator delle request: registrati in automatico tutti gli AbstractValidator<T> pubblici dell'assembly
