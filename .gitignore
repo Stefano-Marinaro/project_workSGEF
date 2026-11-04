@@ -3,3 +3,6 @@
 
 # Cache di Visual Studio
 .vs/
+
+# Segreti per docker compose (vedi .env.example)
+.env
