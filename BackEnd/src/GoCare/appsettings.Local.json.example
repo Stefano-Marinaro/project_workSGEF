@@ -6,5 +6,12 @@
     "OperatorUrl": "http://TUO_IP_LAN:8081/operatore",
     "CaregiverInviteUrl": "http://TUO_IP_LAN:8081/invito-caregiver",
     "SetPasswordUrl": "http://TUO_IP_LAN:8081/set_password"
+  },
+  "Smtp": {
+    "Host": "sandbox.smtp.mailtrap.io",
+    "Port": 2525,
+    "Username": "",
+    "Password": "",
+    "FromAddress": "no-reply@gocare.it"
   }
 }

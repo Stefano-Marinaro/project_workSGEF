@@ -280,7 +280,7 @@ Tutti i Validator FluentValidation corrispondenti sono scritti **e registrati** 
 - [ ] **`Services/Domain/Internal/TripStateMachine.cs`** – funzione pura `CanTransition(current, target, direction) → (bool, motivo)`. Regole in §9. Nessuna dipendenza da EF: testabile in isolamento.
 - [ ] **`Services/Domain/Internal/NotificationDispatcher.cs`** – dato (destinatario, tipo, dati), crea la `Notification`, invia push e/o e-mail secondo le regole di canale (push per cambi stato intermedi; push + e-mail per eventi di esito, incluso `Suspended`).
 - [ ] **`Services/Domain/Internal/CoverageEvaluator.cs`** – decide se una richiesta è `NotCovered` (tutte le associazioni candidate hanno rifiutato, oppure sotto soglia ore alla data — PA-02). Usato da `DeclineAsync` e da `CoverageTimeoutJob`.
-- [ ] **`Infrastructure/SmtpEmailSender.cs`** — quando serve un invio e-mail reale (oggi c'è solo `ConsoleEmailSender`).
+- [x] **`Infrastructure/SmtpEmailSender.cs`** — invio e-mail reale via SMTP (MailKit). Scelto in `Program.cs` quando `Smtp:Username` è configurato; altrimenti resta `ConsoleEmailSender` (e-mail scritte nel log).
 - [x] **`Services/Provisioning/ProfileProvisioningService.cs`**: `CreatePersonSkeletonAsync`/`CreateAssociationSkeletonAsync` (fatti), `CompletePersonProfileAsync`/`CompleteAssociationProfileAsync` (fatti, nessun endpoint li chiama ancora — §5.3). Da fare: `AccreditAssociationAsync`, `RejectAssociationAsync`, `AnonymizeForDeletedAccountAsync`.
 - [ ] Interfacce (`IPushSender`, un eventuale `IKmCalculator` per V1): **da introdurre solo quando esiste un secondo scenario reale** che le richiede (test con fake, o un secondo provider) — coerente con la scelta di non avere interfacce "per principio" (§0).
 
