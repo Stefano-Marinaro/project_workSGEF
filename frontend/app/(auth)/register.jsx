@@ -1,186 +1,162 @@
-import { StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Pressable, View } from 'react-native'
-import { Link, useRouter } from 'expo-router'
 import { useState } from 'react'
+import { View, ScrollView, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { useRouter } from 'expo-router'
 import api from '../../config/httpClient.js'
+import { setItem } from '../../config/storage.js'
+import { C, apiErrorMessage } from '../../constants/caregiver'
+import { AuthHeader, AuthIntro, AuthField, AuthButton, AuthSwitch, authStyles } from '../../components/auth/AuthUi'
 
-
-// themed components
-import ThemedView from '../../components/ThemedView.jsx'
-import Spacer from '../../components/Spacer.jsx'
-import ThemedText from '../../components/ThemedText.jsx'
-import ThemedButton from '../../components/ThemedButton.jsx'
-import ThemedTextInput from '../../components/ThemedTextInput.jsx'
-
+// Mockup "Crea il tuo account".
+// La stessa app serve caregiver e associazioni, quindi si sceglie il tipo di account.
+// Il backend registra solo email e password: nome e cognome del caregiver vengono
+// ricordati sul dispositivo e proposti nel "Modifica profilo" dopo il primo accesso.
 const Register = () => {
-
+    const router = useRouter()
+    const [role, setRole] = useState('caregiver')
+    const [name, setName] = useState('')
+    const [surname, setSurname] = useState('')
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
-    const [role, setRole] = useState('caregiver')
-    const router = useRouter()
-    
-    const Wrapper = Platform.OS == 'web' ? View : TouchableWithoutFeedback
-    const WrapperProps = Platform.OS == 'web' ? {} : {onPress : () => {Keyboard.dismiss()}}
+    const [confirm, setConfirm] = useState('')
+    const [errors, setErrors] = useState({})
+    const [errorMessage, setErrorMessage] = useState('')
+    const [loading, setLoading] = useState(false)
 
-    //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
-    //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
+    const isCaregiver = role === 'caregiver'
 
-    const [errorMessage, setErrorMessage] = useState('')   // manca anche questo state, aggiungilo
+    const handleSubmit = async () => {
+        const found = {}
+        if (isCaregiver && !name.trim()) found.name = 'Inserisci il nome.'
+        if (isCaregiver && !surname.trim()) found.surname = 'Inserisci il cognome.'
+        if (!email.trim()) found.email = 'Inserisci la tua email.'
+        else if (!/^\S+@\S+\.\S+$/.test(email.trim())) found.email = 'L’email non è valida.'
+        if (password.length < 8) found.password = 'La password deve avere almeno 8 caratteri.'
+        if (!confirm) found.confirm = 'Conferma la password.'
+        else if (confirm !== password) found.confirm = 'Le password non coincidono.'
+        setErrors(found)
+        setErrorMessage('')
+        if (Object.keys(found).length) return
 
-const handleSubmit = async () => {
-    setErrorMessage('')
-    console.log('REGISTER BUTTON PRESSED');
-    try {
-        const endpoint = role === 'association' ? 'auth/register/association' : 'auth/register/user'  
-        const response = await api.post(endpoint, { email, password })        
-
-        console.log('Account created:', response.data.accountId)          
-
-        router.replace({ pathname: '/login', params: { role } })
-    } catch (error) {
-        if (error.response) {
-            setErrorMessage(error.response.data.detail || 'Registration failed')
-            console.log('REGISTER ERROR:', error.response?.status, error.response?.data)
-        } else {
-            setErrorMessage('Unable to reach the server')
+        setLoading(true)
+        try {
+            const endpoint = isCaregiver ? '/auth/register/user' : '/auth/register/association'
+            await api.post(endpoint, { email: email.trim(), password })
+            if (isCaregiver)
+                await setItem(
+                    'pendingProfile',
+                    JSON.stringify({ email: email.trim().toLowerCase(), name: name.trim(), surname: surname.trim() }),
+                )
+            router.replace('/login')
+        } catch (error) {
+            setErrorMessage(apiErrorMessage(error, 'Registrazione non riuscita.'))
+        } finally {
+            setLoading(false)
         }
     }
-}
 
-  return (
-    <Wrapper {...WrapperProps}>
-        <ThemedView style={styles.container}>
+    return (
+        <View style={authStyles.page}>
+            <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <AuthHeader />
+                <ScrollView contentContainerStyle={authStyles.scroll} keyboardShouldPersistTaps="handled">
+                    <View style={authStyles.section}>
+                        <AuthIntro title="Crea il tuo account">
+                            Registrati per organizzare{'\n'}i tuoi trasporti con GoCare.
+                        </AuthIntro>
 
-            <Spacer/>
-            <ThemedText title={true} style={styles.title}>
-                Register to your account
-            </ThemedText>
+                        <View style={styles.roles} accessibilityRole="radiogroup">
+                            {[
+                                ['caregiver', 'Caregiver'],
+                                ['association', 'Associazione'],
+                            ].map(([value, label]) => (
+                                <Pressable
+                                    key={value}
+                                    onPress={() => setRole(value)}
+                                    accessibilityRole="radio"
+                                    accessibilityState={{ selected: role === value }}
+                                    style={[styles.role, role === value && styles.roleOn]}
+                                >
+                                    <Text style={[styles.roleText, role === value && styles.roleTextOn]}>{label}</Text>
+                                </Pressable>
+                            ))}
+                        </View>
 
-            <ThemedTextInput 
-                style={{ width: '80%', marginBottom: 20}}
-                placeholder="Email"
-                keyboardType="email-address"
-                onChangeText={setEmail}
-                value={email}
-            />
+                        {isCaregiver ? (
+                            <View style={styles.pair}>
+                                <AuthField
+                                    icon="person-outline"
+                                    placeholder="Nome"
+                                    autoComplete="given-name"
+                                    value={name}
+                                    onChangeText={setName}
+                                    error={errors.name}
+                                    style={styles.flex}
+                                />
+                                <AuthField
+                                    icon="person-outline"
+                                    placeholder="Cognome"
+                                    autoComplete="family-name"
+                                    value={surname}
+                                    onChangeText={setSurname}
+                                    error={errors.surname}
+                                    style={styles.flex}
+                                />
+                            </View>
+                        ) : null}
+                        <AuthField
+                            icon="mail-outline"
+                            placeholder="Email"
+                            keyboardType="email-address"
+                            autoCapitalize="none"
+                            autoComplete="email"
+                            value={email}
+                            onChangeText={setEmail}
+                            error={errors.email}
+                        />
+                        <AuthField
+                            icon="lock-closed-outline"
+                            placeholder="Almeno 8 caratteri"
+                            secure
+                            autoComplete="new-password"
+                            value={password}
+                            onChangeText={setPassword}
+                            error={errors.password}
+                        />
+                        <AuthField
+                            icon="lock-closed-outline"
+                            placeholder="Conferma password"
+                            secure
+                            autoComplete="new-password"
+                            value={confirm}
+                            onChangeText={setConfirm}
+                            onSubmitEditing={handleSubmit}
+                            error={errors.confirm}
+                            style={styles.lastField}
+                        />
 
-            <ThemedTextInput 
-                style={{ width: '80%', marginBottom: 20}}
-                placeholder="Password"
-                secureTextEntry
-                onChangeText={setPassword}
-                value={password}
-            />
+                        <View style={styles.submit}>
+                            <AuthButton label="Registrati" onPress={handleSubmit} loading={loading} />
+                        </View>
+                        {errorMessage ? <Text style={authStyles.formError}>{errorMessage}</Text> : null}
 
-
-            <Spacer height={20}/>
-
-            <ThemedText style={styles.roleLabel}>I am registering as</ThemedText>
-            <View style={styles.roleOptions}>
-                <Pressable
-                    onPress={() => setRole('caregiver')}
-                    style={[styles.roleOption, role === 'caregiver' && styles.selectedRole]}
-                >
-                    <ThemedText>Caregiver / Persona</ThemedText>
-                </Pressable>
-                <Pressable
-                    onPress={() => setRole('association')}
-                    style={[styles.roleOption, role === 'association' && styles.selectedRole]}
-                >
-                    <ThemedText>Associazione</ThemedText>
-                </Pressable>
-            </View>
-
-            <Spacer height={20}/>
-
-            <ThemedButton onPress={handleSubmit}>
-                <Text style={{ color: '#f2f2f2'}}>Register</Text>
-            </ThemedButton>
-
-            {errorMessage ? <ThemedText style={{ color: 'red' }}>{errorMessage}</ThemedText> : null}
-
-            <Spacer height={50}/>
-
-            <Link href='/login' style={styles.link}>
-                <ThemedText style={{ textAlign: 'center' }}>
-                    Login instead
-                </ThemedText>
-            </Link>
-        </ThemedView>
-    </Wrapper>
-  )
+                        <AuthSwitch text="Hai già un account?" action="Accedi" onPress={() => router.replace('/login')} />
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </View>
+    )
 }
 
 export default Register
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: "center", 
-        justifyContent: "center"
-    },
-    title: {
-        fontWeight: "bold",
-        textAlign: "center",
-        fontSize: 18,
-        marginBottom: 30,
-    },
-    input: {
-        width: '80%',
-        marginBottom: 15,
-    },
-    btnText: {
-        color: '#f2f2f2',
-    },
-    link: {
-        marginVertical: 10,
-        borderBottomWidth: 1
-    },
-    roleLabel: {
-        alignSelf: 'flex-start',
-        marginLeft: '10%',
-        marginBottom: 8,
-    },
-    roleOptions: {
-        width: '80%',
-        flexDirection: 'row',
-        gap: 8,
-        marginBottom: 10,
-    },
-    roleOption: {
-        flex: 1,
-        padding: 12,
-        borderWidth: 1,
-        borderColor: '#aaa',
-        borderRadius: 6,
-        alignItems: 'center',
-    },
-    selectedRole: {
-        borderColor: '#2f80ed',
-        backgroundColor: '#dbeafe',
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    modalContent: {
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        paddingBottom: 30,
-    },
-    modalHeader: {
-        alignItems: 'flex-end',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        backgroundColor: '#f8f8f8',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-    },
-    doneText: {
-        color: '#007AFF',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
+    flex: { flex: 1 },
+    roles: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: C.card, marginBottom: 14 },
+    role: { flex: 1, alignItems: 'center', borderRadius: 9, paddingVertical: 10 },
+    roleOn: { backgroundColor: C.primary },
+    roleText: { fontSize: 14, fontWeight: '600', color: C.muted },
+    roleTextOn: { color: C.white },
+    pair: { flexDirection: 'row', gap: 16 },
+    lastField: { marginBottom: 0 },
+    submit: { marginTop: 28 },
 })
