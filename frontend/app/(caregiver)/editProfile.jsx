@@ -3,6 +3,7 @@ import { Text, StyleSheet } from "react-native";
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
 import api from "../../config/httpClient.js";
+import { getItem, deleteItem } from "../../config/storage.js";
 import { C, toIsoDay, apiErrorMessage } from "../../constants/caregiver";
 import DateTimeField from "../../components/caregiver/DateTimeField";
 import {
@@ -41,8 +42,16 @@ const EditProfile = () => {
       const loadProfile = async () => {
         try {
           const response = await api.get("/me/profile");
-          setName(response.data.name ?? "");
-          setSurname(response.data.surname ?? "");
+          // Nome e cognome inseriti in registrazione (il backend non li riceve a quel punto)
+          let pending = null;
+          if (!response.data.name) {
+            try {
+              pending = JSON.parse((await getItem("pendingProfile")) ?? "null");
+            } catch (e) {}
+            if (pending?.email !== (response.data.email ?? "").toLowerCase()) pending = null;
+          }
+          setName(response.data.name ?? pending?.name ?? "");
+          setSurname(response.data.surname ?? pending?.surname ?? "");
           setBirthDate(response.data.birthDate ?? "");
           setPhone(response.data.phone ?? "");
           setEmail(response.data.email ?? "");
@@ -86,6 +95,7 @@ const EditProfile = () => {
         phone: phone.trim(),
         homeAddress,
       });
+      await deleteItem("pendingProfile");
       if (next === "wizard") router.replace("/transport/new");
       else router.replace({ pathname: "/profile", params: { saved: "1" } });
     } catch (error) {
