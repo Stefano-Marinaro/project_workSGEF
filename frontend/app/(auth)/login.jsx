@@ -39,7 +39,9 @@ const Login = () => {
             await setItem('accessToken', response.data.accessToken)
             await setItem('refreshToken', response.data.refreshToken)
  
-            router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
+            // redirect: pagina da riaprire dopo l'accesso (es. link di invito caregiver)
+            if (params.redirect) router.replace(params.redirect)
+            else router.replace(role === 'association' ? '/association/request' : '/(caregiver)/transport')
         } catch (error) {
             if (error.response) {
        

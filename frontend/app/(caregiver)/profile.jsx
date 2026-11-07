@@ -1,194 +1,141 @@
-import {
-  StyleSheet,
-  Image,
-  ScrollView,
-  useColorScheme,
-  ActivityIndicator,
-} from "react-native";
-import { useState, useEffect } from "react";
-import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { View, Text, Pressable, StyleSheet } from "react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
-import ThemedView from "../../components/ThemedView";
-import Spacer from "../../components/Spacer";
-import ThemedText from "../../components/ThemedText";
-import ThemedButton from "../../components/ThemedButton";
-import { Colors } from "../../constants/Colors";
 import api from "../../config/httpClient.js";
+import Banner from "../../components/Banner";
+import { C, formatIsoDate, apiErrorMessage } from "../../constants/caregiver";
+import {
+  Page,
+  Scroll,
+  Loading,
+  PageTitle,
+  Card,
+  Icon,
+  Initials,
+  CircleButton,
+  Divider,
+  Btn,
+  ErrorText,
+} from "../../components/caregiver/ui";
+
+const DataRow = ({ icon, label, value }) => (
+  <View style={styles.dataRow}>
+    <Icon name={icon} size={20} color={C.muted} />
+    <View>
+      <Text style={styles.dataLabel}>{label}</Text>
+      <Text style={styles.dataValue}>{value || "Non indicato"}</Text>
+    </View>
+  </View>
+);
 
 const Profile = () => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
   const router = useRouter();
+  const { saved } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [profile, setProfile] = useState(null);
+  const [showSaved, setShowSaved] = useState(false);
 
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [email, setEmail] = useState("");
-  const [birthDate, setBirthDate] = useState("");
-  const [phone, setPhone] = useState("");
+  useFocusEffect(
+    useCallback(() => {
+      setShowSaved(saved === "1");
+      const loadProfile = async () => {
+        try {
+          const response = await api.get("/me/profile");
+          setProfile(response.data);
+          setErrorMessage("");
+        } catch (error) {
+          setErrorMessage(apiErrorMessage(error, "Impossibile caricare il profilo"));
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadProfile();
+    }, [saved]),
+  );
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await api.get("/me/profile");
-        setName(response.data.name ?? "");
-        setSurname(response.data.surname ?? "");
-        setEmail(response.data.email ?? "");
-        setBirthDate(response.data.birthDate ?? "");
-        setPhone(response.data.phone ?? "");
-      } catch (error) {
-        setErrorMessage(
-          error.response
-            ? error.response.data.detail || "Impossibile caricare il profilo"
-            : "Unable to reach the server",
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProfile();
-  }, []);
-
-  if (loading) {
-    return (
-      <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
-      </ThemedView>
-    );
-  }
-  const handleLogout = () => {
-    router.replace("/logout");
-  };
-  const handleModify = () => {
-    router.push("/editProfile");
-  }; //poi verrà rimpiazzata con .replace, cosi che l'utente non possa piu tornare indietro, come sopra
-  const handleModifyPassword = () => {
-    router.push("/editPassword");
-  };
-
-  if (errorMessage) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText style={{ color: "red" }}>{errorMessage}</ThemedText>
-      </ThemedView>
-    );
-  }
+  if (loading) return <Loading />;
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Spacer height={60} />
+    <Page>
+      <Scroll>
+        {showSaved ? (
+          <Banner
+            variant="success"
+            message="Modifiche salvate"
+            onDismiss={() => {
+              setShowSaved(false);
+              router.setParams({ saved: "" });
+            }}
+            style={styles.banner}
+          />
+        ) : null}
 
-        {/* Avatar */}
-        <Image
-          source={require("../../assets/img/fotoProfilo.jpg")}
-          style={[styles.avatar, { borderColor: Colors.primary }]}
-        />
+        <PageTitle>Profilo</PageTitle>
+        <ErrorText>{errorMessage}</ErrorText>
 
-        <Spacer height={12} />
+        {profile ? (
+          <>
+            <View style={styles.identity}>
+              <Initials name={profile.name} surname={profile.surname} size={52} solid />
+              <View style={styles.flex}>
+                <Text style={styles.name}>
+                  {profile.name} {profile.surname}
+                </Text>
+                <Text style={styles.email}>{profile.email}</Text>
+              </View>
+              <CircleButton icon="pencil" label="Modifica profilo" onPress={() => router.push("/editProfile")} />
+            </View>
 
-        {/* Nome utente */}
+            <Card style={styles.card}>
+              <Text style={styles.cardTitle}>Dati personali</Text>
+              <DataRow icon="call-outline" label="Telefono" value={profile.phone} />
+              <Divider style={styles.divider} />
+              <DataRow icon="calendar-outline" label="Data di nascita" value={formatIsoDate(profile.birthDate)} />
+            </Card>
+          </>
+        ) : null}
 
-        <ThemedText title={true} style={styles.nome}>
-          {name} {surname}
-        </ThemedText>
+        <Pressable onPress={() => router.push("/transport/history")} style={({ pressed }) => [styles.history, pressed && styles.pressed]}>
+          <View style={styles.flex}>
+            <Text style={styles.historyTitle}>Storico dei trasporti</Text>
+            <Text style={styles.historySub}>Consulta i trasporti precedenti</Text>
+          </View>
+          <Icon name="chevron-forward" size={20} color={C.muted} />
+        </Pressable>
 
-        <Spacer height={30} />
-
-        {/* Card Informazioni Personali */}
-        <ThemedView
-          style={[styles.card, { backgroundColor: theme.uiBackground }]}
-        >
-          <ThemedText style={styles.label}>Email</ThemedText>
-          <ThemedText style={styles.value}>{email}</ThemedText>
-
-          <Spacer height={16} />
-
-          <ThemedText style={styles.label}>Phone</ThemedText>
-          <ThemedText style={styles.value}>{phone}</ThemedText>
-        </ThemedView>
-
-        <Spacer height={30} />
-
-        {/* Card Informazioni Utente */}
-        <ThemedView
-          style={[styles.card, { backgroundColor: theme.uiBackground }]}
-        >
-          <ThemedText style={styles.label}>Date of Birth</ThemedText>
-          <ThemedText style={styles.value}>{birthDate}</ThemedText>
-        </ThemedView>
-
-        <Spacer height={30} />
-
-        <ThemedButton style={styles.input} onPress={handleModify}>
-          <ThemedText style={styles.btnText}>Modify Profile</ThemedText>
-        </ThemedButton>
-
-        <Spacer height={15} />
-
-        <ThemedButton style={styles.input} onPress={handleModifyPassword}>
-          <ThemedText style={styles.btnText}>Modify Password</ThemedText>
-        </ThemedButton>
-
-        <Spacer height={15} />
-
-        <ThemedButton
-          style={[styles.input, { backgroundColor: Colors.warning }]}
-          onPress={handleLogout}
-        >
-          <ThemedText style={styles.btnText}>Logout</ThemedText>
-        </ThemedButton>
-
-        <Spacer height={50} />
-      </ScrollView>
-    </ThemedView>
+        <Btn label="Esci" variant="danger" icon="log-out-outline" onPress={() => router.replace("/logout")} style={styles.logout} />
+      </Scroll>
+    </Page>
   );
 };
 
 export default Profile;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
+  flex: { flex: 1 },
+  pressed: { opacity: 0.85 },
+  banner: { marginTop: 12 },
+  identity: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 22 },
+  name: { fontSize: 19, fontWeight: "600", color: C.text },
+  email: { fontSize: 13, color: C.muted, marginTop: 4 },
+  card: { paddingVertical: 20, marginBottom: 22 },
+  cardTitle: { fontSize: 14, fontWeight: "600", color: C.muted, marginBottom: 18 },
+  dataRow: { flexDirection: "row", gap: 16, alignItems: "flex-start" },
+  dataLabel: { fontSize: 13, color: C.muted, marginBottom: 4 },
+  dataValue: { fontSize: 16, color: C.text },
+  divider: { marginVertical: 14 },
+  history: {
+    flexDirection: "row",
     alignItems: "center",
-    paddingBottom: 40,
+    backgroundColor: C.card,
+    borderRadius: 14,
+    padding: 18,
+    marginBottom: 36,
   },
-  avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 3,
-    alignSelf: "center",
-  },
-  nome: {
-    fontSize: 20,
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  card: {
-    width: "85%",
-    borderRadius: 12,
-    padding: 20,
-  },
-  label: {
-    fontSize: 13,
-    opacity: 0.6,
-    marginBottom: 4,
-  },
-  value: {
-    fontSize: 16,
-    fontWeight: "500",
-  },
-  input: {
-    width: "80%",
-    marginBottom: 0,
-  },
-  btnText: {
-    color: "#f2f2f2",
-    textAlign: "center",
-  },
+  historyTitle: { fontSize: 16, fontWeight: "600", color: C.text },
+  historySub: { fontSize: 13, color: C.muted, marginTop: 4 },
+  logout: { borderRadius: 12 },
 });
