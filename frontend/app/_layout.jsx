@@ -17,6 +17,8 @@ const RootLayout = () => {
             <Stack.Screen name="(auth)" options={{ headerShown: false }}/>
             <Stack.Screen name="(caregiver)" options={{ headerShown: false }}/>
             <Stack.Screen name="association" options={{ headerShown: false }}/>
+            {/* Pagina pubblica del link operatore: nessun login, nessuna navigazione */}
+            <Stack.Screen name="operatore/[token]" options={{ headerShown: false }}/>
             <Stack.Screen name="index" options={{ title: 'Home' }}/>
         </Stack> 
         </> 
