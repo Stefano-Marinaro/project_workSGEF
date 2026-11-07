@@ -3,15 +3,29 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { C } from "../constants/caregiver";
 
-// Header del mockup caregiver: campanella a sinistra, logo GoCare al centro,
-// iniziali del profilo a destra.
+// Header dei mockup caregiver e associazione: campanella a sinistra, logo GoCare
+// al centro, iniziali del profilo a destra.
+// badgeCount: numero di notifiche non lette (associazione); hasUnreadNotifications: solo pallino (caregiver)
+// brandOnly: solo logo, per la pagina pubblica dell'operatore
 export default function Header({
   initials,
   hasUnreadNotifications,
+  badgeCount,
   onPressAvatar,
   onPressNotifications,
+  brandOnly = false,
 }) {
   const insets = useSafeAreaInsets();
+  if (brandOnly) {
+    return (
+      <View style={[styles.container, styles.centered, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.brand}>
+          <Image source={require("../assets/img/gocareLogo.png")} style={styles.logo} />
+          <Text style={styles.brandText}>GoCare</Text>
+        </View>
+      </View>
+    );
+  }
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
       <Pressable
@@ -20,7 +34,13 @@ export default function Header({
         style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
       >
         <Ionicons name="notifications-outline" size={21} color={C.primary} />
-        {hasUnreadNotifications ? <View style={styles.badge} /> : null}
+        {badgeCount > 0 ? (
+          <View style={styles.countBadge}>
+            <Text style={styles.countText}>{badgeCount}</Text>
+          </View>
+        ) : hasUnreadNotifications ? (
+          <View style={styles.badge} />
+        ) : null}
       </Pressable>
 
       <View style={styles.brand}>
@@ -72,6 +92,20 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: C.card,
   },
+  centered: { justifyContent: "center" },
+  countBadge: {
+    position: "absolute",
+    top: 2,
+    right: 2,
+    minWidth: 17,
+    height: 17,
+    borderRadius: 9,
+    paddingHorizontal: 4,
+    backgroundColor: C.primary,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  countText: { color: C.white, fontSize: 10, fontWeight: "700" },
   brand: { flexDirection: "row", alignItems: "center", gap: 6 },
   logo: { width: 44, height: 44, resizeMode: "contain" },
   brandText: {
