@@ -1,173 +1,150 @@
-import {
-  StyleSheet,
-  Image,
-  ScrollView,
-  useColorScheme,
-  ActivityIndicator,
-} from "react-native";
-import { useState, useEffect } from "react";
-import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
+import { Text, StyleSheet } from "react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
-import ThemedView from "../../components/ThemedView";
-import Spacer from "../../components/Spacer";
-import ThemedText from "../../components/ThemedText";
-import ThemedTextInput from "../../components/ThemedTextInput";
-import ThemedButton from "../../components/ThemedButton";
-import { Colors } from "../../constants/Colors";
 import api from "../../config/httpClient.js";
+import { getItem, deleteItem } from "../../config/storage.js";
+import { C, toIsoDay, apiErrorMessage } from "../../constants/caregiver";
+import DateTimeField from "../../components/caregiver/DateTimeField";
+import {
+  Page,
+  Scroll,
+  Loading,
+  PageTitle,
+  Muted,
+  Field,
+  Row,
+  Footer,
+  Btn,
+  ErrorText,
+} from "../../components/caregiver/ui";
 
+// Mockup "Modifica profilo". L'email si cambia con un flusso dedicato
+// (/auth/change-email, richiede la password), quindi qui è in sola lettura.
 const EditProfile = () => {
-  const colorScheme = useColorScheme();
-  const theme = Colors[colorScheme] ?? Colors.light;
   const router = useRouter();
+  const { next } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [errors, setErrors] = useState({});
+  const [saving, setSaving] = useState(false);
 
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [homeAddress, setHomeAddress] = useState(null);
 
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const response = await api.get("/me/profile");
-        setName(response.data.name ?? "");
-        setSurname(response.data.surname ?? "");
-        setBirthDate(response.data.birthDate ?? "");
-        setPhone(response.data.phone ?? "");
-      } catch (error) {
-        setErrorMessage("Impossibile caricare il profilo");
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      const loadProfile = async () => {
+        try {
+          const response = await api.get("/me/profile");
+          // Nome e cognome inseriti in registrazione (il backend non li riceve a quel punto)
+          let pending = null;
+          if (!response.data.name) {
+            try {
+              pending = JSON.parse((await getItem("pendingProfile")) ?? "null");
+            } catch (e) {}
+            if (pending?.email !== (response.data.email ?? "").toLowerCase()) pending = null;
+          }
+          setName(response.data.name ?? pending?.name ?? "");
+          setSurname(response.data.surname ?? pending?.surname ?? "");
+          setBirthDate(response.data.birthDate ?? "");
+          setPhone(response.data.phone ?? "");
+          setEmail(response.data.email ?? "");
+          setHomeAddress(response.data.homeAddress ?? null);
+          setErrors({});
+          setErrorMessage("");
+        } catch (error) {
+          setErrorMessage("Impossibile caricare il profilo");
+        } finally {
+          setLoading(false);
+        }
+      };
+      loadProfile();
+    }, []),
+  );
+
+  const goBack = () => {
+    if (next === "wizard") router.replace("/transport");
+    else router.replace("/profile");
+  };
 
   const handleSave = async () => {
+    const found = {};
+    if (!name.trim()) found.name = "Inserisci il nome.";
+    if (!surname.trim()) found.surname = "Inserisci il cognome.";
+    if (!birthDate) found.birthDate = "Inserisci la data di nascita.";
+    else if (birthDate >= toIsoDay(new Date())) found.birthDate = "La data di nascita deve essere nel passato.";
+    if (!phone.trim()) found.phone = "Inserisci il numero di telefono.";
+    else if (!/^\+?[0-9][0-9 ()\-]{5,}$/.test(phone.trim())) found.phone = "Il numero di telefono non è valido.";
+    setErrors(found);
+    if (Object.keys(found).length) return;
+
+    setSaving(true);
+    setErrorMessage("");
     try {
-      // TODO: PUT /me/profile non esiste ancora sul backend (vedi UpdatePersonProfileService,
-      // registrato ma senza controller) - va collegato prima che questa chiamata funzioni davvero.
-      await api.put("/me/profile", { name, surname, birthDate, phone });
-      router.back();
+      // La residenza non compare nel modulo: si rimanda quella già salvata per non perderla
+      await api.put("/me/profile", {
+        name: name.trim(),
+        surname: surname.trim(),
+        birthDate,
+        phone: phone.trim(),
+        homeAddress,
+      });
+      await deleteItem("pendingProfile");
+      if (next === "wizard") router.replace("/transport/new");
+      else router.replace({ pathname: "/profile", params: { saved: "1" } });
     } catch (error) {
-      setErrorMessage(
-        error.response?.data?.detail || "Salvataggio non riuscito",
-      );
+      setErrorMessage(apiErrorMessage(error, "Salvataggio non riuscito"));
+    } finally {
+      setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" />
-      </ThemedView>
-    );
-  }
+  if (loading) return <Loading />;
 
   return (
-    <ThemedView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Spacer height={60} />
+    <Page>
+      <Scroll>
+        <PageTitle>Modifica profilo</PageTitle>
+        <Muted style={styles.intro}>Aggiorna i tuoi dati personali e i recapiti.</Muted>
 
-        <Image
-          source={require("../../assets/img/fotoProfilo.jpg")}
-          style={[styles.avatar, { borderColor: Colors.primary }]}
-        />
+        <Text style={styles.section}>Dati personali</Text>
+        <Muted style={styles.hint}>
+          Telefono e data di nascita sono necessari per richiedere un trasporto. I campi con * sono obbligatori.
+        </Muted>
+        <Row>
+          <Field label="Nome" required style={styles.flex} value={name} onChangeText={setName} error={errors.name} />
+          <Field label="Cognome" required style={styles.flex} value={surname} onChangeText={setSurname} error={errors.surname} />
+        </Row>
+        <Field label="Data di nascita" required error={errors.birthDate}>
+          <DateTimeField mode="date" value={birthDate} onChange={setBirthDate} placeholder="gg/mm/aaaa" maximumDate={new Date()} />
+        </Field>
 
-        <Spacer height={12} />
+        <Text style={styles.section}>Recapiti</Text>
+        <Field label="Email" required value={email} editable={false} />
+        <Field label="Telefono" required value={phone} onChangeText={setPhone} keyboardType="phone-pad" error={errors.phone} />
 
-        <ThemedText title={true} style={styles.title}>
-          Edit Profile
-        </ThemedText>
-
-        <Spacer height={30} />
-
-        <ThemedView
-          style={[styles.card, { backgroundColor: theme.uiBackground }]}
-        >
-          <ThemedText style={styles.label}>Nome</ThemedText>
-          <ThemedTextInput
-            style={styles.textInput}
-            value={name}
-            onChangeText={setName}
-          />
-
-          <Spacer height={16} />
-
-          <ThemedText style={styles.label}>Cognome</ThemedText>
-          <ThemedTextInput
-            style={styles.textInput}
-            value={surname}
-            onChangeText={setSurname}
-          />
-
-          <Spacer height={16} />
-
-          <ThemedText style={styles.label}>
-            Data di nascita (AAAA-MM-GG)
-          </ThemedText>
-          <ThemedTextInput
-            style={styles.textInput}
-            value={birthDate}
-            onChangeText={setBirthDate}
-            placeholder="1990-05-20"
-          />
-
-          <Spacer height={16} />
-
-          <ThemedText style={styles.label}>Telefono</ThemedText>
-          <ThemedTextInput
-            style={styles.textInput}
-            value={phone}
-            onChangeText={setPhone}
-            keyboardType="phone-pad"
-          />
-        </ThemedView>
-
-        {errorMessage ? (
-          <ThemedText style={{ color: "red" }}>{errorMessage}</ThemedText>
-        ) : null}
-
-        <Spacer height={30} />
-
-        <ThemedButton style={styles.input} onPress={handleSave}>
-          <ThemedText style={styles.btnText}>Save Changes</ThemedText>
-        </ThemedButton>
-
-        <Spacer height={15} />
-
-        <ThemedButton
-          style={[styles.input, { backgroundColor: Colors.warning }]}
-          onPress={() => router.back()}
-        >
-          <ThemedText style={styles.btnText}>Cancel</ThemedText>
-        </ThemedButton>
-
-        <Spacer height={50} />
-      </ScrollView>
-    </ThemedView>
+        <ErrorText>{errorMessage}</ErrorText>
+      </Scroll>
+      <Footer>
+        <Btn label="Annulla" variant="secondary" onPress={goBack} />
+        <Btn label="Salva modifiche" onPress={handleSave} loading={saving} style={styles.save} />
+      </Footer>
+    </Page>
   );
 };
 
 export default EditProfile;
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  scrollContent: { alignItems: "center", paddingBottom: 40 },
-  avatar: {
-    width: 110,
-    height: 110,
-    borderRadius: 55,
-    borderWidth: 3,
-    alignSelf: "center",
-  },
-  title: { fontSize: 20, fontWeight: "bold", textAlign: "center" },
-  card: { width: "85%", borderRadius: 12, padding: 20 },
-  label: { fontSize: 13, opacity: 0.6, marginBottom: 4 },
-  textInput: { width: "100%" },
-  input: { width: "80%", marginBottom: 0 },
-  btnText: { color: "#f2f2f2", textAlign: "center" },
+  flex: { flex: 1 },
+  intro: { fontSize: 15, marginBottom: 16 },
+  section: { fontSize: 14, fontWeight: "600", color: C.muted, marginBottom: 10, marginTop: 4 },
+  hint: { fontSize: 13, lineHeight: 20, marginBottom: 14 },
+  save: { flex: 1, maxWidth: 200 },
 });

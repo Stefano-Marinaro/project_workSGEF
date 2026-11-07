@@ -1,24 +1,46 @@
 import { useEffect, useState } from "react"
-import { Tabs, useRouter } from "expo-router"
-import { useColorScheme } from "react-native"
-import {Colors } from "../../constants/Colors"
+import { Tabs, useRouter, usePathname } from "expo-router"
+import { View, Text, StyleSheet } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import Header from "../../components/Header"
 import api from "../../config/httpClient.js"
+import { getItem } from "../../config/storage.js"
+import { C, initialsFor } from "../../constants/caregiver"
+
+// Schermate raggiungibili con router.push ma non mostrate nella tab bar
+const HIDDEN = [
+    "profile",
+    "editProfile",
+    "editPassword",
+    "notifications",
+    "transport/[id]",
+    "transport/history",
+    "assisted/[id]",
+    "assisted/new",
+    "invito-caregiver/[token]",
+]
+
+const TabLabel = ({ focused, label }) => (
+    <Text style={[styles.label, focused && styles.labelFocused]}>{label}</Text>
+)
 
 const DashboardLayout = () => {
-    const colorScheme = useColorScheme()
-    const theme = Colors[colorScheme] ?? Colors.light
     const router = useRouter()
+    const pathname = usePathname()
 
-    const [name, setName] = useState("")
+    const [initials, setInitials] = useState("")
     const [hasUnreadNotifications, setHasUnreadNotifications] = useState(false)
 
+    // Ricarica iniziali e contatore notifiche a ogni cambio di schermata,
+    // così il pallino si aggiorna dopo aver letto le notifiche o modificato il profilo.
     useEffect(() => {
         const loadHeaderData = async () => {
+            // Senza sessione (es. link di invito aperto da chi non ha fatto l'accesso)
+            // non si chiama il backend: ci pensa la schermata a mandare al login.
+            if (!(await getItem("accessToken"))) return
             try {
                 const profileResponse = await api.get("/me/profile")
-                setName(`${profileResponse.data.name} ${profileResponse.data.surname}`)
+                setInitials(initialsFor(profileResponse.data.name ?? "", profileResponse.data.surname ?? ""))
             } catch (error) {
                 // L'Header non deve bloccare l'app se questa chiamata fallisce
             }
@@ -31,110 +53,79 @@ const DashboardLayout = () => {
             }
         }
         loadHeaderData()
-    }, [])
+    }, [pathname])
 
     return (
         <>
         <Header
-            name={name}
+            initials={initials}
             hasUnreadNotifications={hasUnreadNotifications}
             onPressAvatar={() => router.push('/profile')}
             onPressNotifications={() => router.push('/notifications')}
         />
         <Tabs
-            screenOptions={{ headerShown: false, tabBarStyle: {
-                backgroundColor: theme.navBackground,
-                paddingTop: 10,
-                height: 90
-            },
-            tabBarActiveTintColor: theme.iconColorFocused,
-            tabBarInactiveTintColor: theme.iconColor
-        }}
-
+            backBehavior="history"
+            screenOptions={{
+                headerShown: false,
+                sceneStyle: { backgroundColor: C.page },
+                tabBarStyle: {
+                    backgroundColor: C.nav,
+                    borderTopColor: C.card,
+                    paddingTop: 8,
+                    height: 94,
+                },
+                tabBarActiveTintColor: C.text,
+                tabBarInactiveTintColor: "#686477",
+            }}
         >
-            {/* Si raggiunge dall'avatar nell'Header, non più come tab: href:null la tiene navigabile senza icona in basso */}
-            <Tabs.Screen
-                name="profile"
-                options={{
-                    href: null,
-                    title: "Profile"
-                }}
-            />
-            {/* Questa Tabs dice editProfile esiste ed è raggiungibile tramite router.push, ma non mostrarla nella tab bar */}
-            <Tabs.Screen 
-                name="editProfile" 
-                options={{
-                    href: null,
-                    title: "Edit Profile"
-                }}
-            />
-
-            <Tabs.Screen
-                name="editPassword"
-                options={{
-                    href: null,
-                    title: "Edit Password"
-                }}
-            />
-            {/* Raggiunta dal campanello nell'Header, non è una tab */}
-            <Tabs.Screen
-                name="notifications"
-                options={{
-                    href: null,
-                    title: "Notifications"
-                }}
-            />
-
             <Tabs.Screen
                 name="transport"
-                options={{title:"My Transports", tabBarIcon: ({ focused }) => (
-                    <Ionicons 
-                        size={24} 
-                        name={ focused ? 'car' : 'car-outline'} 
-                        color={ focused ?  theme.iconColorFocused :  theme.iconColor }
-                    />
-                )}}
+                options={{
+                    title: "Trasporti",
+                    tabBarLabel: ({ focused }) => <TabLabel focused={focused} label="Trasporti" />,
+                    tabBarIcon: ({ color }) => <Ionicons size={22} name="car-outline" color={color} />,
+                }}
             />
             <Tabs.Screen
                 name="transport/new"
-                options={{title:"New Transport", tabBarIcon: ({ focused }) => (
-                    <Ionicons
-                        size={24}
-                        name={ focused ? 'add-circle' : 'add-circle-outline'}
-                        color={ focused ?  theme.iconColorFocused :  theme.iconColor }
-                    />
-                )}}
+                options={{
+                    title: "Nuovo trasporto",
+                    tabBarLabel: () => <Text style={styles.newLabel}>Nuovo trasporto</Text>,
+                    tabBarIcon: () => (
+                        <View style={styles.newIcon}>
+                            <Ionicons size={24} name="add-circle-outline" color={C.white} />
+                        </View>
+                    ),
+                }}
             />
-            {/* TODO: assisted.jsx è ancora un placeholder - va sostituito con la vera lista assistiti (mockup 3.1) */}
             <Tabs.Screen
                 name="assisted"
-                options={{title:"Assistiti", tabBarIcon: ({ focused }) => (
-                    <Ionicons
-                        size={24}
-                        name={ focused ? 'people' : 'people-outline'}
-                        color={ focused ?  theme.iconColorFocused :  theme.iconColor }
-                    />
-                )}}
-            />
-            {/* Dettaglio raggiunto dalla lista assistiti, non è una tab */}
-            <Tabs.Screen
-                name="assisted/[id]"
                 options={{
-                    href: null,
-                    title: "Assisted Detail"
+                    title: "Assistiti",
+                    tabBarLabel: ({ focused }) => <TabLabel focused={focused} label="Assistiti" />,
+                    tabBarIcon: ({ color }) => <Ionicons size={22} name="people-outline" color={color} />,
                 }}
             />
-            {/* Dettaglio raggiunto dalla lista trasporti, non è una tab */}
-            <Tabs.Screen
-                name="transport/[id]"
-                options={{
-                    href: null,
-                    title: "Transport Detail"
-                }}
-            />
+            {HIDDEN.map((name) => (
+                <Tabs.Screen key={name} name={name} options={{ href: null }} />
+            ))}
         </Tabs>
         </>
     )
 }
 
 export default DashboardLayout
+
+const styles = StyleSheet.create({
+    label: { fontSize: 12, color: "#686477", marginTop: 4 },
+    labelFocused: { color: C.text, fontWeight: "700" },
+    newIcon: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: C.primary,
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    newLabel: { fontSize: 13, fontWeight: "600", color: C.primary, marginTop: 6 },
+})

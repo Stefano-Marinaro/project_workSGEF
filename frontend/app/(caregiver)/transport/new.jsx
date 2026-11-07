@@ -1,390 +1,880 @@
-import { Pressable, View, ScrollView, StyleSheet, Text, Platform, Keyboard, TouchableWithoutFeedback, Modal, TouchableOpacity } from 'react-native'
-import { useState } from 'react'
-import DateTimePicker from '@react-native-community/datetimepicker' //Gestisce la data/ora a secondo di IOS/Android
-import { Picker } from '@react-native-picker/picker' //Picker, stile tendina (select)
+import { useCallback, useRef, useState } from 'react'
+import { View, Text, Pressable, StyleSheet } from 'react-native'
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 
-import ThemedView from '../../../components/ThemedView'
-import Spacer from '../../../components/Spacer'
-import ThemedText from '../../../components/ThemedText'
-import ThemedTextInput from '../../../components/ThemedTextInput'
-import ThemedButton from '../../../components/ThemedButton'
+import api from '../../../config/httpClient.js'
+import { geocodeAddress } from '../../../config/caregiverApi'
+import {
+    C,
+    TRIP_TYPES,
+    ONE_WAY_ONLY,
+    tripTypeLabel,
+    directionLabel,
+    ageFrom,
+    formatFullDate,
+    addressLines,
+    toIsoDay,
+    apiErrorMessage,
+} from '../../../constants/caregiver'
+import DateTimeField from '../../../components/caregiver/DateTimeField'
+import AddressModal from '../../../components/caregiver/AddressModal'
+import InviteCaregiverModal from '../../../components/caregiver/InviteCaregiverModal'
+import {
+    Page,
+    Scroll,
+    Loading,
+    PageTitle,
+    Card,
+    Icon,
+    Initials,
+    Radio,
+    OptionRow,
+    CheckRow,
+    FieldLabel,
+    Input,
+    Row,
+    Divider,
+    Btn,
+    Footer,
+    ErrorText,
+    EmptyState,
+    SuccessCheck,
+    RouteStops,
+} from '../../../components/caregiver/ui'
 
-// Gli accompagnatori
-const COMPANIONS = [
-    { label: 'Nobody', value: null },
-    { label: 'Mario Rossi', value: 'mario_rossi' },
-    { label: 'Luigi Bianchi', value: 'luigi_bianchi' },
-    { label: 'Anna Verdi', value: 'anna_verdi' },
+const STEPS = 5
+
+const MOBILITY = [
+    { value: 'walking', label: 'Cammina senza ausili' },
+    { value: 'aid', label: 'Usa bastone o deambulatore' },
+    { value: 'wheelchair', label: 'Usa una sedia a rotelle' },
+]
+const HELP = [
+    { value: 'boarding', label: 'Aiuto per salire e scendere dal mezzo' },
+    { value: 'walking_help', label: 'Aiuto nel tragitto a piedi fino al mezzo' },
 ]
 
-// Tipo di viaggio
-const TYPE_OF_TRANSPORT = [
-    { label: 'Nobody', value: null },
-    { label: 'Visit', value: 'visit' },
-    { label: 'Admission', value: 'admission' },
-    { label: 'Discharge', value: 'discharge' },
-    { label: 'Transfer', value: 'transfer' },
-]
+// Tariffa e minimo come in appsettings.json (sezione Pricing) del backend
+const PRICE_PER_KM = 0.8
+const MINIMUM_AMOUNT = 5
 
-const DIRECTIONS = [
-    { label: 'Round Trip', value: 'round_trip' },
-    { label: 'Outbound Only', value: 'outbound' },
-    { label: 'Return Only', value: 'return' },
-]
+const initialState = (assistedId = '') => ({
+    step: 1,
+    published: false,
+    tripType: 'Visit',
+    direction: 'RoundTrip',
+    date: '',
+    time: '',
+    returnTime: '',
+    added: [],
+    coords: {},
+    fromKey: '',
+    toKey: '',
+    returnKey: '',
+    sameReturn: false,
+    personId: assistedId,
+    mobility: '',
+    help: [],
+    donate: false,
+    extra: '',
+})
 
-// Gruppo cura (placeholder - UC9 non ancora implementato)
-const CARE_GROUPS = [
-    { label: 'Nobody', value: null },
-    { label: 'Mamma Rossi', value: 'gruppo_1' },
-    { label: 'Nonno Bianchi', value: 'gruppo_2' },
-]
+// Distanza in linea d'aria (km): serve solo per la stima del contributo
+const distanceKm = (a, b) => {
+    if (!a?.latitude || !b?.latitude) return 0
+    const rad = (d) => (d * Math.PI) / 180
+    const dLat = rad(b.latitude - a.latitude)
+    const dLon = rad(b.longitude - a.longitude)
+    const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.latitude)) * Math.cos(rad(b.latitude)) * Math.sin(dLon / 2) ** 2
+    return 6371 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h))
+}
+
+const euros = (value) => value.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' })
+
+// ---------- Pezzi di interfaccia del wizard ----------
+
+const Progress = ({ step }) => (
+    <View style={styles.progress}>
+        <Text style={styles.progressText}>
+            Passaggio {step} di {STEPS}
+        </Text>
+        <View style={styles.bars}>
+            {Array.from({ length: STEPS }, (_, i) => (
+                <View key={i} style={[styles.bar, i < step && styles.barOn]} />
+            ))}
+        </View>
+    </View>
+)
+
+const Required = () => (
+    <Text style={styles.requiredNote}>
+        I campi contrassegnati con <Text style={styles.star}>*</Text> sono obbligatori.
+    </Text>
+)
+
+const StepTitle = ({ title, required, subtitle }) => (
+    <View style={styles.stepHead}>
+        <Text style={styles.stepTitle}>
+            {title}
+            {required ? <Text style={styles.star}> *</Text> : null}
+        </Text>
+        {subtitle ? <Text style={styles.stepSubtitle}>{subtitle}</Text> : null}
+    </View>
+)
+
+const AddressOption = ({ option, selected, onPress }) => {
+    const lines = addressLines(option)
+    return (
+        <Pressable onPress={onPress} style={[styles.addressOption, selected && styles.addressOptionOn]}>
+            <View style={styles.addressRadio}>
+                <Radio checked={selected} />
+            </View>
+            <View style={styles.flex}>
+                {option.label ? <Text style={styles.addressTag}>{option.label}</Text> : null}
+                <Text style={styles.addressLine1}>{lines.line1}</Text>
+                <Text style={styles.addressLine2}>{lines.line2}</Text>
+            </View>
+        </Pressable>
+    )
+}
+
+// Blocco "Partenza" / "Destinazione" / "Destinazione del ritorno" dello step 2
+const AddressPicker = ({ icon, title, emptyHint, options, value, onSelect, onAdd, error }) => (
+    <View>
+        <View style={styles.pickerHead}>
+            <Icon name={icon} size={19} color={C.primary} />
+            <Text style={styles.pickerTitle}>
+                {title}
+                <Text style={styles.star}> *</Text>
+            </Text>
+        </View>
+        <Text style={[styles.pickerHint, !options.length && styles.pickerHintIndented]}>
+            {options.length ? 'Scegli tra gli indirizzi già usati' : emptyHint}
+        </Text>
+        {options.map((o) => (
+            <AddressOption key={o.key} option={o} selected={value === o.key} onPress={() => onSelect(o.key)} />
+        ))}
+        <Btn
+            label={options.length ? 'Inserisci un altro indirizzo' : 'Inserisci indirizzo'}
+            icon="add"
+            onPress={onAdd}
+            style={styles.addAddress}
+            textStyle={styles.addAddressText}
+        />
+        <ErrorText>{error}</ErrorText>
+    </View>
+)
+
+// ---------- Schermata ----------
 
 const Create = () => {
-    //useState è una funzione React che dà memoria a un componente, cioè l'informazione salvata 
-    //su questa variabile const rimane tale un render e un altro e 
-    //può essere modificata solo da setPickupAddress
-    const [pickupAddress, setPickupAddress] = useState('')
-    const [destinationAddress, setDestinationAddress] = useState('')
-    const [notes, setNotes] = useState('')
-    const [direction, setDirection] = useState('round_trip')
+    const { assistedId } = useLocalSearchParams()
+    const router = useRouter()
+    const scrollRef = useRef(null)
+    const consumedAssisted = useRef(null)
 
-    const [date, setDate] = useState(new Date())
-    const [time, setTime] = useState(new Date())
-    const [companion, setCompanion] = useState(null)
-    const [typeOfTransport, setTypeOfTransport] = useState(null)
-    const [careGroup, setCareGroup] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [loadError, setLoadError] = useState('')
+    const [profile, setProfile] = useState(null)
+    const [people, setPeople] = useState([])
+    const [s, setS] = useState(() => initialState(assistedId))
+    const [errors, setErrors] = useState({})
+    const [busy, setBusy] = useState(false)
+    const [submitError, setSubmitError] = useState('')
+    const [addressTarget, setAddressTarget] = useState(null)
+    const [inviteOpen, setInviteOpen] = useState(false)
 
-    const [showDatePicker, setShowDatePicker] = useState(false)
-    const [showTimePicker, setShowTimePicker] = useState(false)
-
-    //Su Android il selettore di data si apre e chiude da solo appena scegli un giorno,
-    //per questo devi dire a React Native che non è piu aperto con setShowDatePicker(false)
-    const onChangeDate = (event, selectedDate) => {
-        if (Platform.OS === 'android') {
-            setShowDatePicker(false)
-        }
-        if (selectedDate) setDate(selectedDate)
-        // è un controllo di sicurezza in caso l'utente
-        //"tocca fuori" prima di aver selezionato una data quindi aggiorni lo stato se è arrivato davvero un valore
+    const update = (patch) => {
+        setS((prev) => ({ ...prev, ...patch }))
+        setErrors({})
     }
 
-    const onChangeTime = (event, selectedTime) => {
-        if (Platform.OS === 'android') {
-            setShowTimePicker(false)
-        }
-        if (selectedTime) setTime(selectedTime)
+    useFocusEffect(
+        useCallback(() => {
+            // Dopo un invio, o arrivando con un nuovo assistito già scelto, si riparte da capo
+            const freshAssisted = assistedId && consumedAssisted.current !== assistedId
+            if (freshAssisted) consumedAssisted.current = assistedId
+            setS((prev) => (prev.published || freshAssisted ? initialState(assistedId ?? '') : prev))
+            setErrors({})
+            setSubmitError('')
+            const load = async () => {
+                try {
+                    const [me, list] = await Promise.all([api.get('/me/profile'), api.get('/assisted')])
+                    // Telefono e data di nascita servono per richiedere un trasporto (mockup: completamento profilo)
+                    if (!me.data.phone || !me.data.birthDate) {
+                        router.replace({ pathname: '/editProfile', params: { next: 'wizard' } })
+                        return
+                    }
+                    setProfile(me.data)
+                    setPeople(list.data)
+                    setLoadError('')
+                } catch (e) {
+                    setLoadError(apiErrorMessage(e, 'Impossibile preparare la richiesta.'))
+                } finally {
+                    setLoading(false)
+                }
+            }
+            load()
+        }, [assistedId]),
+    )
+
+    if (loading) return <Loading />
+
+    if (loadError) {
+        return (
+            <Page>
+                <Scroll>
+                    <EmptyState title="Nuovo trasporto" text={loadError} />
+                </Scroll>
+            </Page>
+        )
     }
 
-    // tutte le informazioni fornite, che verrà collegata con una funzione fetch per il backend C#
-    //date.toISOString(),split('T')[0], converte la data in formato ISO e prende la parte prima di T([0], lo split li divide in 0 e 1) non compresa
-
-    const handleSubmit = () => {
-        const payload = {
-            pickupAddress,
-            destinationAddress,
-            notes,
-            date: date.toISOString().split('T')[0],
-            time: time.toTimeString().split(' ')[0],
-            companion,
-            typeOfTransport,
-            direction,
-            careGroup,
-        }
-        console.log('transport form submitted', payload)
+    if (people.length === 0) {
+        return (
+            <Page>
+                <Scroll>
+                    <EmptyState
+                        title="Aggiungi il tuo primo assistito"
+                        text="Registra la persona da accompagnare per iniziare a usare GoCare."
+                        action="Registra assistito"
+                        onAction={() => router.push({ pathname: '/assisted/new', params: { from: 'wizard' } })}
+                    />
+                </Scroll>
+            </Page>
+        )
     }
 
-    return (
-        //TouchableWithoutFeedback è un wrapper invisibile che intercetta i tap, se l'utente tocca un punto qualsiasi dello schermo fuori dai campi di testo, keyboard.dismiss() chiude la tastiera
-        //ScrollView rende il contenuto scrollabile 
-        //contentContainerStyle definisce lo stile del contenuto dentro (dove metti alignItems, paddingBottom ecc)
-        //keyboardShouldPersistTaps="handled": senza questa prop, se la tastiera è aperta e tocchi un bottone, il primo tap si "sprecherebbe" solo per chiudere la tastiera. Con "handled", il tap viene passato correttamente all'elemento anche se la tastiera è aperta.
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <ThemedView style={styles.container}>
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                >
-                    <Spacer />
-                    <ThemedText title={true} style={styles.title}>
-                        Create New Transport 
-                    </ThemedText>
+    // ---- dati derivati ----
+    const person = people.find((p) => p.id === s.personId) ?? null
+    const orderedPeople = person ? [person, ...people.filter((p) => p !== person)] : people
+    const residences = orderedPeople
+        .filter((p) => p.homeAddress)
+        .map((p) => ({ key: `res-${p.id}`, label: `Residenza di ${p.name} ${p.surname}`, ...p.homeAddress }))
+    const allOptions = [...residences, ...s.added]
+    // Le coordinate delle residenze vengono calcolate allo step 2 e salvate a parte
+    const find = (key) => {
+        const option = allOptions.find((o) => o.key === key)
+        return option ? { ...option, ...s.coords[key] } : undefined
+    }
+    const roundTrip = s.direction === 'RoundTrip'
+    const from = find(s.fromKey)
+    const to = find(s.toKey)
+    const returnTo = roundTrip ? (s.sameReturn ? from : find(s.returnKey)) : null
+    const me = { name: profile.name, surname: profile.surname, phone: profile.phone }
 
-                    {/* Indirizzo di Partenza */}
-                    <ThemedTextInput
-                        style={styles.input}
-                        placeholder="Starting Address"
-                        onChangeText={setPickupAddress}
-                        value={pickupAddress}
-                    />
+    const km = distanceKm(from, to) + (roundTrip ? distanceKm(to, returnTo) : 0)
+    const roundedKm = Math.round(km * 10) / 10
+    const minimum = Math.max(roundedKm * PRICE_PER_KM, MINIMUM_AMOUNT)
+    const extra = s.donate ? Math.max(Number(String(s.extra).replace(',', '.')) || 0, 0) : 0
 
-                    {/* Indirizzo di Arrivo */}
-                    <ThemedTextInput
-                        style={styles.input}
-                        placeholder="Delivery Address"
-                        onChangeText={setDestinationAddress}
-                        value={destinationAddress}
-                    />
+    const goTo = (step) => {
+        update({ step })
+        setErrors({})
+        scrollRef.current?.scrollTo?.({ y: 0, animated: false })
+    }
 
-                    {/* Note */}
-                    <ThemedTextInput
-                        style={styles.input}
-                        placeholder="Notes or details about the route (optional)"
-                        onChangeText={setNotes}
-                        value={notes}
-                        multiline
-                    />
+    // ---- validazione per step ----
+    const validateStep2 = async () => {
+        const found = {}
+        if (!s.date) found.date = 'Scegli la data.'
+        if (!s.time) found.time = 'Scegli l’ora di partenza.'
+        if (s.date && s.time && new Date(`${s.date}T${s.time}`) <= new Date()) found.time = 'La partenza deve essere nel futuro.'
+        if (roundTrip) {
+            if (!s.returnTime) found.returnTime = 'Scegli l’ora di ritorno.'
+            else if (s.time && s.returnTime <= s.time) found.returnTime = 'Il ritorno deve essere successivo alla partenza.'
+        }
+        if (!from) found.from = 'Scegli l’indirizzo di partenza.'
+        if (!to) found.to = 'Scegli la destinazione.'
+        if (roundTrip && !s.sameReturn && !returnTo) found.returnTo = 'Scegli dove accompagnare la persona al ritorno.'
+        if (Object.keys(found).length) return found
 
-                    <Spacer height={10} />
+        // Le residenze non hanno coordinate: si geocodificano qui, prima di proseguire
+        const missing = [from, to, returnTo].filter((o) => o && o.latitude == null)
+        for (const option of missing) {
+            const located = await geocodeAddress(option)
+            if (!located) {
+                const field = option === from ? 'from' : option === to ? 'to' : 'returnTo'
+                found[field] = 'Indirizzo non trovato: inseriscilo di nuovo controllando via, civico e comune.'
+                continue
+            }
+            setS((prev) => ({
+                ...prev,
+                coords: { ...prev.coords, [option.key]: { latitude: located.latitude, longitude: located.longitude } },
+            }))
+        }
+        return found
+    }
 
-                    {/* Selezione Data, la data è gia formattata in italiano grazie alla funzione toLocateDateString */}
-                    <ThemedButton
-                        onPress={() => setShowDatePicker(true)}
-                        style={styles.input}
-                    >
-                        <Text style={styles.btnText}>
-                            Date: {date.toLocaleDateString('it-IT')} 
-                        </Text>
-                    </ThemedButton>
+    const next = async () => {
+        if (s.step === 2) {
+            setBusy(true)
+            try {
+                const found = await validateStep2()
+                setErrors(found)
+                if (Object.keys(found).length) return
+            } catch (e) {
+                setErrors({ from: apiErrorMessage(e, 'Impossibile verificare gli indirizzi.') })
+                return
+            } finally {
+                setBusy(false)
+            }
+        }
+        if (s.step === 4) {
+            const found = {}
+            if (!person) found.person = 'Scegli la persona da accompagnare.'
+            else if (!s.mobility) found.mobility = 'Seleziona come si sposta la persona.'
+            if (s.donate && !(extra > 0)) found.extra = 'Inserisci l’importo della donazione.'
+            setErrors(found)
+            if (Object.keys(found).length) return
+        }
+        goTo(s.step + 1)
+    }
 
-                    {/* Selezione Ora */}
-                    <ThemedButton
-                        onPress={() => setShowTimePicker(true)}
-                        style={styles.input}
-                    >
-                        <Text style={styles.btnText}>
-                            Time: {time.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}
-                        </Text>
-                    </ThemedButton>
+    const back = () => {
+        if (s.step === 1) router.replace('/transport')
+        else goTo(s.step - 1)
+    }
 
-                    <Spacer height={30} />
+    const tripAddress = (o) => ({
+        street: o.street,
+        number: o.number,
+        postalCode: o.postalCode,
+        city: o.city,
+        province: o.province,
+        latitude: o.latitude,
+        longitude: o.longitude,
+    })
 
-                    {/* Accompagnatore */}
-                    <ThemedText style={styles.label}>
-                        Companion
-                    </ThemedText>
-                    <ThemedView style={styles.pickerWrapper}>
-                        
-                        {/*selectedValue, lo stato attuale */}
-                        <Picker
-                            selectedValue={companion}
-                            onValueChange={(itemValue) => setCompanion(itemValue)}
+    const submit = async () => {
+        if (s.donate && !(extra > 0)) {
+            setErrors({ extra: 'Inserisci l’importo della donazione.' })
+            return
+        }
+        setBusy(true)
+        setSubmitError('')
+        try {
+            // Mobilità, aiuti e donazione non hanno ancora un campo nel backend (NewTransportRequest)
+            const sameAsStart = s.sameReturn || returnTo?.key === from.key
+            await api.post('/transports', {
+                beneficiaryId: person.id,
+                tripType: s.tripType,
+                tripDirection: s.direction,
+                departureDateHour: new Date(`${s.date}T${s.time}`).toISOString(),
+                returnDateHour: roundTrip ? new Date(`${s.date}T${s.returnTime}`).toISOString() : null,
+                startAddress: tripAddress(from),
+                endAddress: tripAddress(to),
+                returnEndAddress: roundTrip && !sameAsStart ? tripAddress(returnTo) : null,
+                referencePhone: profile.phone,
+                referenceEmail: profile.email,
+                companions: [],
+            })
+            update({ published: true })
+        } catch (e) {
+            setSubmitError(apiErrorMessage(e, 'Invio della richiesta non riuscito.'))
+        } finally {
+            setBusy(false)
+        }
+    }
+
+    // ---- schermata di conferma ----
+    if (s.published) {
+        return (
+            <Page style={styles.sent}>
+                <SuccessCheck />
+                <Text style={styles.sentTitle}>Richiesta inviata</Text>
+                <Text style={styles.sentState}>In attesa di approvazione</Text>
+                <Text style={styles.sentText}>
+                    Un’associazione di volontariato deve ancora confermare la disponibilità. Ti avviseremo quando
+                    l’accompagnamento sarà approvato.
+                </Text>
+                <Btn label="Visualizza le mie richieste" onPress={() => router.replace('/transport')} style={styles.sentBtn} />
+            </Page>
+        )
+    }
+
+    // ---- step ----
+    const renderStep1 = () => (
+        <>
+            <Required />
+            <StepTitle title="Di cosa hai bisogno?" required subtitle="Scegli il servizio di accompagnamento." />
+            <View style={styles.services}>
+                {TRIP_TYPES.map((t) => {
+                    const selected = s.tripType === t.value
+                    return (
+                        <Pressable
+                            key={t.value}
+                            onPress={() =>
+                                update({ tripType: t.value, ...(ONE_WAY_ONLY.includes(t.value) ? { direction: 'OneWay' } : {}) })
+                            }
+                            style={[styles.service, selected && styles.serviceOn]}
                         >
-                            {COMPANIONS.map((item) => (
-                                <Picker.Item key={item.value ?? 'none'} label={item.label} value={item.value} />
-                            ))}
-                        </Picker>
-                    </ThemedView>
+                            <View style={styles.serviceSymbol}>
+                                <Icon name={`mc:${t.icon}`} size={20} color={C.primary} />
+                            </View>
+                            {selected ? <Icon name="checkmark-circle" size={20} color={C.primary} style={styles.serviceCheck} /> : null}
+                            <Text style={styles.serviceTitle}>{t.label}</Text>
+                            <Text style={styles.serviceText}>{t.description}</Text>
+                        </Pressable>
+                    )
+                })}
+            </View>
+            <FieldLabel label="Di quale percorso hai bisogno?" required style={styles.directionLabel} />
+            <Row>
+                <OptionRow label="Solo andata" selected={s.direction === 'OneWay'} onPress={() => update({ direction: 'OneWay' })} style={styles.directionOption} />
+                <OptionRow
+                    label="Andata e ritorno"
+                    selected={s.direction === 'RoundTrip'}
+                    disabled={ONE_WAY_ONLY.includes(s.tripType)}
+                    onPress={() => update({ direction: 'RoundTrip' })}
+                    style={styles.directionOption}
+                />
+            </Row>
+            {ONE_WAY_ONLY.includes(s.tripType) ? (
+                <Text style={styles.hint}>Per {tripTypeLabel(s.tripType).toLowerCase()} è previsto solo il viaggio di andata.</Text>
+            ) : null}
+        </>
+    )
 
-                    <Spacer height={30} />
+    const renderStep2 = () => (
+        <>
+            <Required />
+            <StepTitle title="Quando e dove?" subtitle="Indica quando partire e il percorso." />
+            <Row>
+                <View style={styles.flex}>
+                    <FieldLabel label="Data del trasporto" required />
+                    <DateTimeField mode="date" value={s.date} onChange={(date) => update({ date })} placeholder="gg/mm/aaaa" minimumDate={new Date()} />
+                    <ErrorText>{errors.date}</ErrorText>
+                </View>
+                <View style={styles.flex}>
+                    <FieldLabel label="Ora di partenza" required />
+                    <DateTimeField mode="time" value={s.time} onChange={(time) => update({ time })} placeholder="--:--" />
+                    <ErrorText>{errors.time}</ErrorText>
+                </View>
+            </Row>
 
-                    {/* Tipo di viaggio */}
-                    <ThemedText style={styles.label}>
-                        Type of Transport
-                    </ThemedText>
-                    <ThemedView style={styles.pickerWrapper}>
-                        
-                        {/*selectedValue, lo stato attuale */}
-                        <Picker
-                            selectedValue={typeOfTransport}
-                            onValueChange={(itemValue) => setTypeOfTransport(itemValue)}
-                        >
-                            {TYPE_OF_TRANSPORT.map((item) => (
-                                <Picker.Item key={item.value ?? 'none'} label={item.label} value={item.value} />
-                            ))}
-                        </Picker>
-                    </ThemedView>
+            <Card style={styles.routePanel}>
+                <AddressPicker
+                    icon="radio-button-on-outline"
+                    title="Partenza"
+                    emptyHint="Da dove parte la persona?"
+                    options={allOptions}
+                    value={s.fromKey}
+                    onSelect={(fromKey) => update({ fromKey })}
+                    onAdd={() => setAddressTarget('fromKey')}
+                    error={errors.from}
+                />
+                <Divider style={styles.panelDivider} />
+                <AddressPicker
+                    icon="location-outline"
+                    title="Destinazione"
+                    emptyHint="Dove deve essere accompagnata?"
+                    options={s.added}
+                    value={s.toKey}
+                    onSelect={(toKey) => update({ toKey })}
+                    onAdd={() => setAddressTarget('toKey')}
+                    error={errors.to}
+                />
+                {roundTrip ? (
+                    <>
+                        <Divider style={styles.panelDivider} />
+                        <FieldLabel label="Ora di ritorno" required />
+                        <View style={styles.returnTime}>
+                            <DateTimeField mode="time" value={s.returnTime} onChange={(returnTime) => update({ returnTime })} placeholder="--:--" style={styles.onPanel} />
+                        </View>
+                        <Text style={styles.hint}>Il ritorno è previsto nello stesso giorno della partenza.</Text>
+                        <ErrorText>{errors.returnTime}</ErrorText>
+                        <CheckRow
+                            checked={s.sameReturn}
+                            onPress={() => update({ sameReturn: !s.sameReturn })}
+                            label="Al ritorno, torna all’indirizzo di partenza"
+                            style={styles.sameReturn}
+                        />
+                        {!s.sameReturn ? (
+                            <AddressPicker
+                                icon="location-outline"
+                                title="Destinazione del ritorno"
+                                emptyHint="Dove accompagnare la persona al ritorno?"
+                                options={allOptions}
+                                value={s.returnKey}
+                                onSelect={(returnKey) => update({ returnKey })}
+                                onAdd={() => setAddressTarget('returnKey')}
+                                error={errors.returnTo}
+                            />
+                        ) : null}
+                    </>
+                ) : null}
+            </Card>
+        </>
+    )
 
-                    <Spacer height={30} /> 
+    const renderStep3 = () => (
+        <>
+            <StepTitle title="Chi possiamo contattare?" subtitle="L’associazione userà questi recapiti per organizzare l’accompagnamento." />
+            <Card style={styles.contactPanel}>
+                <View style={styles.pickerHead}>
+                    <Icon name="call-outline" size={19} color={C.primary} />
+                    <Text style={styles.pickerTitle}>Referente principale</Text>
+                </View>
+                <View style={[styles.addressOption, styles.addressOptionOn, styles.referent]}>
+                    <Radio checked />
+                    <Initials name={me.name} surname={me.surname} size={33} />
+                    <View style={styles.flex}>
+                        <Text style={styles.referentName}>
+                            {me.name} {me.surname} · Tu
+                        </Text>
+                        <Text style={styles.referentPhone}>{me.phone}</Text>
+                    </View>
+                </View>
+                <Text style={styles.hint}>Scegli chi verrà contattato per organizzare il trasporto.</Text>
+            </Card>
+            <Btn label="Aggiungi caregiver" icon="person-add-outline" onPress={() => setInviteOpen(true)} />
+        </>
+    )
 
-                    {/* Direzione del viaggio */}
-                    <ThemedText style={styles.label}>
-                        Direction
-                    </ThemedText>
-                    
-                    <View style={styles.roleOptions}>
-                        {DIRECTIONS.map((item) => (
-                            <Pressable
-                                key={item.value}
-                                onPress={() => setDirection(item.value)}
-                                    style={[styles.roleOption, direction === item.value && styles.selectedRole]}
-                            >
-                                <ThemedText>{item.label}</ThemedText>
-                            </Pressable>
+    const renderStep4 = () => (
+        <>
+            <Required />
+            <StepTitle title="Chi deve essere accompagnato?" required subtitle="Scegli la persona per cui inviare la richiesta." />
+            {people.map((p) => {
+                const selected = s.personId === p.id
+                const meta = [ageFrom(p.birthDate), p.homeAddress?.city].filter(Boolean).join(' · ')
+                return (
+                    <Pressable
+                        key={p.id}
+                        onPress={() => update({ personId: p.id, mobility: selected ? s.mobility : '', help: selected ? s.help : [] })}
+                        style={[styles.personOption, selected && styles.personOptionOn]}
+                    >
+                        <Radio checked={selected} />
+                        <Initials name={p.name} surname={p.surname} size={34} />
+                        <View style={styles.flex}>
+                            <Text style={styles.personName}>
+                                {p.name} {p.surname}
+                            </Text>
+                            {meta ? <Text style={styles.personMeta}>{meta}</Text> : null}
+                        </View>
+                    </Pressable>
+                )
+            })}
+            <ErrorText>{errors.person}</ErrorText>
+
+            {person ? (
+                <View style={styles.support}>
+                    <Text style={styles.supportTitle}>Supporto durante il trasporto</Text>
+                    <Text style={styles.stepSubtitle}>Aiuta l’associazione a organizzare l’accompagnamento.</Text>
+                    <FieldLabel label="Come si sposta la persona?" required style={styles.supportLabel} />
+                    {MOBILITY.map((m) => (
+                        <OptionRow
+                            key={m.value}
+                            label={m.label}
+                            selected={s.mobility === m.value}
+                            onPress={() => update({ mobility: m.value })}
+                            style={styles.supportOption}
+                        />
+                    ))}
+                    <ErrorText style={styles.supportError}>{errors.mobility}</ErrorText>
+                    <FieldLabel label="Di quale aiuto ha bisogno?" optional style={styles.supportLabel} />
+                    {HELP.map((h) => {
+                        const on = s.help.includes(h.value)
+                        return (
+                            <OptionRow
+                                key={h.value}
+                                multi
+                                label={h.label}
+                                selected={on}
+                                onPress={() => update({ help: on ? s.help.filter((x) => x !== h.value) : [...s.help, h.value] })}
+                                style={styles.supportOption}
+                            />
+                        )
+                    })}
+                </View>
+            ) : null}
+        </>
+    )
+
+    const renderStep5 = () => {
+        const fromLines = addressLines(from)
+        const toLines = addressLines(to)
+        const returnLines = addressLines(returnTo)
+        const tags = [MOBILITY.find((m) => m.value === s.mobility)?.label, ...HELP.filter((h) => s.help.includes(h.value)).map((h) => h.label)].filter(Boolean)
+        return (
+            <>
+                <StepTitle title="Controlla la richiesta" subtitle="Verifica le informazioni prima di inviare." />
+
+                <Card style={styles.reviewCard}>
+                    <Row>
+                        <View style={styles.flex}>
+                            <Icon name="calendar-outline" size={18} color={C.primary} />
+                            <Text style={styles.reviewLabel}>Data del trasporto</Text>
+                            <Text style={styles.reviewStrong}>{formatFullDate(`${s.date}T12:00:00`)}</Text>
+                        </View>
+                        <View style={styles.flex}>
+                            <Icon name="time-outline" size={18} color={C.primary} />
+                            <Text style={styles.reviewLabel}>Ora di partenza</Text>
+                            <Text style={styles.reviewStrong}>{s.time}</Text>
+                        </View>
+                    </Row>
+                    <Divider />
+                    <RouteStops
+                        labelColor={C.muted}
+                        stops={[
+                            { label: 'Partenza', ...fromLines },
+                            { label: 'Destinazione', ...toLines },
+                            ...(roundTrip ? [{ label: 'Ritorno', time: s.returnTime, ...returnLines }] : []),
+                        ]}
+                    />
+                </Card>
+
+                <Card style={styles.reviewCard}>
+                    <View style={styles.reviewPerson}>
+                        <Initials name={person.name} surname={person.surname} size={40} />
+                        <View>
+                            <Text style={styles.reviewLabelTight}>Assistito da accompagnare</Text>
+                            <Text style={styles.reviewName}>
+                                {person.name} {person.surname}
+                            </Text>
+                        </View>
+                    </View>
+                    <Divider />
+                    <Text style={styles.reviewLabelTight}>Supporto durante il trasporto</Text>
+                    <View style={styles.tags}>
+                        {tags.map((t) => (
+                            <Text key={t} style={styles.tag}>
+                                {t}
+                            </Text>
                         ))}
                     </View>
+                    <Divider />
+                    <View style={styles.reviewService}>
+                        <Icon name="mc:stethoscope" size={18} color={C.primary} />
+                        <View>
+                            <Text style={styles.reviewServiceTitle}>{tripTypeLabel(s.tripType)}</Text>
+                            <Text style={styles.reviewMuted}>{directionLabel(s.direction)}</Text>
+                        </View>
+                    </View>
+                </Card>
 
-                    <Spacer height={30} /> 
+                <Card style={styles.reviewCard}>
+                    <Text style={styles.reviewLabelTight}>Referente principale</Text>
+                    <View style={styles.reviewService}>
+                        <Icon name="call-outline" size={18} color={C.primary} />
+                        <View>
+                            <Text style={styles.reviewServiceTitle}>
+                                {me.name} {me.surname}
+                            </Text>
+                            <Text style={styles.reviewPhone}>{me.phone}</Text>
+                        </View>
+                    </View>
+                </Card>
 
-                    {/* Per chi (gruppo cura) - placeholder */}
-                    <ThemedText style={styles.label}>
-                        Select the Care Group
-                    </ThemedText>
-                    <ThemedView style={styles.pickerWrapper}>
-                    <Picker
-                        selectedValue={careGroup}
-                        onValueChange={(itemValue) => setCareGroup(itemValue)}
-                    >
-                    {CARE_GROUPS.map((item) => (
-                        <Picker.Item key={item.value ?? 'none'} label={item.label} value={item.value} />
-                    ))}
-                    </Picker>
+                <Text style={styles.contributionTitle}>Contributo e pagamento</Text>
+                <Card style={styles.reviewCard}>
+                    <Text style={styles.reviewMuted}>Contributo minimo stimato</Text>
+                    <Text style={styles.amount}>{euros(minimum)}</Text>
+                    <Text style={styles.reviewMuted}>Per {roundedKm.toLocaleString('it-IT')} km di percorso dell’assistito</Text>
+                    <Divider />
+                    <View style={styles.payRow}>
+                        <Icon name="shield-checkmark-outline" size={18} color={C.primary} />
+                        <Text style={styles.payFree}>Ora non devi pagare nulla</Text>
+                    </View>
+                    <View style={styles.payRow}>
+                        <Icon name="time-outline" size={18} color={C.primary} />
+                        <View style={styles.flex}>
+                            <Text style={styles.payTitle}>Quando paghi?</Text>
+                            <Text style={styles.payText}>Al momento del servizio.</Text>
+                        </View>
+                    </View>
+                    <View style={styles.payRow}>
+                        <Icon name="mc:hand-coin-outline" size={18} color={C.primary} />
+                        <View style={styles.flex}>
+                            <Text style={styles.payTitle}>A chi versi il contributo?</Text>
+                            <Text style={styles.payText}>All’associazione che confermerà il trasporto.</Text>
+                        </View>
+                    </View>
+                    <View style={styles.payRow}>
+                        <Icon name="information-circle-outline" size={18} color={C.primary} />
+                        <View style={styles.flex}>
+                            <Text style={styles.payTitle}>La cifra è definitiva?</Text>
+                            <Text style={styles.payText}>
+                                È una stima. L’associazione ti confermerà l’importo e come pagare prima del trasporto. Eventuali
+                                variazioni ti saranno comunicate prima del servizio.
+                            </Text>
+                        </View>
+                    </View>
+                    <Divider />
+                    <CheckRow checked={s.donate} onPress={() => update({ donate: !s.donate })} label="Voglio donare di più" />
+                    {s.donate ? (
+                        <View style={styles.extra}>
+                            <FieldLabel label="Donazione aggiuntiva (€)" />
+                            <Input value={String(s.extra)} onChangeText={(v) => update({ extra: v })} keyboardType="decimal-pad" />
+                            <ErrorText>{errors.extra}</ErrorText>
+                        </View>
+                    ) : null}
+                    <Divider />
+                    <View style={styles.totalRow}>
+                        <Text style={styles.totalLabel}>Totale stimato</Text>
+                        <Text style={styles.total}>{euros(minimum + extra)}</Text>
+                    </View>
+                </Card>
 
-                </ThemedView>
+                <Text style={styles.afterSend}>Dopo l’invio, il trasporto dovrà essere approvato da un’associazione.</Text>
+                <ErrorText>{submitError}</ErrorText>
+            </>
+        )
+    }
 
-                    <Spacer height={30} />
+    const steps = { 1: renderStep1, 2: renderStep2, 3: renderStep3, 4: renderStep4, 5: renderStep5 }
 
-                    <ThemedButton onPress={handleSubmit} style={styles.input}>
-                        <Text style={styles.btnText}>Transport Confirmation</Text>
-                    </ThemedButton>
-
-                    <Spacer height={50} />
-                </ScrollView>
-
-                {/* MODAL DATE PICKER (iOS) / NATIVO (Android) */}
-                {showDatePicker && (
-                    Platform.OS === 'ios' ? (
-                        <Modal transparent={true} animationType="slide" visible={showDatePicker}>
-                            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowDatePicker(false)}>
-                                <View style={styles.modalContent}>
-                                    <View style={styles.modalHeader}>
-                                        <TouchableOpacity onPress={() => setShowDatePicker(false)}>
-                                            <Text style={styles.doneText}>Conferma</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    <DateTimePicker
-                                        value={date}
-                                        mode="date"
-                                        display="spinner"
-                                        onChange={onChangeDate}
-                                        textColor="#000000"
-                                        themeVariant="light"
-                                    />
-                                </View>
-                            </TouchableOpacity>
-                        </Modal>
-                    ) : (
-                        <DateTimePicker
-                            value={date}
-                            mode="date"
-                            display="default"
-                            onChange={onChangeDate}
-                        />
-                    )
+    return (
+        <Page>
+            <Scroll ref={scrollRef}>
+                <PageTitle style={styles.title}>Nuovo trasporto</PageTitle>
+                <Progress step={s.step} />
+                {steps[s.step]()}
+            </Scroll>
+            <Footer>
+                <Btn label="Indietro" variant="secondary" onPress={back} style={styles.footerBtn} />
+                {s.step < STEPS ? (
+                    <Btn label="Continua" onPress={next} loading={busy} style={styles.footerBtn} />
+                ) : (
+                    <Btn label="Invia richiesta" onPress={submit} loading={busy} style={styles.footerBtn} />
                 )}
+            </Footer>
 
-                {/* MODAL TIME PICKER (iOS) / NATIVO (Android) */}
-                {showTimePicker && (
-                    Platform.OS === 'ios' ? (
-                        <Modal transparent={true} animationType="slide" visible={showTimePicker}>
-                            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setShowTimePicker(false)}>
-                                <View style={styles.modalContent}>
-                                    <View style={styles.modalHeader}>
-                                        <TouchableOpacity onPress={() => setShowTimePicker(false)}>
-                                            <Text style={styles.doneText}>Conferma</Text>
-                                        </TouchableOpacity>
-                                    </View>
-                                    <DateTimePicker
-                                        value={time}
-                                        mode="time"
-                                        is24Hour={true}
-                                        display="spinner"
-                                        onChange={onChangeTime}
-                                        textColor="#000000"
-                                        themeVariant="light"
-                                    />
-                                </View>
-                            </TouchableOpacity>
-                        </Modal>
-                    ) : (
-                        <DateTimePicker
-                            value={time}
-                            mode="time"
-                            is24Hour={true}
-                            display="default"
-                            onChange={onChangeTime}
-                        />
-                    )
-                )}
-            </ThemedView>
-        </TouchableWithoutFeedback>
+            <AddressModal
+                visible={!!addressTarget}
+                onClose={() => setAddressTarget(null)}
+                onSave={(address) => {
+                    const key = `add-${Date.now()}`
+                    setS((prev) => ({ ...prev, added: [...prev.added, { key, label: '', ...address }], [addressTarget]: key }))
+                    setAddressTarget(null)
+                }}
+            />
+            <InviteCaregiverModal visible={inviteOpen} onClose={() => setInviteOpen(false)} person={person} people={people} />
+        </Page>
     )
 }
 
 export default Create
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollContent: {
-        alignItems: 'center',
-        paddingBottom: 40,
-    },
-    title: {
-        fontWeight: 'bold',
-        textAlign: 'center',
-        fontSize: 18,
-        marginBottom: 30,
-        marginTop: 20
-    },
-    input: {
-        width: '80%',
-        marginBottom: 15,
-    },
-    label: {
-        alignSelf: 'flex-start',
-        marginLeft: '10%',
-        marginBottom: 5,
-    },
-    btnText: {
-        color: '#f2f2f2',
-    },
-    pickerWrapper: {
-        width: '80%',
-        borderRadius: 8,
-        overflow: 'hidden',
-    },
-    modalOverlay: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        backgroundColor: 'rgba(0,0,0,0.5)',
-    },
-    modalContent: {
-        backgroundColor: '#ffffff',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-        paddingBottom: 30,
-    },
-    modalHeader: {
-        alignItems: 'flex-end',
-        padding: 15,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-        backgroundColor: '#f8f8f8',
-        borderTopLeftRadius: 16,
-        borderTopRightRadius: 16,
-    },
-    doneText: {
-        color: '#007AFF',
-        fontWeight: 'bold',
-        fontSize: 16,
-    },
-    roleOptions: {
-    width: '80%',
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 10,
-    },
-    roleOption: {
-        flex: 1,
+    flex: { flex: 1 },
+    title: { marginBottom: 12 },
+    star: { color: C.primary, fontWeight: '700' },
+    hint: { fontSize: 13, lineHeight: 20, color: C.muted, marginTop: 8 },
+
+    progress: { marginBottom: 18 },
+    progressText: { fontSize: 12, color: C.muted, marginBottom: 10 },
+    bars: { flexDirection: 'row', gap: 6 },
+    bar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: '#c9c6d4' },
+    barOn: { backgroundColor: C.primary },
+    requiredNote: { fontSize: 12, color: C.muted, marginBottom: 16 },
+    stepHead: { marginBottom: 16 },
+    stepTitle: { fontSize: 20, fontWeight: '600', color: C.text },
+    stepSubtitle: { fontSize: 14, lineHeight: 21, color: C.muted, marginTop: 8 },
+
+    services: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 20 },
+    service: {
+        width: '47.5%',
+        flexGrow: 1,
+        minHeight: 120,
+        backgroundColor: C.card,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: 'transparent',
         padding: 12,
-        borderWidth: 1,
-        borderColor: '#aaa',
-        borderRadius: 6,
+    },
+    serviceOn: { borderColor: C.primary, backgroundColor: C.cardSelected },
+    serviceSymbol: { width: 32, height: 32, borderRadius: 9, backgroundColor: C.initialsBg, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+    serviceCheck: { position: 'absolute', top: 10, right: 10 },
+    serviceTitle: { fontSize: 14, fontWeight: '600', color: C.text, marginBottom: 3 },
+    serviceText: { fontSize: 12, lineHeight: 17, color: C.muted },
+    directionLabel: { marginBottom: 10 },
+    directionOption: { flex: 1, paddingVertical: 11 },
+
+    routePanel: { marginTop: 8, padding: 16 },
+    panelDivider: { marginVertical: 16 },
+    pickerHead: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
+    pickerTitle: { fontSize: 16, fontWeight: '600', color: C.text },
+    pickerHint: { fontSize: 12, color: C.muted, marginBottom: 10 },
+    pickerHintIndented: { fontSize: 13, marginLeft: 29 },
+    addressOption: {
+        flexDirection: 'row',
         alignItems: 'center',
+        gap: 12,
+        backgroundColor: C.page,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#b8b5c7',
+        paddingVertical: 12,
+        paddingHorizontal: 12,
+        marginBottom: 10,
     },
-    selectedRole: {
-        borderColor: '#2f80ed',
-        backgroundColor: '#dbeafe',
+    addressOptionOn: { borderColor: C.primary, backgroundColor: C.cardSelected },
+    addressRadio: { paddingTop: 2 },
+    addressTag: { fontSize: 12, fontWeight: '600', color: C.primary, marginBottom: 3 },
+    addressLine1: { fontSize: 15, color: C.text },
+    addressLine2: { fontSize: 12, color: C.muted, marginTop: 3 },
+    addAddress: { minHeight: 44, borderRadius: 10, marginTop: 2 },
+    addAddressText: { fontSize: 14 },
+    returnTime: { width: 140 },
+    onPanel: { backgroundColor: C.page },
+    sameReturn: { marginTop: 4, marginBottom: 10 },
+
+    contactPanel: { marginBottom: 20, padding: 18 },
+    referent: { marginTop: 8, marginBottom: 0 },
+    referentName: { fontSize: 14, fontWeight: '600', color: C.text },
+    referentPhone: { fontSize: 13, color: C.muted, marginTop: 4 },
+
+    personOption: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        backgroundColor: C.card,
+        borderRadius: 14,
+        borderWidth: 1.5,
+        borderColor: 'transparent',
+        padding: 12,
+        marginBottom: 12,
     },
+    personOptionOn: { borderColor: C.primary, backgroundColor: C.cardSelected },
+    personName: { fontSize: 15, fontWeight: '600', color: C.text },
+    personMeta: { fontSize: 12, color: C.muted, marginTop: 3 },
+    support: { marginTop: 10 },
+    supportTitle: { fontSize: 17, fontWeight: '600', color: C.text },
+    supportLabel: { marginTop: 16, marginBottom: 10 },
+    supportOption: { marginBottom: 10 },
+    supportError: { marginTop: -4 },
+
+    reviewCard: { padding: 16, marginBottom: 14 },
+    reviewLabel: { fontSize: 12, color: C.muted, marginTop: 8, marginBottom: 4 },
+    reviewLabelTight: { fontSize: 12, color: C.muted, marginBottom: 4 },
+    reviewStrong: { fontSize: 14, fontWeight: '700', color: C.text },
+    reviewPerson: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+    reviewName: { fontSize: 16, fontWeight: '600', color: C.text },
+    tags: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 6 },
+    tag: { fontSize: 12, color: C.primary, backgroundColor: C.initialsBg, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 5, overflow: 'hidden' },
+    reviewService: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginTop: 4 },
+    reviewServiceTitle: { fontSize: 15, fontWeight: '600', color: C.text },
+    reviewMuted: { fontSize: 13, color: C.muted, marginTop: 2 },
+    reviewPhone: { fontSize: 15, color: C.primary, marginTop: 4 },
+    contributionTitle: { fontSize: 18, fontWeight: '600', color: C.text, marginTop: 10, marginBottom: 12 },
+    amount: { fontSize: 30, fontWeight: '700', color: C.primary, marginVertical: 6 },
+    payRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+    payFree: { fontSize: 14, fontWeight: '600', color: C.primary },
+    payTitle: { fontSize: 14, fontWeight: '600', color: C.text },
+    payText: { fontSize: 13, lineHeight: 20, color: C.muted, marginTop: 3 },
+    extra: { marginTop: 10 },
+    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    totalLabel: { fontSize: 14, color: C.text },
+    total: { fontSize: 22, fontWeight: '700', color: C.primary },
+    afterSend: { fontSize: 13, lineHeight: 20, color: C.muted, marginTop: 6 },
+
+    footerBtn: { paddingHorizontal: 26 },
+
+    sent: { alignItems: 'center', justifyContent: 'center', paddingHorizontal: 28 },
+    sentTitle: { fontSize: 24, fontWeight: '600', color: C.text, marginTop: 20, marginBottom: 12 },
+    sentState: { fontSize: 18, fontWeight: '600', color: C.waiting, marginBottom: 12 },
+    sentText: { fontSize: 16, lineHeight: 25, color: C.muted, textAlign: 'center', marginBottom: 24 },
+    sentBtn: { paddingHorizontal: 18 },
 })

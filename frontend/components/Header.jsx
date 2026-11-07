@@ -1,36 +1,45 @@
-import { View, StyleSheet } from "react-native";
+import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import ThemedView from "./ThemedView";
-import ThemedText from "./ThemedText";
-import IconButton from "./IconButton";
+import { Ionicons } from "@expo/vector-icons";
+import { C } from "../constants/caregiver";
 
+// Header del mockup caregiver: campanella a sinistra, logo GoCare al centro,
+// iniziali del profilo a destra.
 export default function Header({
-  name,
+  initials,
   hasUnreadNotifications,
   onPressAvatar,
   onPressNotifications,
 }) {
   const insets = useSafeAreaInsets();
   return (
-    <ThemedView style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.left}>
-        <IconButton
-          name="person-outline"
-          size={22}
-          variant="subtle"
-          onPress={onPressAvatar}
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <Pressable
+        onPress={onPressNotifications}
+        accessibilityLabel="Notifiche"
+        style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
+      >
+        <Ionicons name="notifications-outline" size={21} color={C.primary} />
+        {hasUnreadNotifications ? <View style={styles.badge} /> : null}
+      </Pressable>
+
+      <View style={styles.brand}>
+        <Image
+          source={require("../assets/img/gocareLogo.png")}
+          style={styles.logo}
+          accessibilityIgnoresInvertColors
         />
-        <ThemedText style={styles.name}>{name}</ThemedText>
+        <Text style={styles.brandText}>GoCare</Text>
       </View>
 
-      <IconButton
-        name="notifications-outline"
-        size={20}
-        variant="subtle"
-        badge={hasUnreadNotifications}
-        onPress={onPressNotifications}
-      />
-    </ThemedView>
+      <Pressable
+        onPress={onPressAvatar}
+        accessibilityLabel="Apri profilo"
+        style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
+      >
+        <Text style={styles.initials}>{initials}</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -41,14 +50,35 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 20,
     paddingBottom: 12,
+    backgroundColor: C.page,
   },
-  left: {
-    flexDirection: "row",
+  circle: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: C.card,
     alignItems: "center",
-    gap: 12,
+    justifyContent: "center",
   },
-  name: {
-    fontSize: 16,
-    fontWeight: "600",
+  pressed: { opacity: 0.8 },
+  badge: {
+    position: "absolute",
+    top: 8,
+    right: 9,
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#cc475a",
+    borderWidth: 1.5,
+    borderColor: C.card,
   },
+  brand: { flexDirection: "row", alignItems: "center", gap: 6 },
+  logo: { width: 44, height: 44, resizeMode: "contain" },
+  brandText: {
+    fontSize: 28,
+    fontWeight: "700",
+    letterSpacing: -1,
+    color: C.primary,
+  },
+  initials: { fontSize: 12, fontWeight: "700", color: C.primary },
 });
