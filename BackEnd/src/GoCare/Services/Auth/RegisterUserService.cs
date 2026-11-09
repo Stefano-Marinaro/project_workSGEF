@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Errors;
@@ -41,9 +42,10 @@ public sealed class RegisterUserService(
 
         await provisioning.CreatePersonSkeletonAsync(accountId, email, ct);
 
-        await emailSender.SendAsync(
-            email, "Verifica il tuo account GoCare",
-            $"<a href=\"{_frontend.VerifyEmailUrl}?token={verificationToken.Token}\">Clicca qui per verificare il tuo account</a>", ct);
+        var (subject, html) = EmailTemplates.VerifyAccount(
+            $"{_frontend.VerifyEmailUrl}?token={verificationToken.Token}", verificationToken.ExpiresAt - now);
+
+        await emailSender.SendAsync(email, subject, html, ct);
 
         return accountId;
     }

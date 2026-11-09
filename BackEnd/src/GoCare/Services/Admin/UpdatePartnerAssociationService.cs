@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Errors;
@@ -71,12 +72,12 @@ public sealed class UpdatePartnerAssociationService(
         await db.SaveChangesAsync(ct);
 
         if (emailToken is not null)
-            await emailSender.SendAsync(
-                email,
-                "Conferma la nuova e-mail GoCare",
-                $"L'amministratore di GoCare ha indicato questo indirizzo per la vostra associazione. " +
-                $"<a href=\"{_frontend.ChangeEmailUrl}?token={emailToken.Token}\">Conferma il cambio di e-mail</a>",
-                ct);
+        {
+            var (subject, html) = EmailTemplates.ConfirmEmailChange(
+                $"{_frontend.ChangeEmailUrl}?token={emailToken.Token}", emailToken.ExpiresAt - DateTimeOffset.UtcNow, requestedByAdmin: true);
+
+            await emailSender.SendAsync(email, subject, html, ct);
+        }
 
         return emailToken is not null;
     }

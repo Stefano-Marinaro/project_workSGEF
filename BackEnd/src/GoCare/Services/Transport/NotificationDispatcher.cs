@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Models.Domain;
@@ -37,7 +38,10 @@ public sealed class NotificationDispatcher(GoCareDbContext db, IEmailSender emai
                 : await db.Associations.Where(a => a.Id == subjectId).Select(a => a.Email).FirstOrDefaultAsync(ct);
 
             if (email is not null)
-                await emailSender.SendAsync(email, title, body, ct);
+            {
+                var (subject, html) = EmailTemplates.Notification(title, body);
+                await emailSender.SendAsync(email, subject, html, ct);
+            }
         }
 
         if (channels.HasFlag(ENotificationChannel.Push))
