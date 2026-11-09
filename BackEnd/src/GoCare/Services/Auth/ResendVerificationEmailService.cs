@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Models.Auth;
@@ -45,10 +46,9 @@ public sealed class ResendVerificationEmailService(
         db.EmailVerificationTokens.Add(newToken);
         await db.SaveChangesAsync(ct);
 
-        await emailSender.SendAsync(
-            account.Email,
-            "Verifica il tuo account GoCare",
-            $"<a href=\"{_frontend.VerifyEmailUrl}?token={newToken.Token}\">Clicca qui per verificare il tuo account</a>",
-            ct);
+        var (subject, html) = EmailTemplates.VerifyAccount(
+            $"{_frontend.VerifyEmailUrl}?token={newToken.Token}", newToken.ExpiresAt - now);
+
+        await emailSender.SendAsync(account.Email, subject, html, ct);
     }
 }
