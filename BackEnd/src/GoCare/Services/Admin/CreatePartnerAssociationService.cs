@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Errors;
@@ -61,11 +62,10 @@ public sealed class CreatePartnerAssociationService(
 
         await db.SaveChangesAsync(ct);
 
-        await emailSender.SendAsync(
-            email, "Benvenuti in GoCare",
-            $"La vostra associazione è stata registrata su GoCare. " +
-            $"<a href=\"{_frontend.SetPasswordUrl}?token={inviteToken.Token}\">Clicca qui per impostare la password</a> " +
-            $"(il link scade tra {InviteValidity.TotalDays} giorni).", ct);
+        var (subject, html) = EmailTemplates.AssociationInvite(
+            name, $"{_frontend.SetPasswordUrl}?token={inviteToken.Token}", InviteValidity);
+
+        await emailSender.SendAsync(email, subject, html, ct);
 
         return accountId;
     }

@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Models.Auth;
@@ -29,8 +30,9 @@ public sealed class ForgotPasswordService(
         db.PasswordResetTokens.Add(resetToken);
         await db.SaveChangesAsync(ct);
 
-        await emailSender.SendAsync(
-            email, "Reimposta la password di GoCare",
-            $"<a href=\"{_frontend.ResetPasswordUrl}?token={resetToken.Token}\">Clicca qui per reimpostare la password</a>", ct);
+        var (subject, html) = EmailTemplates.ResetPassword(
+            $"{_frontend.ResetPasswordUrl}?token={resetToken.Token}", resetToken.ExpiresAt - now);
+
+        await emailSender.SendAsync(email, subject, html, ct);
     }
 }

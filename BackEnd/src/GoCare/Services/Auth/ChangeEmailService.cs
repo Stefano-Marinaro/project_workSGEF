@@ -1,3 +1,4 @@
+using GoCare.Infrastructure;
 using GoCare.Abstractions;
 using GoCare.Data;
 using GoCare.Errors;
@@ -64,10 +65,9 @@ public sealed class ChangeEmailService(
         db.EmailChangeTokens.Add(token);
         await db.SaveChangesAsync(ct);
 
-        await emailSender.SendAsync(
-            newEmail,
-            "Conferma la nuova e-mail GoCare",
-            $"<a href=\"{_frontend.ChangeEmailUrl}?token={token.Token}\">Conferma il cambio di e-mail</a>",
-            ct);
+        var (subject, html) = EmailTemplates.ConfirmEmailChange(
+            $"{_frontend.ChangeEmailUrl}?token={token.Token}", token.ExpiresAt - now);
+
+        await emailSender.SendAsync(newEmail, subject, html, ct);
     }
 }
