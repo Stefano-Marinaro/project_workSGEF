@@ -38,8 +38,8 @@ export const TRIP_TYPES = [
 export const tripTypeShort = (value) => TRIP_TYPES.find((t) => t.value === value)?.short ?? "Trasporto"
 export const tripTypeLabel = (value) => TRIP_TYPES.find((t) => t.value === value)?.label ?? "Trasporto"
 
-// Ricovero e Dimissione ammettono solo un viaggio OneWay (vedi NewTransportValidator)
-export const ONE_WAY_ONLY = ["Hospitalization", "Discharge"]
+// Solo la visita consente andata e ritorno (vedi NewTransportValidator).
+export const ONE_WAY_ONLY = ["Hospitalization", "Discharge", "Transfer"]
 
 export const directionLabel = (value) => (value === "RoundTrip" ? "Andata e ritorno" : "Solo andata")
 

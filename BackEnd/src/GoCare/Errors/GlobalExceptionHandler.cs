@@ -15,6 +15,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
             ConflictException   => (StatusCodes.Status409Conflict,            "Conflitto"),
             ForbiddenException  => (StatusCodes.Status403Forbidden,           "Operazione non consentita"),
             ValidationException => (StatusCodes.Status422UnprocessableEntity, "Dati non validi"),
+            ServiceUnavailableException => (StatusCodes.Status503ServiceUnavailable, "Servizio temporaneamente non disponibile"),
             _                   => (StatusCodes.Status500InternalServerError, "Errore interno")
         };
 

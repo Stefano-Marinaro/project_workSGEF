@@ -3,6 +3,7 @@ import { View, ScrollView, Animated, Easing, StyleSheet, AccessibilityInfo, Keyb
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { setItem } from '../../config/storage.js'
 import api from '../../config/httpClient.js'
+import { roleFromToken } from '../../config/session'
 import { C } from '../../constants/caregiver'
 import { AuthHeader, AuthIntro, AuthField, AuthButton, AuthSwitch, authStyles } from '../../components/auth/AuthUi'
 
@@ -11,30 +12,6 @@ import { AuthHeader, AuthIntro, AuthField, AuthButton, AuthSwitch, authStyles } 
 let splashPlayed = false
 
 const SPLASH_SIZE = 200
-
-// Il ruolo è nel claim "role" dell'access token (TokenService): non serve chiederlo all'utente
-const roleFromToken = (token) => {
-    try {
-        const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
-        const padded = part + '='.repeat((4 - (part.length % 4)) % 4)
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-        let bits = 0
-        let value = 0
-        let json = ''
-        for (const ch of padded.replace(/=+$/, '')) {
-            value = (value << 6) | chars.indexOf(ch)
-            bits += 6
-            if (bits >= 8) {
-                bits -= 8
-                json += String.fromCharCode((value >> bits) & 0xff)
-            }
-        }
-        // i byte UTF-8 restano validi come caratteri JSON: a noi serve solo "role" (ASCII)
-        return JSON.parse(json).role
-    } catch (e) {
-        return null
-    }
-}
 
 const Login = () => {
     const params = useLocalSearchParams()

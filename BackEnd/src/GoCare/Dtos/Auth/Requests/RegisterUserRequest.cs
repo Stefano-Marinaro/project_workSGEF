@@ -1,3 +1,3 @@
 namespace GoCare.Dtos.Auth.Requests;
 
-public sealed record RegisterUserRequest(string Email, string Password);
+public sealed record RegisterUserRequest(string Email, string Password, string Name, string Surname);

@@ -424,6 +424,14 @@ namespace GoCare.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("assisted_person_id");
 
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
                     b.Property<Guid>("InvitedByPersonId")
                         .HasColumnType("uuid")
                         .HasColumnName("invited_by_person_id");

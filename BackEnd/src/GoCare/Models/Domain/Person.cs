@@ -4,12 +4,13 @@ public sealed class Person
 {
     private Person() { } // costruttore vuoto: EF (materializzazione dal DB)
 
-    // costruttore minimo: solo quello che si ha alla registrazione (email+password).
-    // il resto del profilo arriva dopo, tramite CompleteProfile.
-    public Person(Guid id, string email)
+    // I recapiti e la data di nascita possono essere completati dopo la registrazione.
+    public Person(Guid id, string email, string? name = null, string? surname = null)
     {
         Id = id;
         Email = email;
+        Name = name;
+        Surname = surname;
     }
 
     public Guid Id { get; }

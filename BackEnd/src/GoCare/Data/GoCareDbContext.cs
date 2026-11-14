@@ -444,6 +444,8 @@ public sealed class GoCareDbContext(DbContextOptions<GoCareDbContext> options) :
         {
             invite.HasKey(i => i.Id);
             invite.Property(i => i.Token).HasMaxLength(255);
+            invite.Property(i => i.ExpiresAt);
+            invite.Property(i => i.CreatedAt);
 
             invite.HasOne<AssistedPerson>()
                 .WithMany()

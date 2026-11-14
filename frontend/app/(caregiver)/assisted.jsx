@@ -93,7 +93,7 @@ const Assisted = () => {
                             <PageTitle style={styles.title}>Assistiti</PageTitle>
                             {people.length > 0 ? (
                                 <Btn
-                                    label="Registra Assistito"
+                                    label="Registra assistito"
                                     icon="person-add-outline"
                                     onPress={() => router.push('/assisted/new')}
                                     style={styles.addBtn}

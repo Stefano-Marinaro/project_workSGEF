@@ -4,6 +4,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
 import api from "../../config/httpClient.js";
 import Banner from "../../components/Banner";
+import HistoryIcon from "../../components/HistoryIcon";
 import { C, formatIsoDate, apiErrorMessage } from "../../constants/caregiver";
 import {
   Page,
@@ -99,12 +100,22 @@ const Profile = () => {
         ) : null}
 
         <Pressable onPress={() => router.push("/transport/history")} style={({ pressed }) => [styles.history, pressed && styles.pressed]}>
+          <HistoryIcon size={24} />
           <View style={styles.flex}>
             <Text style={styles.historyTitle}>Storico dei trasporti</Text>
             <Text style={styles.historySub}>Consulta i trasporti precedenti</Text>
           </View>
           <Icon name="chevron-forward" size={20} color={C.muted} />
         </Pressable>
+
+        <Card onPress={() => router.push('/(caregiver)/help')} style={styles.help}>
+          <Icon name="help-circle-outline" size={24} />
+          <View style={styles.flex}>
+            <Text style={styles.historyTitle}>Aiuto e informazioni</Text>
+            <Text style={styles.historySub}>Guide, domande frequenti e assistenza</Text>
+          </View>
+          <Icon name="chevron-forward" size={20} color={C.muted} />
+        </Card>
 
         <Btn label="Esci" variant="danger" icon="log-out-outline" onPress={() => router.replace("/logout")} style={styles.logout} />
       </Scroll>
@@ -130,12 +141,14 @@ const styles = StyleSheet.create({
   history: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 14,
     backgroundColor: C.card,
     borderRadius: 14,
     padding: 18,
-    marginBottom: 36,
+    marginBottom: 12,
   },
   historyTitle: { fontSize: 16, fontWeight: "600", color: C.text },
   historySub: { fontSize: 13, color: C.muted, marginTop: 4 },
+  help: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 36 },
   logout: { borderRadius: 12 },
 });

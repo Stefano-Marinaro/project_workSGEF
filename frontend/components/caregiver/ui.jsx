@@ -158,7 +158,7 @@ export const Checkbox = ({ checked }) => (
 )
 
 export const CheckRow = ({ checked, onPress, label, style }) => (
-    <Pressable onPress={onPress} style={[styles.checkRow, style]}>
+    <Pressable onPress={onPress} accessibilityRole="checkbox" accessibilityState={{ checked }} style={[styles.checkRow, style]}>
         <Checkbox checked={checked} />
         <Text style={styles.checkRowText}>{label}</Text>
     </Pressable>
@@ -169,6 +169,8 @@ export const OptionRow = ({ selected, onPress, label, disabled, multi, style }) 
     <Pressable
         onPress={onPress}
         disabled={disabled}
+        accessibilityRole={multi ? "checkbox" : "radio"}
+        accessibilityState={{ checked: !!selected, disabled: !!disabled }}
         style={[styles.option, selected && styles.optionSelected, disabled && styles.disabled, style]}
     >
         {multi ? <Checkbox checked={selected} /> : <Radio checked={selected} />}
@@ -322,11 +324,12 @@ export const styles = StyleSheet.create({
     },
     circleBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: C.primary, alignItems: "center", justifyContent: "center" },
 
-    field: { marginBottom: 16 },
+    field: { marginBottom: 16, minWidth: 0 },
     fieldLabel: { fontSize: 14, fontWeight: "600", color: C.textStrong, marginBottom: 7 },
     star: { color: C.primary, fontWeight: "700" },
     optional: { fontWeight: "600", color: C.textStrong },
     input: {
+        minWidth: 0,
         backgroundColor: C.card,
         borderRadius: 10,
         paddingHorizontal: 14,

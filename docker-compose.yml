@@ -36,14 +36,14 @@ services:
       # Dentro la rete di Docker il database si raggiunge col nome del servizio ("db"), non con localhost.
       ConnectionStrings__GoCareDb: "Host=db;Port=5432;Database=gocare;Username=postgres;Password=postgres"
       # I link nelle e-mail puntano al frontend servito dal container "frontend".
-      Frontend__VerifyEmailUrl: "http://localhost:8081/verify_email"
-      Frontend__ResetPasswordUrl: "http://localhost:8081/reset_password"
-      Frontend__ChangeEmailUrl: "http://localhost:8081/conferma-cambio-email"
-      Frontend__OperatorUrl: "http://localhost:8081/operatore"
-      Frontend__CaregiverInviteUrl: "http://localhost:8081/invito-caregiver"
-      Frontend__SetPasswordUrl: "http://localhost:8081/set_password"
-      Frontend__PaymentSuccessUrl: "http://localhost:8081/pagamento-riuscito"
-      Frontend__PaymentCancelUrl: "http://localhost:8081/pagamento-annullato"
+      Frontend__VerifyEmailUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/verify_email"
+      Frontend__ResetPasswordUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/reset_password"
+      Frontend__ChangeEmailUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/conferma-cambio-email"
+      Frontend__OperatorUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/operatore"
+      Frontend__CaregiverInviteUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/invito-caregiver"
+      Frontend__SetPasswordUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/set_password"
+      Frontend__PaymentSuccessUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/pagamento-riuscito"
+      Frontend__PaymentCancelUrl: "${FRONTEND_PUBLIC_URL:-http://localhost:8081}/pagamento-annullato"
       # Segreti letti dal file .env (vuoti se non impostati).
       Jwt__SigningKey: "${JWT_SIGNING_KEY:-sviluppo-solo-chiave-lunga-almeno-32-caratteri}"
       GraphHopper__ApiKey: "${GRAPHHOPPER_API_KEY:-}"
@@ -66,6 +66,9 @@ services:
       args:
         # Indirizzo dell'API come lo vede il browser dell'utente.
         EXPO_PUBLIC_API_URL: "${API_PUBLIC_URL:-http://localhost:5161}"
+        EXPO_PUBLIC_SUPPORT_EMAIL: "${SUPPORT_EMAIL:-}"
+        EXPO_PUBLIC_PRIVACY_URL: "${PRIVACY_URL:-}"
+        EXPO_PUBLIC_TERMS_URL: "${TERMS_URL:-}"
     ports:
       - "8081:80"
     depends_on:

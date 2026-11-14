@@ -16,7 +16,7 @@ public sealed class CreateTransportService(GoCareDbContext db, IRoutingService r
         ETripType tripType, //tipo di viaggio(solo andata/ andata e ritorno)
         ETripDirection tripDirection, //direzione del viaggio
         DateTimeOffset departureDateHour, //data e ora di partenza, TimeOffset include anche il fuso orario
-        DateTimeOffset? returnDateHour, //data e ora del ritorno, ? lo rende all'occorrenza nullable se è solo andata
+        DateTimeOffset? returnDateHour, // null per il ritorno al termine della visita, senza orario prefissato
         TripAddress startAddress, // indirizzo di partenza (con coordinate obbligatorie, servono per il calcolo del percorso)
         TripAddress endAddress, //indirizzo di destinazione
         TripAddress? returnEndAddress, //di ritorno, nullable in caso

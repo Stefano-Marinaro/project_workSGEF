@@ -69,7 +69,7 @@ const EditProfile = () => {
   );
 
   const goBack = () => {
-    if (next === "wizard") router.replace("/transport");
+    if (next === "wizard") router.dismissTo("/transport/new");
     else router.replace("/profile");
   };
 
@@ -96,7 +96,7 @@ const EditProfile = () => {
         homeAddress,
       });
       await deleteItem("pendingProfile");
-      if (next === "wizard") router.replace("/transport/new");
+      if (next === "wizard") router.dismissTo({ pathname: "/transport/new", params: { saved: "1" } });
       else router.replace({ pathname: "/profile", params: { saved: "1" } });
     } catch (error) {
       setErrorMessage(apiErrorMessage(error, "Salvataggio non riuscito"));
@@ -121,7 +121,7 @@ const EditProfile = () => {
           <Field label="Nome" required style={styles.flex} value={name} onChangeText={setName} error={errors.name} />
           <Field label="Cognome" required style={styles.flex} value={surname} onChangeText={setSurname} error={errors.surname} />
         </Row>
-        <Field label="Data di nascita" required error={errors.birthDate}>
+        <Field label="Data di nascita" required error={errors.birthDate} style={styles.birthDate}>
           <DateTimeField mode="date" value={birthDate} onChange={setBirthDate} placeholder="gg/mm/aaaa" maximumDate={new Date()} />
         </Field>
 
@@ -142,7 +142,8 @@ const EditProfile = () => {
 export default EditProfile;
 
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, minWidth: 0 },
+  birthDate: { width: 180, maxWidth: "100%", alignSelf: "flex-start" },
   intro: { fontSize: 15, marginBottom: 16 },
   section: { fontSize: 14, fontWeight: "600", color: C.muted, marginBottom: 10, marginTop: 4 },
   hint: { fontSize: 13, lineHeight: 20, marginBottom: 14 },

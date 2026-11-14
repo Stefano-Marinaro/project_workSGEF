@@ -3,6 +3,8 @@ import { View, Text, Pressable, StyleSheet } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router'
 
 import api from '../../../config/httpClient.js'
+import { donationEstimate, donationDigitCount, MAX_DONATION_DIGITS } from '../../../utils/donation'
+import Banner from '../../../components/Banner'
 import { geocodeAddress } from '../../../config/caregiverApi'
 import {
     C,
@@ -29,7 +31,6 @@ import {
     Initials,
     Radio,
     OptionRow,
-    CheckRow,
     FieldLabel,
     Input,
     Row,
@@ -65,13 +66,12 @@ const initialState = (assistedId = '') => ({
     direction: 'RoundTrip',
     date: '',
     time: '',
-    returnTime: '',
     added: [],
     coords: {},
     fromKey: '',
     toKey: '',
     returnKey: '',
-    sameReturn: false,
+    sameReturn: true,
     personId: assistedId,
     mobility: '',
     help: [],
@@ -168,7 +168,7 @@ const AddressPicker = ({ icon, title, emptyHint, options, value, onSelect, onAdd
 // ---------- Schermata ----------
 
 const Create = () => {
-    const { assistedId } = useLocalSearchParams()
+    const { assistedId, saved } = useLocalSearchParams()
     const router = useRouter()
     const scrollRef = useRef(null)
     const consumedAssisted = useRef(null)
@@ -191,30 +191,29 @@ const Create = () => {
 
     useFocusEffect(
         useCallback(() => {
+            let active = true
             // Dopo un invio, o arrivando con un nuovo assistito già scelto, si riparte da capo
             const freshAssisted = assistedId && consumedAssisted.current !== assistedId
             if (freshAssisted) consumedAssisted.current = assistedId
-            setS((prev) => (prev.published || freshAssisted ? initialState(assistedId ?? '') : prev))
+            setS((prev) => prev.published ? initialState(assistedId ?? '')
+                : freshAssisted ? { ...prev, personId: assistedId, mobility: '', help: [] } : prev)
             setErrors({})
             setSubmitError('')
             const load = async () => {
                 try {
                     const [me, list] = await Promise.all([api.get('/me/profile'), api.get('/assisted')])
-                    // Telefono e data di nascita servono per richiedere un trasporto (mockup: completamento profilo)
-                    if (!me.data.phone || !me.data.birthDate) {
-                        router.replace({ pathname: '/editProfile', params: { next: 'wizard' } })
-                        return
-                    }
+                    if (!active) return
                     setProfile(me.data)
                     setPeople(list.data)
                     setLoadError('')
                 } catch (e) {
-                    setLoadError(apiErrorMessage(e, 'Impossibile preparare la richiesta.'))
+                    if (active) setLoadError(apiErrorMessage(e, 'Impossibile preparare la richiesta.'))
                 } finally {
-                    setLoading(false)
+                    if (active) setLoading(false)
                 }
             }
             load()
+            return () => { active = false }
         }, [assistedId]),
     )
 
@@ -262,11 +261,12 @@ const Create = () => {
     const to = find(s.toKey)
     const returnTo = roundTrip ? (s.sameReturn ? from : find(s.returnKey)) : null
     const me = { name: profile.name, surname: profile.surname, phone: profile.phone }
+    const profileComplete = !!(profile.name && profile.surname && profile.phone && profile.birthDate)
 
     const km = distanceKm(from, to) + (roundTrip ? distanceKm(to, returnTo) : 0)
     const roundedKm = Math.round(km * 10) / 10
     const minimum = Math.max(roundedKm * PRICE_PER_KM, MINIMUM_AMOUNT)
-    const extra = s.donate ? Math.max(Number(String(s.extra).replace(',', '.')) || 0, 0) : 0
+    const donation = donationEstimate(s.extra, s.donate, minimum)
 
     const goTo = (step) => {
         update({ step })
@@ -280,10 +280,6 @@ const Create = () => {
         if (!s.date) found.date = 'Scegli la data.'
         if (!s.time) found.time = 'Scegli l’ora di partenza.'
         if (s.date && s.time && new Date(`${s.date}T${s.time}`) <= new Date()) found.time = 'La partenza deve essere nel futuro.'
-        if (roundTrip) {
-            if (!s.returnTime) found.returnTime = 'Scegli l’ora di ritorno.'
-            else if (s.time && s.returnTime <= s.time) found.returnTime = 'Il ritorno deve essere successivo alla partenza.'
-        }
         if (!from) found.from = 'Scegli l’indirizzo di partenza.'
         if (!to) found.to = 'Scegli la destinazione.'
         if (roundTrip && !s.sameReturn && !returnTo) found.returnTo = 'Scegli dove accompagnare la persona al ritorno.'
@@ -307,6 +303,10 @@ const Create = () => {
     }
 
     const next = async () => {
+        if (s.step === 3 && !profileComplete) {
+            setErrors({ profile: 'Completa i dati del referente prima di proseguire.' })
+            return
+        }
         if (s.step === 2) {
             setBusy(true)
             try {
@@ -324,7 +324,6 @@ const Create = () => {
             const found = {}
             if (!person) found.person = 'Scegli la persona da accompagnare.'
             else if (!s.mobility) found.mobility = 'Seleziona come si sposta la persona.'
-            if (s.donate && !(extra > 0)) found.extra = 'Inserisci l’importo della donazione.'
             setErrors(found)
             if (Object.keys(found).length) return
         }
@@ -347,8 +346,8 @@ const Create = () => {
     })
 
     const submit = async () => {
-        if (s.donate && !(extra > 0)) {
-            setErrors({ extra: 'Inserisci l’importo della donazione.' })
+        if (donation.error) {
+            setErrors({ extra: donation.error })
             return
         }
         setBusy(true)
@@ -361,7 +360,7 @@ const Create = () => {
                 tripType: s.tripType,
                 tripDirection: s.direction,
                 departureDateHour: new Date(`${s.date}T${s.time}`).toISOString(),
-                returnDateHour: roundTrip ? new Date(`${s.date}T${s.returnTime}`).toISOString() : null,
+                returnDateHour: null,
                 startAddress: tripAddress(from),
                 endAddress: tripAddress(to),
                 returnEndAddress: roundTrip && !sameAsStart ? tripAddress(returnTo) : null,
@@ -422,13 +421,12 @@ const Create = () => {
             <FieldLabel label="Di quale percorso hai bisogno?" required style={styles.directionLabel} />
             <Row>
                 <OptionRow label="Solo andata" selected={s.direction === 'OneWay'} onPress={() => update({ direction: 'OneWay' })} style={styles.directionOption} />
-                <OptionRow
+                {!ONE_WAY_ONLY.includes(s.tripType) ? <OptionRow
                     label="Andata e ritorno"
                     selected={s.direction === 'RoundTrip'}
-                    disabled={ONE_WAY_ONLY.includes(s.tripType)}
                     onPress={() => update({ direction: 'RoundTrip' })}
                     style={styles.directionOption}
-                />
+                /> : null}
             </Row>
             {ONE_WAY_ONLY.includes(s.tripType) ? (
                 <Text style={styles.hint}>Per {tripTypeLabel(s.tripType).toLowerCase()} è previsto solo il viaggio di andata.</Text>
@@ -478,18 +476,16 @@ const Create = () => {
                 {roundTrip ? (
                     <>
                         <Divider style={styles.panelDivider} />
-                        <FieldLabel label="Ora di ritorno" required />
-                        <View style={styles.returnTime}>
-                            <DateTimeField mode="time" value={s.returnTime} onChange={(returnTime) => update({ returnTime })} placeholder="--:--" style={styles.onPanel} />
-                        </View>
-                        <Text style={styles.hint}>Il ritorno è previsto nello stesso giorno della partenza.</Text>
-                        <ErrorText>{errors.returnTime}</ErrorText>
-                        <CheckRow
-                            checked={s.sameReturn}
-                            onPress={() => update({ sameReturn: !s.sameReturn })}
-                            label="Al ritorno, torna all’indirizzo di partenza"
+                        <Text style={styles.pickerTitle}>Ritorno al termine della visita</Text>
+                        <Text style={styles.hint}>Non serve indicare un orario: la persona sarà riaccompagnata appena finita la visita.</Text>
+                        <OptionRow
+                            selected={s.sameReturn}
+                            onPress={() => update({ sameReturn: true })}
+                            label="Ritorno all’indirizzo di partenza"
                             style={styles.sameReturn}
                         />
+                        <OptionRow selected={!s.sameReturn} onPress={() => update({ sameReturn: false })}
+                            label="Ritorno a un altro indirizzo" style={styles.sameReturn} />
                         {!s.sameReturn ? (
                             <AddressPicker
                                 icon="location-outline"
@@ -526,7 +522,13 @@ const Create = () => {
                         <Text style={styles.referentPhone}>{me.phone}</Text>
                     </View>
                 </View>
-                <Text style={styles.hint}>Scegli chi verrà contattato per organizzare il trasporto.</Text>
+                {!profileComplete ? (
+                    <View>
+                        <Text style={styles.hint}>Completa nome, cognome, telefono e data di nascita del referente per proseguire. La richiesta rimane salvata mentre aggiorni il profilo.</Text>
+                        <Btn label="Completa i dati del referente" onPress={() => router.push({ pathname: '/editProfile', params: { next: 'wizard' } })} style={styles.sameReturn} />
+                        <ErrorText>{errors.profile}</ErrorText>
+                    </View>
+                ) : <Text style={styles.hint}>L’associazione contatterà te per organizzare il trasporto.</Text>}
             </Card>
             <Btn label="Aggiungi caregiver" icon="person-add-outline" onPress={() => setInviteOpen(true)} />
         </>
@@ -574,15 +576,21 @@ const Create = () => {
                     ))}
                     <ErrorText style={styles.supportError}>{errors.mobility}</ErrorText>
                     <FieldLabel label="Di quale aiuto ha bisogno?" optional style={styles.supportLabel} />
-                    {HELP.map((h) => {
-                        const on = s.help.includes(h.value)
+                    {[
+                        { value: 'none', label: 'Nessun aiuto aggiuntivo' },
+                        ...HELP,
+                        { value: 'both', label: 'Entrambi gli aiuti' },
+                    ].map((h) => {
+                        const on = h.value === 'none' ? s.help.length === 0
+                            : h.value === 'both' ? s.help.length === HELP.length
+                            : s.help.length === 1 && s.help[0] === h.value
                         return (
                             <OptionRow
                                 key={h.value}
-                                multi
                                 label={h.label}
                                 selected={on}
-                                onPress={() => update({ help: on ? s.help.filter((x) => x !== h.value) : [...s.help, h.value] })}
+                                onPress={() => update({ help: h.value === 'none' ? []
+                                    : h.value === 'both' ? HELP.map((item) => item.value) : [h.value] })}
                                 style={styles.supportOption}
                             />
                         )
@@ -620,7 +628,7 @@ const Create = () => {
                         stops={[
                             { label: 'Partenza', ...fromLines },
                             { label: 'Destinazione', ...toLines },
-                            ...(roundTrip ? [{ label: 'Ritorno', time: s.returnTime, ...returnLines }] : []),
+                            ...(roundTrip ? [{ label: 'Ritorno al termine della visita', ...returnLines }] : []),
                         ]}
                     />
                 </Card>
@@ -702,18 +710,30 @@ const Create = () => {
                         </View>
                     </View>
                     <Divider />
-                    <CheckRow checked={s.donate} onPress={() => update({ donate: !s.donate })} label="Voglio donare di più" />
+                    <FieldLabel label="Vuoi aggiungere una donazione?" />
+                    <OptionRow selected={!s.donate} onPress={() => update({ donate: false })} label="No, solo il contributo minimo" style={styles.sameReturn} />
+                    <OptionRow selected={s.donate} onPress={() => update({ donate: true })} label="Sì, voglio donare di più" />
                     {s.donate ? (
                         <View style={styles.extra}>
                             <FieldLabel label="Donazione aggiuntiva (€)" />
-                            <Input value={String(s.extra)} onChangeText={(v) => update({ extra: v })} keyboardType="decimal-pad" />
-                            <ErrorText>{errors.extra}</ErrorText>
+                            <Input style={styles.donationInput} value={String(s.extra)} onChangeText={(v) => {
+                                if (donationDigitCount(v) > MAX_DONATION_DIGITS) {
+                                    // Keep the previous value, including when pasting an oversized amount.
+                                    setS((prev) => ({ ...prev }))
+                                    setErrors({ extra: 'La donazione può contenere al massimo 10 cifre complessive.' })
+                                    return
+                                }
+                                update({ extra: v })
+                            }}
+                                keyboardType="decimal-pad" inputMode="decimal" maxLength={24} placeholder="0,00" accessibilityLabel="Donazione aggiuntiva in euro" />
+                            <Text style={styles.hint}>Massimo 10 cifre complessive, con non più di due decimali.</Text>
+                            <ErrorText>{errors.extra || (String(s.extra).trim() ? donation.error : '')}</ErrorText>
                         </View>
                     ) : null}
                     <Divider />
                     <View style={styles.totalRow}>
                         <Text style={styles.totalLabel}>Totale stimato</Text>
-                        <Text style={styles.total}>{euros(minimum + extra)}</Text>
+                        <Text style={styles.total}>{euros(donation.total)}</Text>
                     </View>
                 </Card>
 
@@ -728,6 +748,7 @@ const Create = () => {
     return (
         <Page>
             <Scroll ref={scrollRef}>
+                {saved === '1' ? <Banner variant="success" message="Dati del profilo salvati. Puoi continuare la richiesta." onDismiss={() => router.setParams({ saved: '' })} /> : null}
                 <PageTitle style={styles.title}>Nuovo trasporto</PageTitle>
                 <Progress step={s.step} />
                 {steps[s.step]()}
@@ -817,8 +838,6 @@ const styles = StyleSheet.create({
     addressLine2: { fontSize: 12, color: C.muted, marginTop: 3 },
     addAddress: { minHeight: 44, borderRadius: 10, marginTop: 2 },
     addAddressText: { fontSize: 14 },
-    returnTime: { width: 140 },
-    onPanel: { backgroundColor: C.page },
     sameReturn: { marginTop: 4, marginBottom: 10 },
 
     contactPanel: { marginBottom: 20, padding: 18 },
@@ -865,9 +884,10 @@ const styles = StyleSheet.create({
     payTitle: { fontSize: 14, fontWeight: '600', color: C.text },
     payText: { fontSize: 13, lineHeight: 20, color: C.muted, marginTop: 3 },
     extra: { marginTop: 10 },
-    totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+    donationInput: { backgroundColor: C.white },
+    totalRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' },
     totalLabel: { fontSize: 14, color: C.text },
-    total: { fontSize: 22, fontWeight: '700', color: C.primary },
+    total: { fontSize: 22, fontWeight: '700', color: C.primary, flexShrink: 1, minWidth: 0 },
     afterSend: { fontSize: 13, lineHeight: 20, color: C.muted, marginTop: 6 },
 
     footerBtn: { paddingHorizontal: 26 },

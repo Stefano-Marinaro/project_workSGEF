@@ -24,6 +24,7 @@ public sealed class ChangeEmailService(
         string currentPassword,
         CancellationToken ct)
     {
+        newEmail = newEmail.Trim().ToLowerInvariant();
         var account = await db.Accounts.SingleOrDefaultAsync(a => a.Id == accountId, ct)
             ?? throw new NotFoundException("Account non trovato.");
 
@@ -37,7 +38,7 @@ public sealed class ChangeEmailService(
             throw new ConflictException("La nuova e-mail coincide con quella attuale.");
 
         var emailAlreadyUsed = await db.Accounts.AnyAsync(
-            a => a.Email == newEmail && a.Id != accountId,
+            a => a.Email.ToLower() == newEmail && a.Id != accountId,
             ct);
 
         if (emailAlreadyUsed)

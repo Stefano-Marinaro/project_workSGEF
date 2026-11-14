@@ -25,7 +25,7 @@ public sealed class ConfirmEmailChangeService(GoCareDbContext db)
             throw new ForbiddenException("Account non attivo.");
 
         var emailAlreadyUsed = await db.Accounts.AnyAsync(
-            a => a.Email == token.NewEmail && a.Id != account.Id,
+            a => a.Email.ToLower() == token.NewEmail.ToLower() && a.Id != account.Id,
             ct);
 
         if (emailAlreadyUsed)

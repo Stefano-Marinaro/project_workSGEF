@@ -106,7 +106,15 @@ builder.Services.AddHttpClient<IGeocodingService, NominatimGeocodingService>(cli
 // basta ripristinare questa riga su AddHttpClient<IRoutingService, OpenRouteServiceClient>().
 builder.Services.AddHttpClient<IRoutingService, GraphHopperClient>();
 builder.Services.AddSingleton<Stripe.IStripeClient>(sp =>
-    new Stripe.StripeClient(sp.GetRequiredService<IOptions<StripeOptions>>().Value.SecretKey));
+{
+    var secretKey = sp.GetRequiredService<IOptions<StripeOptions>>().Value.SecretKey;
+    if (string.IsNullOrWhiteSpace(secretKey))
+        throw new GoCare.Errors.ServiceUnavailableException("Il servizio di pagamento e rimborso non è configurato. Contatta il gestore dell’app.");
+    return new Stripe.StripeClient(secretKey);
+});
+// Gli annullamenti senza pagamento non devono richiedere una configurazione Stripe.
+builder.Services.AddScoped<Lazy<Stripe.IStripeClient>>(sp =>
+    new Lazy<Stripe.IStripeClient>(() => sp.GetRequiredService<Stripe.IStripeClient>()));
 builder.Services.AddScoped<CreateCheckoutSessionService>();
 builder.Services.AddScoped<StripeWebhookService>();
 builder.Services.AddScoped<GetPersonProfileService>();

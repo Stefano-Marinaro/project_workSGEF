@@ -4,7 +4,7 @@ using GoCare.Data;
 using GoCare.Errors;
 using GoCare.Models.Auth;
 using GoCare.Models.Enums;
-using GoCare.Services.Provisioning;
+using GoCare.Models.Domain;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
@@ -15,15 +15,15 @@ public sealed class RegisterUserService(
     GoCareDbContext db,
     PasswordService passwordService,
     TokenService tokenService,
-    ProfileProvisioningService provisioning,
     IEmailSender emailSender,
     IOptions<FrontendOptions> frontendOptions)
 {
     private readonly FrontendOptions _frontend = frontendOptions.Value;
 
-    public async Task<Guid> RegisterUserAsync(string email, string password, CancellationToken ct)
+    public async Task<Guid> RegisterUserAsync(string email, string password, string name, string surname, CancellationToken ct)
     {
-        var emailExist = await db.Accounts.AnyAsync(a => a.Email == email, ct);
+        email = email.Trim().ToLowerInvariant();
+        var emailExist = await db.Accounts.AnyAsync(a => a.Email.ToLower() == email, ct);
         if (emailExist)
             throw new ConflictException("Email già registrata");
 
@@ -37,10 +37,10 @@ public sealed class RegisterUserService(
 
         db.Accounts.Add(account);
         db.EmailVerificationTokens.Add(verificationToken);
+        db.Persons.Add(new Person(accountId, email, name.Trim(), surname.Trim()));
 
+        // Account, token e identità vengono salvati insieme: il primo accesso ha già le iniziali.
         await db.SaveChangesAsync(ct);
-
-        await provisioning.CreatePersonSkeletonAsync(accountId, email, ct);
 
         var (subject, html) = EmailTemplates.VerifyAccount(
             $"{_frontend.VerifyEmailUrl}?token={verificationToken.Token}", verificationToken.ExpiresAt - now);

@@ -242,7 +242,7 @@ const AssocDetail = () => {
 							<RouteStops
 								labelColor={C.muted}
 								stops={[
-									{ label: 'Partenza', ...end, time: trip.returnDateHour ? formatTime(trip.returnDateHour) : undefined },
+									{ label: trip.returnDateHour ? 'Partenza' : 'Partenza al termine della visita', ...end, time: trip.returnDateHour ? formatTime(trip.returnDateHour) : undefined },
 									{ label: 'Destinazione', ...start },
 								]}
 							/>

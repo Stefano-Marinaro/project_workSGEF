@@ -14,7 +14,7 @@ public sealed class RegisterUserController(RegisterUserService service) : Contro
     [HttpPost("register/user")]
     public async Task<ActionResult<RegisterResponse>> RegisterUser(RegisterUserRequest request, CancellationToken ct)
     {
-        var accountId = await service.RegisterUserAsync(request.Email, request.Password, ct);
+        var accountId = await service.RegisterUserAsync(request.Email, request.Password, request.Name, request.Surname, ct);
 
         return Created($"/auth/account/{accountId}", new RegisterResponse(accountId));
     }

@@ -19,7 +19,8 @@ public sealed class ResendVerificationEmailService(
 
     public async Task ResendVerificationEmailAsync(string email, CancellationToken ct)
     {
-        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email == email, ct);
+        email = email.Trim().ToLowerInvariant();
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email.ToLower() == email, ct);
 
         // Risposta neutra: non rivela se l'account esiste o è già verificato.
         if (account is null || account.Status is not EAccountStatus.Unverified)

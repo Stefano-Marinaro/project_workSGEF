@@ -84,8 +84,12 @@ public sealed class GetTripExecutionStatusService(GoCareDbContext db)
         if (!link.IsUsable(DateTimeOffset.UtcNow))
             throw new ForbiddenException("Il link è scaduto o è stato revocato.");
 
-        return await db.TransportRequests.SingleOrDefaultAsync(t => t.Id == link.TransportRequestId, ct)
+        var trip = await db.TransportRequests.SingleOrDefaultAsync(t => t.Id == link.TransportRequestId, ct)
             ?? throw new NotFoundException("Trasporto non trovato.");
+        if (trip.RequestStatus is ETripRequestStatus.Pending or ETripRequestStatus.Cancelled or ETripRequestStatus.NotCovered
+            || trip.AcceptedAt > link.CreatedAt)
+            throw new ForbiddenException("Il link operatore non è più valido per questo trasporto.");
+        return trip;
     }
 
     private async Task<List<TripStatusTransition>> LoadTransitionsAsync(Guid tripId, CancellationToken ct) =>

@@ -2,14 +2,12 @@ import { useState } from 'react'
 import { View, ScrollView, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import api from '../../config/httpClient.js'
-import { setItem } from '../../config/storage.js'
 import { C, apiErrorMessage } from '../../constants/caregiver'
 import { AuthHeader, AuthIntro, AuthField, AuthButton, AuthSwitch, authStyles } from '../../components/auth/AuthUi'
 
 // Mockup "Crea il tuo account".
 // La stessa app serve caregiver e associazioni, quindi si sceglie il tipo di account.
-// Il backend registra solo email e password: nome e cognome del caregiver vengono
-// ricordati sul dispositivo e proposti nel "Modifica profilo" dopo il primo accesso.
+// Nome e cognome vengono salvati sul server già durante la registrazione.
 const Register = () => {
     const router = useRouter()
     const [role, setRole] = useState('caregiver')
@@ -40,13 +38,11 @@ const Register = () => {
         setLoading(true)
         try {
             const endpoint = isCaregiver ? '/auth/register/user' : '/auth/register/association'
-            await api.post(endpoint, { email: email.trim(), password })
-            if (isCaregiver)
-                await setItem(
-                    'pendingProfile',
-                    JSON.stringify({ email: email.trim().toLowerCase(), name: name.trim(), surname: surname.trim() }),
-                )
-            router.replace('/login')
+            await api.post(endpoint, {
+                email: email.trim().toLowerCase(), password,
+                ...(isCaregiver ? { name: name.trim(), surname: surname.trim() } : {}),
+            })
+            router.replace({ pathname: '/registration_success', params: { email: email.trim() } })
         } catch (error) {
             setErrorMessage(apiErrorMessage(error, 'Registrazione non riuscita.'))
         } finally {

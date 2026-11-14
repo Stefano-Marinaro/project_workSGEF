@@ -57,7 +57,7 @@ export default function Header({
         accessibilityLabel="Apri profilo"
         style={({ pressed }) => [styles.circle, pressed && styles.pressed]}
       >
-        <Text style={styles.initials}>{initials}</Text>
+        {initials ? <Text style={styles.initials}>{initials}</Text> : <Ionicons name="person-outline" size={20} color={C.primary} />}
       </Pressable>
     </View>
   );

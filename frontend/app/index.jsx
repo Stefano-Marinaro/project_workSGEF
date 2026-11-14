@@ -1,49 +1,17 @@
-import { StyleSheet } from 'react-native'
-import { Link } from 'expo-router'
+import { useEffect, useState } from 'react'
+import { Redirect } from 'expo-router'
+import { getItem } from '../config/storage'
+import { roleFromToken } from '../config/session'
+import { Loading } from '../components/caregiver/ui'
 
-// themed components
-import ThemedView from '../components/ThemedView'
-import ThemedLogo from '../components/ThemedLogo'
-import Spacer from '../components/Spacer'
-import ThemedText from '../components/ThemedText'
-
-const Home = () => {
-    return (
-        <ThemedView style={styles.container}>
-            <ThemedLogo />
-            <Spacer height={20}/>
-
-            <ThemedText style={styles.title} title={true}>GoCare</ThemedText>
-
-            <Spacer height={10}/>
-            
-            <ThemedText>Support for mobility and care</ThemedText>
-                
-            <Link href="/login" style={styles.link}> 
-                <ThemedText> Login Page </ThemedText>
-            </Link>
-
-            <Link href="/register" style={styles.link}> 
-                <ThemedText> Register Page </ThemedText>
-            </Link>
-
-        </ThemedView>
-        
-    )
+export default function Home() {
+    const [destination, setDestination] = useState(null)
+    useEffect(() => {
+        getItem('accessToken').then((token) => {
+            const role = roleFromToken(token)
+            setDestination(role === 'Person' ? '/(caregiver)/transport'
+                : role === 'Association' ? '/association/request' : '/login')
+        }).catch(() => setDestination('/login'))
+    }, [])
+    return destination ? <Redirect href={destination} /> : <Loading />
 }
-export default Home
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    title: {
-        fontWeight: 'bold',
-        fontSize: 18,
-    },
-    link: {
-        marginVertical: 10,
-        borderBottomWidth: 1,
-    },
-})

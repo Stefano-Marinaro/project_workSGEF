@@ -23,7 +23,8 @@ public sealed class RegisterAssociationService(
 
     public async Task<Guid> RegisterAssociationAsync(string email, string password, CancellationToken ct)
     {
-        var emailExist = await db.Accounts.AnyAsync(a => a.Email == email, ct);
+        email = email.Trim().ToLowerInvariant();
+        var emailExist = await db.Accounts.AnyAsync(a => a.Email.ToLower() == email, ct);
         if (emailExist)
             throw new ConflictException("Email già registrata");
 

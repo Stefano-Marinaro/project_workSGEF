@@ -17,11 +17,12 @@ internal static class TestSupport
             .Options);
 
     public static Address SampleAddress() => new("Via Roma", "1", "06100", "Perugia", "PG");
+    public static TripAddress SampleTripAddress() => new("Via Roma", "1", "06100", "Perugia", "PG", 43.11, 12.39);
 
     public static TransportRequest NewTransport(Guid requestedById, DateTimeOffset? departure = null) =>
         new(Guid.NewGuid(), requestedById, Guid.NewGuid(), ETripType.Visit, ETripDirection.OneWay,
-            departure ?? DateTimeOffset.UtcNow.AddDays(2), null, SampleAddress(), SampleAddress(), null,
-            "333123456", null, DateTimeOffset.UtcNow);
+            departure ?? DateTimeOffset.UtcNow.AddDays(2), null, SampleTripAddress(), SampleTripAddress(), null,
+            "333123456", null, 10, DateTimeOffset.UtcNow);
 
     public static Account NewAccount(EAccountRole role, string email, bool verified = true)
     {

@@ -30,6 +30,8 @@ public sealed class AdvanceTripStatusService(GoCareDbContext db)
         string token, ETripOperatorAction action, string operatorLabel, CancellationToken ct)
     {
         var trip = await ResolveTripAsync(token, ct);
+        if (trip.RequestStatus is not (ETripRequestStatus.Confirmed or ETripRequestStatus.InProgress))
+            throw new ConflictException("Il trasporto non è più disponibile per l’avanzamento di stato.");
         var transitions = await LoadTransitionsAsync(trip.Id, ct);
         var (effectiveStatus, isSuspended) = Resolve(transitions);
         var sequence = trip.TripDirection == ETripDirection.RoundTrip ? RoundTripSequence : OneWaySequence;
@@ -114,8 +116,12 @@ public sealed class AdvanceTripStatusService(GoCareDbContext db)
         if (!link.IsUsable(DateTimeOffset.UtcNow))
             throw new ForbiddenException("Il link è scaduto o è stato revocato.");
 
-        return await db.TransportRequests.SingleOrDefaultAsync(t => t.Id == link.TransportRequestId, ct)
+        var trip = await db.TransportRequests.SingleOrDefaultAsync(t => t.Id == link.TransportRequestId, ct)
             ?? throw new NotFoundException("Trasporto non trovato.");
+        if (trip.RequestStatus is ETripRequestStatus.Pending or ETripRequestStatus.Cancelled or ETripRequestStatus.NotCovered
+            || trip.AcceptedAt > link.CreatedAt)
+            throw new ForbiddenException("Il link operatore non è più valido per questo trasporto.");
+        return trip;
     }
 
     private async Task<List<TripStatusTransition>> LoadTransitionsAsync(Guid tripId, CancellationToken ct) =>

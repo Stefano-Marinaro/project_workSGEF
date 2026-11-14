@@ -18,7 +18,8 @@ public sealed class ForgotPasswordService(
 
     public async Task ForgotPasswordAsync(string email, CancellationToken ct)
     {
-        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email == email, ct);
+        email = email.Trim().ToLowerInvariant();
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email.ToLower() == email, ct);
         if (account is null)
             return; // stessa risposta sia che l'email esista o no: niente enumerazione utenti
 

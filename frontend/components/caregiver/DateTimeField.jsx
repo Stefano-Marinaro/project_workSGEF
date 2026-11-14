@@ -13,14 +13,21 @@ export default function DateTimeField({ mode = "date", value, onChange, placehol
     const [open, setOpen] = useState(false)
 
     if (Platform.OS === "web") {
-        return createElement("input", {
+        // Safari assegna al controllo data una larghezza intrinseca: il contenitore
+        // e minWidth: 0 gli permettono di restringersi anche nelle righe a due campi.
+        return <View style={styles.webContainer}>
+            {createElement("style", null, '.gocare-date-input::-webkit-date-and-time-value { text-align: left; } .gocare-date-input::-webkit-datetime-edit { padding: 0; }')}
+            {createElement("input", {
             type: mode,
+            className: "gocare-date-input",
+            lang: "it",
+            "aria-label": mode === "date" ? "Data" : "Ora",
             value: value ?? "",
             max: maximumDate ? toIso(maximumDate) : undefined,
             min: minimumDate ? toIso(minimumDate) : undefined,
             onChange: (e) => onChange(e.target.value),
             style: StyleSheet.flatten([webStyle, style]),
-        })
+        })}</View>
     }
 
     const asDate = () => {
@@ -74,6 +81,14 @@ const toIso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDat
 const webStyle = {
     boxSizing: "border-box",
     width: "100%",
+    maxWidth: "100%",
+    minWidth: 0,
+    display: "block",
+    appearance: "none",
+    WebkitAppearance: "none",
+    textAlign: "left",
+    flexShrink: 1,
+    height: 48,
     minHeight: 48,
     border: "none",
     borderRadius: 10,
@@ -86,6 +101,7 @@ const webStyle = {
 }
 
 const styles = StyleSheet.create({
+    webContainer: { width: "100%", maxWidth: "100%", minWidth: 0, flexShrink: 1 },
     box: {
         minHeight: 48,
         borderRadius: 10,

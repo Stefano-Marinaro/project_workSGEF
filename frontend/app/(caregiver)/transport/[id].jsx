@@ -251,7 +251,7 @@ const TransportDetail = () => {
                         <RouteStops
                             labelColor={C.muted}
                             stops={[
-                                { label: 'Partenza per il ritorno', ...end },
+                                { label: trip.returnDateHour ? 'Partenza per il ritorno' : 'Partenza al termine della visita', ...end },
                                 { label: 'Dove accompagnare la persona al ritorno', ...returnEnd },
                             ]}
                         />

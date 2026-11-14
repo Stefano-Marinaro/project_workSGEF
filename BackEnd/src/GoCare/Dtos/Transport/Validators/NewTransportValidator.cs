@@ -22,10 +22,10 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
             .IsInEnum();
 
         // stessa regola di TransportRequest.EnsureScheduleConsistency, qui per rispondere 422 invece di 500
-        When(t => t.TripType == ETripType.Hospitalization || t.TripType == ETripType.Discharge, () =>
+        When(t => t.TripType is ETripType.Hospitalization or ETripType.Discharge or ETripType.Transfer, () =>
         {
             RuleFor(t => t.TripDirection)
-                .Equal(ETripDirection.OneWay).WithMessage("Ricovero e Dimissione ammettono solo un viaggio di sola andata/ritorno (OneWay), non Andata e ritorno.");
+                .Equal(ETripDirection.OneWay).WithMessage("Ricovero, dimissione e trasferimento ammettono solo un viaggio di sola andata.");
         });
 
         RuleFor(t => t.DepartureDateHour)
@@ -35,8 +35,8 @@ public class NewTransportValidator : AbstractValidator<NewTransportRequest>
         When(t => t.TripDirection == ETripDirection.RoundTrip, () =>
         {
             RuleFor(t => t.ReturnDateHour)
-                .NotNull().WithMessage("Per un viaggio di andata e ritorno serve l'orario di ritorno.")
-                .GreaterThan(t => t.DepartureDateHour).WithMessage("Il ritorno deve essere successivo alla partenza.");
+                .GreaterThan(t => t.DepartureDateHour).WithMessage("Il ritorno deve essere successivo alla partenza.")
+                .When(t => t.ReturnDateHour.HasValue);
         }).Otherwise(() =>
         {
             RuleFor(t => t.ReturnDateHour)

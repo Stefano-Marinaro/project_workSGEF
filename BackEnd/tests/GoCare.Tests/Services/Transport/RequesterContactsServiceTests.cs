@@ -19,8 +19,8 @@ public class RequesterContactsServiceTests
 
         var transport = new TransportRequest(
             Guid.NewGuid(), requester.Id, beneficiary.Id, ETripType.Visit, ETripDirection.OneWay,
-            DateTimeOffset.UtcNow.AddDays(2), null, TestSupport.SampleAddress(), TestSupport.SampleAddress(), null,
-            "333999888", null, DateTimeOffset.UtcNow);
+            DateTimeOffset.UtcNow.AddDays(2), null, TestSupport.SampleTripAddress(), TestSupport.SampleTripAddress(), null,
+            "333999888", null, 10, DateTimeOffset.UtcNow);
         var associationId = Guid.NewGuid();
         transport.Accept(associationId, DateTimeOffset.UtcNow);
 

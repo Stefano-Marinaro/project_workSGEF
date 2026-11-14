@@ -76,8 +76,15 @@ export default function InviteCaregiverModal({ visible, onClose, person, people 
     }
 
     const copy = async () => {
-        await Clipboard.setStringAsync(link.url)
-        setCopied(true)
+        try {
+            const ok = await Clipboard.setStringAsync(link.url)
+            if (!ok) throw new Error('Clipboard unavailable')
+            setCopied(true)
+            setError('')
+        } catch {
+            setCopied(false)
+            setError('Impossibile copiare il link. Tienilo premuto per copiarlo manualmente oppure condividi il QR code.')
+        }
     }
 
     return (

@@ -181,6 +181,36 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         await db.SaveChangesAsync(ct);
     }
 
+    public async Task RemoveFromListAsync(Guid caregiverId, Guid assistedPersonId, CancellationToken ct)
+    {
+        var assistedPerson = await FindAccessibleAsync(caregiverId, assistedPersonId, tracked: true, ct);
+        var link = await db.CaregiverAssistedLinks.SingleAsync(
+            current => current.CaregiverId == caregiverId
+                && current.AssistedPersonId == assistedPersonId && current.DeletedAt == null, ct);
+
+        var hasOtherCaregivers = await db.CaregiverAssistedLinks.AnyAsync(
+            current => current.AssistedPersonId == assistedPersonId
+                && current.CaregiverId != caregiverId && current.DeletedAt == null, ct);
+
+        var now = DateTimeOffset.UtcNow;
+        if (!hasOtherCaregivers)
+        {
+            var hasOpenTrips = await db.TransportRequests.AnyAsync(
+                trip => trip.BeneficiaryId == assistedPersonId
+                    && (trip.RequestStatus == ETripRequestStatus.Pending
+                        || trip.RequestStatus == ETripRequestStatus.Confirmed
+                        || trip.RequestStatus == ETripRequestStatus.InProgress), ct);
+            if (hasOpenTrips)
+                throw new ConflictException("Prima di eliminare l’assistito, annulla i trasporti in attesa o confermati e attendi la conclusione di quelli in corso.");
+
+            // Archiviazione: i riferimenti nei viaggi conclusi restano validi.
+            assistedPerson.Archive(now);
+        }
+
+        link.Revoke(now);
+        await db.SaveChangesAsync(ct);
+    }
+
     public async Task RemoveCaregiverAsync(
         Guid caregiverId,
         Guid assistedPersonId,

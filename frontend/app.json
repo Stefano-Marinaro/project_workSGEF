@@ -25,7 +25,7 @@
       "package": "com.anonymous.GoCare"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/img/gocareLogo.png"
     },
     "plugins": [
       "expo-router",

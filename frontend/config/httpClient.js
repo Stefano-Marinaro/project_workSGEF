@@ -11,6 +11,9 @@ const api = axios.create({
   },
 });
 
+// All requests in the session share one refresh-token rotation.
+let refreshInFlight = null;
+
 api.interceptors.request.use(async (config) => {
   const token = await getItem('accessToken');
   if (token) {
@@ -26,27 +29,40 @@ api.interceptors.response.use(
 
     const shouldTryRefresh =
       error.response?.status === 401 &&
+      originalRequest &&
       !originalRequest._retriedAfterRefresh &&
-      originalRequest.url !== '/auth/refresh';
+      !originalRequest.url?.startsWith('/auth/');
 
     if (shouldTryRefresh) {
       originalRequest._retriedAfterRefresh = true;
 
       try {
-        const refreshToken = await getItem('refreshToken');
-        if (!refreshToken) throw error;
-
-        const refreshResponse = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken });
-
-        await setItem('accessToken', refreshResponse.data.accessToken);
-        await setItem('refreshToken', refreshResponse.data.refreshToken);
-
-        originalRequest.headers.Authorization = `Bearer ${refreshResponse.data.accessToken}`;
+        const currentToken = await getItem('accessToken');
+        // A late 401 may belong to a request sent before an already completed refresh.
+        if (currentToken && originalRequest.headers?.Authorization !== `Bearer ${currentToken}`) {
+          originalRequest.headers = { ...originalRequest.headers, Authorization: `Bearer ${currentToken}` };
+          return api(originalRequest);
+        }
+        if (!refreshInFlight) {
+          refreshInFlight = (async () => {
+            const refreshToken = await getItem('refreshToken');
+            if (!refreshToken) throw { sessionExpired: true };
+            const response = await axios.post(`${API_BASE_URL}/auth/refresh`, { refreshToken }, { timeout: 10000 });
+            await setItem('accessToken', response.data.accessToken);
+            await setItem('refreshToken', response.data.refreshToken);
+            return response.data.accessToken;
+          })().finally(() => { refreshInFlight = null; });
+        }
+        const newToken = await refreshInFlight;
+        originalRequest.headers = { ...originalRequest.headers, Authorization: `Bearer ${newToken}` };
         return api(originalRequest);
       } catch (refreshError) {
-        await deleteItem('accessToken');
-        await deleteItem('refreshToken');
-        router.replace('/login');
+        // A temporary connection/server failure must not erase a valid refresh token.
+        if (refreshError.sessionExpired || [401, 403].includes(refreshError.response?.status)) {
+          await deleteItem('accessToken');
+          await deleteItem('refreshToken');
+          router.replace('/login');
+        }
         return Promise.reject(error);
       }
     }

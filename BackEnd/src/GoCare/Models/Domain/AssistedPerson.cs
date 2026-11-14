@@ -35,6 +35,8 @@ public sealed class AssistedPerson
     public DateTimeOffset? DeletedAt { get; private set; }
     public DateTimeOffset? AnonymizedAt { get; private set; }
 
+    public void Archive(DateTimeOffset at) => DeletedAt ??= at;
+
     public void Update(string name, string surname, DateOnly birthDate, string phone, Address? homeAddress, string? note)
     {
         Name = name;

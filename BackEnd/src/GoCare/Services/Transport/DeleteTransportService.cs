@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GoCare.Services.Transport;
 
-public sealed class DeleteTransportService(GoCareDbContext db, Stripe.IStripeClient stripeClient)
+public sealed class DeleteTransportService(GoCareDbContext db, Lazy<Stripe.IStripeClient> stripeClient)
 {
     public async Task DeleteTransport(Guid id, Guid deletedBy, CancellationToken ct)
     {
@@ -32,7 +32,7 @@ public sealed class DeleteTransportService(GoCareDbContext db, Stripe.IStripeCli
 
         if (payment is not null)
         {
-            var refundService = new Stripe.RefundService(stripeClient);
+            var refundService = new Stripe.RefundService(stripeClient.Value);
             await refundService.CreateAsync(
                 new Stripe.RefundCreateOptions { PaymentIntent = payment.StripePaymentIntentId },
                 cancellationToken: ct);

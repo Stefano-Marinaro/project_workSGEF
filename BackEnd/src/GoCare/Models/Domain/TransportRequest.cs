@@ -59,14 +59,11 @@ public sealed class TransportRequest
     {
         var isRoundTrip = TripDirection == ETripDirection.RoundTrip;
 
-        if (isRoundTrip && returnDateHour is null)
-            throw new InvalidOperationException("Un RoundTrip richiede l'orario di ritorno.");
-
         if (!isRoundTrip && (returnDateHour is not null || returnEndAddress is not null))
             throw new InvalidOperationException("Solo un RoundTrip può avere orario o indirizzo di ritorno.");
 
-        if (isRoundTrip && (TripType == ETripType.Hospitalization || TripType == ETripType.Discharge))
-            throw new InvalidOperationException("Ricovero e Dimissione ammettono solo un viaggio OneWay, non Andata e ritorno.");
+        if (isRoundTrip && TripType is ETripType.Hospitalization or ETripType.Discharge or ETripType.Transfer)
+            throw new InvalidOperationException("Ricovero, dimissione e trasferimento ammettono solo un viaggio di sola andata.");
 
         if (returnDateHour is not null && returnDateHour <= departure)
             throw new InvalidOperationException("Il ritorno deve essere successivo alla partenza.");

@@ -121,18 +121,18 @@ const AssistedDetail = () => {
         }
     }
 
-    // Rimuove un caregiver dal gruppo; "Elimina assistito" toglie l'assistito dalla propria
-    // lista scollegando sé stessi (il backend non ha un'eliminazione dell'assistito).
+    // Eliminare dalla propria lista è distinto dal rimuovere un altro caregiver.
     const runConfirm = async () => {
         const target = confirm.kind === 'self' ? me : confirm.caregiver
-        if (!target) {
+        if (confirm.kind !== 'self' && !target) {
             setConfirmError('Impossibile identificare il caregiver.')
             return
         }
         setConfirmLoading(true)
         setConfirmError('')
         try {
-            await api.delete(`/assisted/${id}/caregivers/${target.id}`)
+            if (confirm.kind === 'self') await api.delete(`/assisted/${id}`)
+            else await api.delete(`/assisted/${id}/caregivers/${target.id}`)
             setConfirm(null)
             if (confirm.kind === 'self') router.replace('/assisted')
             else await load()
@@ -287,7 +287,7 @@ const AssistedDetail = () => {
                 title={confirm?.kind === 'self' ? 'Elimina assistito' : 'Rimuovi caregiver'}
                 message={
                     confirm?.kind === 'self'
-                        ? `Vuoi eliminare ${fullName} dalla lista assistiti?`
+                        ? `Vuoi eliminare ${fullName} dalla tua lista? Se sei l’unico caregiver, l’assistito verrà archiviato conservando lo storico. Prima dovrai annullare eventuali trasporti ancora aperti.`
                         : `Vuoi rimuovere ${[confirm?.caregiver?.name, confirm?.caregiver?.surname].filter(Boolean).join(' ') || confirm?.caregiver?.email} dai caregiver collegati?`
                 }
                 onCancel={() => setConfirm(null)}

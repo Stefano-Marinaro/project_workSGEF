@@ -13,7 +13,8 @@ public sealed class LoginService(
     public async Task<(string accessToken, string refreshToken)> LoginAsync(
         string email, string password, CancellationToken ct)
     {
-        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email == email, ct)
+        email = email.Trim().ToLowerInvariant();
+        var account = await db.Accounts.SingleOrDefaultAsync(a => a.Email.ToLower() == email, ct)
             ?? throw new ForbiddenException("Credenziali non valide.");
 
         if (!passwordService.Verify(password, account.PasswordHash))

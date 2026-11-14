@@ -47,7 +47,23 @@ docker compose down -v     # ferma tutto e CANCELLA il database
 docker compose logs -f backend
 ```
 
-### E-mail
+### Aiuto e informazioni
+
+La sezione caregiver è disponibile in **Profilo → Aiuto e informazioni** e usa i componenti grafici dell’app.
+Include guida, FAQ, spiegazione degli stati e informazioni sui pagamenti.
+Per rendere disponibili contatti e documenti reali, configura nel file `.env`:
+
+```dotenv
+SUPPORT_EMAIL=
+PRIVACY_URL=
+TERMS_URL=
+```
+
+Gli URL dei documenti devono essere indirizzi HTTP/HTTPS. “Scrivi all’assistenza” apre l’app di posta dell’utente;
+non invia segnalazioni automaticamente. Se i valori sono vuoti, la sezione indica che i recapiti o i documenti
+non sono ancora disponibili. Dopo le modifiche ricostruisci il frontend con `docker compose up -d --build frontend`.
+
+### Configurazione e-mail
 
 Senza credenziali SMTP le e-mail **non partono**: il backend le scrive nel log
 (`docker compose logs backend`), compresi i link di verifica, reset password e invito associazione.

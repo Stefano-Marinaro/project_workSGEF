@@ -53,7 +53,7 @@ const NewAssisted = () => {
                 </Text>
                 <Btn
                     label="Continua con il trasporto"
-                    onPress={() => router.replace({ pathname: '/transport/new', params: { assistedId: created.id } })}
+                    onPress={() => router.dismissTo({ pathname: '/transport/new', params: { assistedId: created.id } })}
                     style={styles.createdBtn}
                 />
                 <Btn label="Vai agli assistiti" variant="ghost" onPress={() => router.replace('/assisted')} style={styles.createdBtn} />
@@ -78,7 +78,7 @@ const NewAssisted = () => {
             </Scroll>
             <Footer>
                 <Btn label="Indietro" variant="secondary" onPress={() => router.back()} style={styles.back} />
-                <Btn label="Registra Assistito" onPress={submit} loading={saving} style={styles.submit} />
+                <Btn label="Registra assistito" onPress={submit} loading={saving} style={styles.submit} />
             </Footer>
         </Page>
     )

@@ -34,6 +34,13 @@ public sealed class AcceptCaregiverInviteService(GoCareDbContext db)
         if (!link.IsUsable(DateTimeOffset.UtcNow))
             throw new ForbiddenException("Il link è scaduto o è stato revocato.");
 
+        if (!await db.AssistedPeople.AnyAsync(p => p.Id == link.AssistedPersonId && p.DeletedAt == null, ct))
+            throw new NotFoundException("Assistito non trovato.");
+
+        if (!await db.CaregiverAssistedLinks.AnyAsync(l => l.AssistedPersonId == link.AssistedPersonId
+                && l.CaregiverId == link.InvitedByPersonId && l.DeletedAt == null, ct))
+            throw new ForbiddenException("Il caregiver che ha generato l’invito non è più collegato all’assistito.");
+
         return link;
     }
 }

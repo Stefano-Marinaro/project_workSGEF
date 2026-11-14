@@ -9,7 +9,7 @@ const RootLayout = () => {
 
     return (
         <>
-        <StatusBar value="auto"/>
+        <StatusBar style="auto"/>
         <Stack screenOptions={{
             headerStyle: { backgroundColor: theme.navBackground },
             headerTintColor: theme.title,
@@ -19,7 +19,7 @@ const RootLayout = () => {
             <Stack.Screen name="association" options={{ headerShown: false }}/>
             {/* Pagina pubblica del link operatore: nessun login, nessuna navigazione */}
             <Stack.Screen name="operatore/[token]" options={{ headerShown: false }}/>
-            <Stack.Screen name="index" options={{ title: 'Home' }}/>
+            <Stack.Screen name="index" options={{ headerShown: false }}/>
         </Stack> 
         </> 
     )
