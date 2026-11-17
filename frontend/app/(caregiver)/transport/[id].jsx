@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { View, Text, StyleSheet, Linking } from 'react-native'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
@@ -54,20 +54,57 @@ const Panel = ({ title, icon, children }) => (
     </Card>
 )
 
-const Timeline = ({ status, departure }) => {
-    const phase = status === 'Pending' ? 1 : status === 'Confirmed' ? 2 : status === 'Completed' ? 4 : 3
+// Passaggi registrati dal volontario tramite il link operatore (TripStatusTransition)
+const EXECUTION_STEPS = {
+    OneWay: ['InCharge', 'Arriving', 'Completed'],
+    RoundTrip: ['InCharge', 'Arriving', 'OnSite', 'Returning', 'Completed'],
+}
+const EXECUTION_TITLES = {
+    InCharge: 'Presa in carico del volontario',
+    Arriving: 'Volontario in arrivo',
+    OnSite: 'In visita',
+    Returning: 'In ritorno',
+    Completed: 'Trasporto concluso',
+}
+
+const Timeline = ({ status, departure, direction, transitions }) => {
+    const approved = status !== 'Pending'
+    const sequence = EXECUTION_STEPS[direction] ?? EXECUTION_STEPS.OneWay
+    // Ultimo passaggio registrato per ogni stato (dopo una sospensione lo stato viene ripetuto)
+    const reached = {}
+    transitions.forEach((t) => {
+        if (t.status !== 'Suspended') reached[t.status] = t
+    })
+    const last = transitions.length ? transitions[transitions.length - 1] : null
+    const suspended = last?.status === 'Suspended'
+    const completed = status === 'Completed' || !!reached.Completed
+    const at = (t) => `${formatTime(t.occurredAt)}${t.operatorLabel ? ` · ${t.operatorLabel}` : ''}`
+
     const steps = [
-        ['Richiesta inviata', 'Ricevuta dalle associazioni.'],
-        ['Approvazione dell’associazione', phase === 1 ? 'In attesa di una disponibilità.' : 'Disponibilità confermata.'],
-        ['Accompagnamento in corso', phase === 2 ? `Previsto per il ${formatFullDate(departure)}.` : ''],
-        ['Trasporto concluso', ''],
+        { title: 'Richiesta inviata', help: 'Ricevuta dalle associazioni.', done: true },
+        {
+            title: 'Approvazione dell’associazione',
+            help: approved ? 'Disponibilità confermata.' : 'In attesa di una disponibilità.',
+            done: approved,
+        },
+        ...sequence.map((key) => {
+            const t = reached[key]
+            const done = !!t || (key === 'Completed' && completed)
+            let help = t ? at(t) : ''
+            if (!t && key === 'InCharge' && status === 'Confirmed')
+                help = `Previsto per il ${formatFullDate(departure)} alle ${formatTime(departure)}.`
+            return { key, title: EXECUTION_TITLES[key], help, done }
+        }),
     ]
+    // Il primo passaggio non ancora avvenuto è quello atteso
+    const currentIndex = completed ? -1 : steps.findIndex((s) => !s.done)
+    if (suspended && currentIndex > 0) steps[currentIndex].help = `Trasporto sospeso dal volontario (${at(last)}).`
+
     return (
         <Card style={styles.panel}>
             <Text style={styles.timelineTitle}>A che punto siamo</Text>
-            {steps.map(([title, help], i) => {
-                const done = i === 0 || phase === 4 || (phase >= 2 && i === 1)
-                const current = (phase === 1 && i === 1) || (phase === 3 && i === 2)
+            {steps.map(({ title, help, done }, i) => {
+                const current = i === currentIndex
                 const color = done ? C.primary : current ? C.waiting : '#827b91'
                 return (
                     <View key={title} style={styles.step}>
@@ -81,6 +118,8 @@ const Timeline = ({ status, departure }) => {
                             >
                                 {done ? (
                                     <Icon name="checkmark" size={14} color={C.white} />
+                                ) : current && suspended ? (
+                                    <Icon name="pause" size={13} color={color} />
                                 ) : (
                                     <Text style={[styles.stepNumber, { color }]}>{i + 1}</Text>
                                 )}
@@ -97,6 +136,9 @@ const Timeline = ({ status, departure }) => {
         </Card>
     )
 }
+
+// Ogni quanto ricaricare lo stato mentre il trasporto è in attesa del volontario o in corso
+const REFRESH_MS = 15000
 
 const TransportDetail = () => {
     const params = useLocalSearchParams()
@@ -116,33 +158,47 @@ const TransportDetail = () => {
     const [cancelling, setCancelling] = useState(false)
     const [cancelError, setCancelError] = useState('')
 
-    const load = useCallback(async () => {
-        setLoading(true)
-        try {
-            const [detail, steps, me] = await Promise.all([
-                api.get(`/transports/${id}`),
-                api.get(`/transports/${id}/status-timeline`).catch(() => ({ data: [] })),
-                api.get('/me/profile').catch(() => ({ data: null })),
-            ])
-            setTrip(detail.data)
-            setTimeline(steps.data)
-            setProfile(me.data)
-            if (!params.assistedName) {
-                const found = await findTripOwner(id)
-                if (found.person)
-                    setOwner({ name: `${found.person.name} ${found.person.surname}`, associationName: found.associationName })
+    const load = useCallback(
+        async ({ silent = false } = {}) => {
+            if (!silent) setLoading(true)
+            try {
+                const [detail, steps, me] = await Promise.all([
+                    api.get(`/transports/${id}`),
+                    api.get(`/transports/${id}/status-timeline`).catch(() => null),
+                    silent ? Promise.resolve(null) : api.get('/me/profile').catch(() => ({ data: null })),
+                ])
+                setTrip(detail.data)
+                // In caso di errore si tiene l'ultima timeline nota invece di svuotarla
+                if (steps) setTimeline(Array.isArray(steps.data) ? steps.data : [])
+                if (!silent) setProfile(me.data)
+                if (!silent && !params.assistedName) {
+                    const found = await findTripOwner(id)
+                    if (found.person)
+                        setOwner({ name: `${found.person.name} ${found.person.surname}`, associationName: found.associationName })
+                }
+                setError('')
+            } catch (e) {
+                // Un aggiornamento automatico fallito non sostituisce la pagina già caricata
+                if (!silent) setError(apiErrorMessage(e, 'Impossibile caricare il trasporto.'))
+            } finally {
+                if (!silent) setLoading(false)
             }
-            setError('')
-        } catch (e) {
-            setError(apiErrorMessage(e, 'Impossibile caricare il trasporto.'))
-        } finally {
-            setLoading(false)
-        }
-    }, [id, params.assistedName])
+        },
+        [id, params.assistedName],
+    )
+
+    // Stato corrente letto dal timer senza ricrearlo a ogni aggiornamento
+    const statusRef = useRef(null)
+    statusRef.current = trip?.requestStatus ?? null
 
     useFocusEffect(
         useCallback(() => {
             load()
+            // Gli avanzamenti del volontario arrivano dal link operatore: senza push si aggiorna periodicamente
+            const timer = setInterval(() => {
+                if (statusRef.current === 'Confirmed' || statusRef.current === 'InProgress') load({ silent: true })
+            }, REFRESH_MS)
+            return () => clearInterval(timer)
         }, [load]),
     )
 
@@ -217,7 +273,14 @@ const TransportDetail = () => {
                     <Icon name={trip.requestStatus === 'Confirmed' ? 'checkmark-circle-outline' : 'information-circle-outline'} size={25} color={C.primary} />
                 </View>
 
-                {state.kind !== 'cancelled' ? <Timeline status={trip.requestStatus} departure={trip.departureDateHour} /> : null}
+                {state.kind !== 'cancelled' ? (
+                    <Timeline
+                        status={trip.requestStatus}
+                        departure={trip.departureDateHour}
+                        direction={trip.tripDirection}
+                        transitions={timeline}
+                    />
+                ) : null}
 
                 {owner.name ? (
                     <Panel title="Chi viene accompagnato" icon="person-outline">
