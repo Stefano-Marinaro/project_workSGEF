@@ -281,7 +281,10 @@ const AssocDetail = () => {
 					<>
 						<Text style={styles.sectionTitle}>Stato del trasporto</Text>
 						<Card style={styles.panel}>
-							<Text style={styles.h3}>{status === 'InProgress' ? 'In corso' : 'In attesa dell’operatore'}</Text>
+							{/* isPaid arriva dal backend: stesso criterio che blocca l'assegnazione del volontario */}
+							<Text style={styles.h3}>
+								{status === 'InProgress' ? 'In corso' : trip.isPaid ? 'In attesa dell’operatore' : 'In attesa del pagamento'}
+							</Text>
 							<Text style={styles.sub}>
 								{trip.isPaid
 									? 'L’operatore aggiorna lo stato durante il trasporto.'
