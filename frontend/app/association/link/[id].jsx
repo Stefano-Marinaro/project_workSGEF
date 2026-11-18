@@ -73,6 +73,8 @@ const OperatorLink = () => {
 	}
 
 	const token = link ? link.url.split('/').pop() : ''
+	// Il volontario si assegna solo dopo il pagamento del caregiver (il backend risponde 409 altrimenti)
+	const awaitingPayment = !trip.isPaid
 
 	return (
 		<Page>
@@ -126,7 +128,16 @@ const OperatorLink = () => {
 						</Text>
 					</>
 				) : (
-					<Btn label="Genera link operatore" icon="link-outline" onPress={generate} loading={generating} />
+					<>
+						<Btn
+							label="Genera link operatore"
+							icon="link-outline"
+							onPress={generate}
+							loading={generating}
+							disabled={awaitingPayment}
+						/>
+						{awaitingPayment ? <Text style={styles.note}>In attesa del pagamento del caregiver.</Text> : null}
+					</>
 				)}
 				<ErrorText>{error}</ErrorText>
 			</Scroll>

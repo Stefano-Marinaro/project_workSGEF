@@ -28,6 +28,10 @@ public sealed class GenerateOperatorLinkService(
         if (transport.RequestStatus is not (ETripRequestStatus.Confirmed or ETripRequestStatus.InProgress))
             throw new ConflictException("Il link operatore è generabile solo per trasporti confermati o in corso.");
 
+        // Il volontario si assegna solo dopo il pagamento confermato dal webhook Stripe
+        if (!await IsPaidAsync(transportId, ct))
+            throw new ConflictException("Il volontario può essere assegnato solo dopo il pagamento del caregiver.");
+
         var now = DateTimeOffset.UtcNow;
 
         var link = new TripOperatorLink(
@@ -44,4 +48,8 @@ public sealed class GenerateOperatorLinkService(
 
         return new OperatorLinkResponse(url, link.ExpiresAt);
     }
+
+    // Pagato = esiste un pagamento Succeeded (lo stato lo imposta solo il webhook checkout.session.completed)
+    private Task<bool> IsPaidAsync(Guid transportId, CancellationToken ct) =>
+        db.Payments.AnyAsync(p => p.TransportRequestId == transportId && p.Status == EPaymentStatus.Succeeded, ct);
 }
