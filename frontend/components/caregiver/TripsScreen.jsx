@@ -2,6 +2,7 @@
 import { useCallback, useState } from "react"
 import { FlatList, View, StyleSheet, RefreshControl } from "react-native"
 import { useFocusEffect, useRouter } from "expo-router"
+import api from "../../config/httpClient.js"
 import { loadTripsWithPeople } from "../../config/caregiverApi"
 import { C, isTerminal, apiErrorMessage } from "../../constants/caregiver"
 import TripCard from "./TripCard"
@@ -18,6 +19,15 @@ export default function TripsScreen({ closed = false }) {
     const load = useCallback(async () => {
         try {
             const data = await loadTripsWithPeople()
+            // Caregiver appena registrato (nessun assistito e profilo incompleto):
+            // prima si completa il profilo, poi si aggiunge l'assistito
+            if (!closed && data.people.length === 0) {
+                const { data: me } = await api.get("/me/profile")
+                if (!(me.name && me.surname && me.birthDate && me.phone)) {
+                    router.replace({ pathname: "/editProfile", params: { next: "onboarding" } })
+                    return
+                }
+            }
             const time = (t) => new Date(t.departureDateHour).getTime()
             const filtered = data.trips
                 .filter((t) => isTerminal(t.requestStatus) === closed)
@@ -31,7 +41,7 @@ export default function TripsScreen({ closed = false }) {
             setLoading(false)
             setRefreshing(false)
         }
-    }, [closed])
+    }, [closed, router])
 
     useFocusEffect(
         useCallback(() => {

@@ -99,6 +99,8 @@ const EditProfile = () => {
       await deleteItem("pendingProfile");
       if (next === "wizard") router.dismissTo({ pathname: "/transport/new", params: { saved: "1" } });
       else if (next === "assisted") router.replace({ pathname: "/assisted/new", params: { from } });
+      // Primo accesso dopo la registrazione: completato il profilo si passa ad aggiungere l'assistito
+      else if (next === "onboarding") router.replace("/transport");
       else router.replace({ pathname: "/profile", params: { saved: "1" } });
     } catch (error) {
       setErrorMessage(apiErrorMessage(error, "Salvataggio non riuscito"));
@@ -112,8 +114,14 @@ const EditProfile = () => {
   return (
     <Page>
       <Scroll>
-        <PageTitle>Modifica profilo</PageTitle>
-        <Muted style={styles.intro}>{next === "assisted" ? "Completa il profilo per registrare un assistito." : "Aggiorna i tuoi dati personali e i recapiti."}</Muted>
+        <PageTitle>{next === "onboarding" ? "Completa il tuo profilo" : "Modifica profilo"}</PageTitle>
+        <Muted style={styles.intro}>
+          {next === "onboarding"
+            ? "Benvenuto in GoCare! Prima di aggiungere la persona da accompagnare, completa i tuoi dati."
+            : next === "assisted"
+              ? "Completa il profilo per registrare un assistito."
+              : "Aggiorna i tuoi dati personali e i recapiti."}
+        </Muted>
 
         <Text style={styles.section}>Dati personali</Text>
         <Muted style={styles.hint}>
@@ -134,8 +142,9 @@ const EditProfile = () => {
         <ErrorText>{errorMessage}</ErrorText>
       </Scroll>
       <Footer>
-        <Btn label="Annulla" variant="secondary" onPress={goBack} />
-        <Btn label="Salva modifiche" onPress={handleSave} loading={saving} style={styles.save} />
+        {/* Al primo accesso il profilo va completato: non c'è una pagina a cui tornare */}
+        {next === "onboarding" ? null : <Btn label="Annulla" variant="secondary" onPress={goBack} />}
+        <Btn label={next === "onboarding" ? "Salva e continua" : "Salva modifiche"} onPress={handleSave} loading={saving} style={styles.save} />
       </Footer>
     </Page>
   );
