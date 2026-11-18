@@ -23,7 +23,7 @@ import {
 // (/auth/change-email, richiede la password), quindi qui è in sola lettura.
 const EditProfile = () => {
   const router = useRouter();
-  const { next } = useLocalSearchParams();
+  const { next, from } = useLocalSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
@@ -70,6 +70,7 @@ const EditProfile = () => {
 
   const goBack = () => {
     if (next === "wizard") router.dismissTo("/transport/new");
+    else if (next === "assisted") router.replace(from === "wizard" ? "/transport/new" : "/assisted");
     else router.replace("/profile");
   };
 
@@ -97,6 +98,7 @@ const EditProfile = () => {
       });
       await deleteItem("pendingProfile");
       if (next === "wizard") router.dismissTo({ pathname: "/transport/new", params: { saved: "1" } });
+      else if (next === "assisted") router.replace({ pathname: "/assisted/new", params: { from } });
       else router.replace({ pathname: "/profile", params: { saved: "1" } });
     } catch (error) {
       setErrorMessage(apiErrorMessage(error, "Salvataggio non riuscito"));
@@ -111,11 +113,11 @@ const EditProfile = () => {
     <Page>
       <Scroll>
         <PageTitle>Modifica profilo</PageTitle>
-        <Muted style={styles.intro}>Aggiorna i tuoi dati personali e i recapiti.</Muted>
+        <Muted style={styles.intro}>{next === "assisted" ? "Completa il profilo per registrare un assistito." : "Aggiorna i tuoi dati personali e i recapiti."}</Muted>
 
         <Text style={styles.section}>Dati personali</Text>
         <Muted style={styles.hint}>
-          Telefono e data di nascita sono necessari per richiedere un trasporto. I campi con * sono obbligatori.
+          Telefono e data di nascita sono necessari per registrare un assistito e richiedere un trasporto. I campi con * sono obbligatori.
         </Muted>
         <Row>
           <Field label="Nome" required style={styles.flex} value={name} onChangeText={setName} error={errors.name} />

@@ -1,16 +1,14 @@
 import { useState } from 'react'
-import { View, ScrollView, Text, Pressable, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
+import { View, ScrollView, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import api from '../../config/httpClient.js'
-import { C, apiErrorMessage } from '../../constants/caregiver'
+import { apiErrorMessage } from '../../constants/caregiver'
 import { AuthHeader, AuthIntro, AuthField, AuthButton, AuthSwitch, authStyles } from '../../components/auth/AuthUi'
 
-// Mockup "Crea il tuo account".
-// La stessa app serve caregiver e associazioni, quindi si sceglie il tipo di account.
+// Registrazione pubblica riservata ai caregiver.
 // Nome e cognome vengono salvati sul server già durante la registrazione.
 const Register = () => {
     const router = useRouter()
-    const [role, setRole] = useState('caregiver')
     const [name, setName] = useState('')
     const [surname, setSurname] = useState('')
     const [email, setEmail] = useState('')
@@ -20,12 +18,10 @@ const Register = () => {
     const [errorMessage, setErrorMessage] = useState('')
     const [loading, setLoading] = useState(false)
 
-    const isCaregiver = role === 'caregiver'
-
     const handleSubmit = async () => {
         const found = {}
-        if (isCaregiver && !name.trim()) found.name = 'Inserisci il nome.'
-        if (isCaregiver && !surname.trim()) found.surname = 'Inserisci il cognome.'
+        if (!name.trim()) found.name = 'Inserisci il nome.'
+        if (!surname.trim()) found.surname = 'Inserisci il cognome.'
         if (!email.trim()) found.email = 'Inserisci la tua email.'
         else if (!/^\S+@\S+\.\S+$/.test(email.trim())) found.email = 'L’email non è valida.'
         if (password.length < 8) found.password = 'La password deve avere almeno 8 caratteri.'
@@ -37,10 +33,9 @@ const Register = () => {
 
         setLoading(true)
         try {
-            const endpoint = isCaregiver ? '/auth/register/user' : '/auth/register/association'
-            await api.post(endpoint, {
+            await api.post('/auth/register/user', {
                 email: email.trim().toLowerCase(), password,
-                ...(isCaregiver ? { name: name.trim(), surname: surname.trim() } : {}),
+                name: name.trim(), surname: surname.trim(),
             })
             router.replace({ pathname: '/registration_success', params: { email: email.trim() } })
         } catch (error) {
@@ -60,45 +55,26 @@ const Register = () => {
                             Registrati per organizzare{'\n'}i tuoi trasporti con GoCare.
                         </AuthIntro>
 
-                        <View style={styles.roles} accessibilityRole="radiogroup">
-                            {[
-                                ['caregiver', 'Caregiver'],
-                                ['association', 'Associazione'],
-                            ].map(([value, label]) => (
-                                <Pressable
-                                    key={value}
-                                    onPress={() => setRole(value)}
-                                    accessibilityRole="radio"
-                                    accessibilityState={{ selected: role === value }}
-                                    style={[styles.role, role === value && styles.roleOn]}
-                                >
-                                    <Text style={[styles.roleText, role === value && styles.roleTextOn]}>{label}</Text>
-                                </Pressable>
-                            ))}
+                        <View style={styles.pair}>
+                            <AuthField
+                                icon="person-outline"
+                                placeholder="Nome"
+                                autoComplete="given-name"
+                                value={name}
+                                onChangeText={setName}
+                                error={errors.name}
+                                style={styles.flex}
+                            />
+                            <AuthField
+                                icon="person-outline"
+                                placeholder="Cognome"
+                                autoComplete="family-name"
+                                value={surname}
+                                onChangeText={setSurname}
+                                error={errors.surname}
+                                style={styles.flex}
+                            />
                         </View>
-
-                        {isCaregiver ? (
-                            <View style={styles.pair}>
-                                <AuthField
-                                    icon="person-outline"
-                                    placeholder="Nome"
-                                    autoComplete="given-name"
-                                    value={name}
-                                    onChangeText={setName}
-                                    error={errors.name}
-                                    style={styles.flex}
-                                />
-                                <AuthField
-                                    icon="person-outline"
-                                    placeholder="Cognome"
-                                    autoComplete="family-name"
-                                    value={surname}
-                                    onChangeText={setSurname}
-                                    error={errors.surname}
-                                    style={styles.flex}
-                                />
-                            </View>
-                        ) : null}
                         <AuthField
                             icon="mail-outline"
                             placeholder="Email"
@@ -147,11 +123,6 @@ export default Register
 
 const styles = StyleSheet.create({
     flex: { flex: 1 },
-    roles: { flexDirection: 'row', gap: 4, padding: 4, borderRadius: 12, backgroundColor: C.card, marginBottom: 14 },
-    role: { flex: 1, alignItems: 'center', borderRadius: 9, paddingVertical: 10 },
-    roleOn: { backgroundColor: C.primary },
-    roleText: { fontSize: 14, fontWeight: '600', color: C.muted },
-    roleTextOn: { color: C.white },
     pair: { flexDirection: 'row', gap: 16 },
     lastField: { marginBottom: 0 },
     submit: { marginTop: 28 },

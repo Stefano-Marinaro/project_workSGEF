@@ -33,6 +33,10 @@ public sealed class CreateCheckoutSessionService(
         if (trip.RequestStatus != ETripRequestStatus.Confirmed)
             throw new ConflictException("Si può pagare solo un trasporto confermato.");
 
+        if (await db.Payments.AnyAsync(p => p.TransportRequestId == transportRequestId
+            && p.Status == EPaymentStatus.Succeeded, ct))
+            throw new ConflictException("Il trasporto è già stato pagato.");
+
         var pricing = pricingOptions.Value;
         var amount = Math.Max((decimal)trip.DistanceKm * pricing.PricePerKm, pricing.MinimumAmount);
 

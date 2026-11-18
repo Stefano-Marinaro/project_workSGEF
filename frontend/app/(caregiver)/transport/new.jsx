@@ -56,7 +56,7 @@ const HELP = [
 ]
 
 // Tariffa e minimo come in appsettings.json (sezione Pricing) del backend
-const PRICE_PER_KM = 0.8
+const PRICE_PER_KM = 1.2
 const MINIMUM_AMOUNT = 5
 
 const initialState = (assistedId = '') => ({
@@ -680,6 +680,7 @@ const Create = () => {
                     <Text style={styles.reviewMuted}>Contributo minimo stimato</Text>
                     <Text style={styles.amount}>{euros(minimum)}</Text>
                     <Text style={styles.reviewMuted}>Per {roundedKm.toLocaleString('it-IT')} km di percorso dell’assistito</Text>
+                    <Text style={styles.reviewMuted}>Rimborso di 1,20 €/km · minimo 5 €</Text>
                     <Divider />
                     <View style={styles.payRow}>
                         <Icon name="shield-checkmark-outline" size={18} color={C.primary} />
@@ -689,7 +690,7 @@ const Create = () => {
                         <Icon name="time-outline" size={18} color={C.primary} />
                         <View style={styles.flex}>
                             <Text style={styles.payTitle}>Quando paghi?</Text>
-                            <Text style={styles.payText}>Al momento del servizio.</Text>
+                            <Text style={styles.payText}>Dopo la conferma dell’associazione, dal dettaglio del trasporto.</Text>
                         </View>
                     </View>
                     <View style={styles.payRow}>

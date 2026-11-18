@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { View, Text, StyleSheet, Linking } from 'react-native'
+import { View, Text, StyleSheet, Linking, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import { Picker } from '@react-native-picker/picker'
 
@@ -115,6 +115,8 @@ const TransportDetail = () => {
     const [note, setNote] = useState('')
     const [cancelling, setCancelling] = useState(false)
     const [cancelError, setCancelError] = useState('')
+    const [paying, setPaying] = useState(false)
+    const [paymentError, setPaymentError] = useState('')
 
     const load = useCallback(async () => {
         setLoading(true)
@@ -125,6 +127,7 @@ const TransportDetail = () => {
                 api.get('/me/profile').catch(() => ({ data: null })),
             ])
             setTrip(detail.data)
+            setPaymentError('')
             setTimeline(steps.data)
             setProfile(me.data)
             if (!params.assistedName) {
@@ -199,6 +202,21 @@ const TransportDetail = () => {
         }
     }
 
+    const pay = async () => {
+        if (paying) return
+        setPaying(true)
+        setPaymentError('')
+        try {
+            const { data } = await api.post(`/transports/${id}/payment-session`)
+            if (Platform.OS === 'web') window.location.assign(data.paymentUrl)
+            else await Linking.openURL(data.paymentUrl)
+        } catch (e) {
+            setPaymentError(apiErrorMessage(e, 'Impossibile avviare il pagamento. Riprova.'))
+        } finally {
+            setPaying(false)
+        }
+    }
+
     return (
         <Page>
             <Scroll>
@@ -262,6 +280,20 @@ const TransportDetail = () => {
                     <Text style={styles.h3}>{associationTitle}</Text>
                     <Text style={styles.p}>{associationText}</Text>
                 </Panel>
+
+                {trip.isPaid || trip.requestStatus === 'Confirmed' ? (
+                    <Panel title="Pagamento" icon="wallet-outline">
+                        {trip.isPaid ? (
+                            <Text style={styles.h3}>Pagamento effettuato</Text>
+                        ) : (
+                            <>
+                                <Text style={styles.p}>L’associazione ha confermato il trasporto. Puoi pagare il rimborso di 1,20 €/km (minimo 5 €). Verifica l’importo nel riepilogo prima di confermare.</Text>
+                                <Btn label="Paga il trasporto" icon="card-outline" onPress={pay} loading={paying} />
+                                <ErrorText>{paymentError}</ErrorText>
+                            </>
+                        )}
+                    </Panel>
+                ) : null}
 
                 <Panel title="Chi verrà contattato">
                     <Text style={styles.h3}>{referentName || 'Referente non indicato'}</Text>

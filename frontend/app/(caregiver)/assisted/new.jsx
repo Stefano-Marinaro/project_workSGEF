@@ -5,12 +5,14 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router'
 import api from '../../../config/httpClient.js'
 import { C, apiErrorMessage } from '../../../constants/caregiver'
 import AssistedForm, { emptyAssisted, validateAssisted } from '../../../components/caregiver/AssistedForm'
-import { Page, Scroll, PageTitle, Muted, Footer, Btn, ErrorText, SuccessCheck } from '../../../components/caregiver/ui'
+import { Page, Scroll, PageTitle, Muted, Footer, Btn, ErrorText, SuccessCheck, Loading, EmptyState } from '../../../components/caregiver/ui'
 
 // Mockup "Registra la persona da accompagnare" + schermata "Assistito registrato"
 const NewAssisted = () => {
     const { from } = useLocalSearchParams()
     const router = useRouter()
+    const [checkingProfile, setCheckingProfile] = useState(true)
+    const [profileReady, setProfileReady] = useState(false)
     const [form, setForm] = useState(emptyAssisted)
     const [errors, setErrors] = useState({})
     const [saving, setSaving] = useState(false)
@@ -20,14 +22,35 @@ const NewAssisted = () => {
     // Ogni volta che si arriva qui si parte da un modulo vuoto
     useFocusEffect(
         useCallback(() => {
+            let active = true
+            setCheckingProfile(true)
+            setProfileReady(false)
+            const checkProfile = async () => {
+                try {
+                    const { data } = await api.get('/me/profile')
+                    if (!active) return
+                    if (!(data.name && data.surname && data.birthDate && data.phone)) {
+                        router.replace({ pathname: '/editProfile', params: { next: 'assisted', from } })
+                        return
+                    }
+                    setProfileReady(true)
+                } catch (e) {
+                    if (active) setApiError(apiErrorMessage(e, 'Impossibile verificare il profilo.'))
+                } finally {
+                    if (active) setCheckingProfile(false)
+                }
+            }
+            checkProfile()
             setForm(emptyAssisted)
             setErrors({})
             setApiError('')
             setCreated(null)
-        }, []),
+            return () => { active = false }
+        }, [from, router]),
     )
 
     const submit = async () => {
+        if (!profileReady) return
         const { errors: found, payload } = validateAssisted(form)
         setErrors(found)
         if (Object.keys(found).length) return
@@ -41,6 +64,22 @@ const NewAssisted = () => {
         } finally {
             setSaving(false)
         }
+    }
+
+    if (checkingProfile) return <Loading />
+    if (!profileReady) {
+        return (
+            <Page>
+                <Scroll>
+                    <EmptyState
+                        title="Completa il tuo profilo"
+                        text={apiError || 'Completa i dati personali prima di registrare un assistito.'}
+                        action="Vai al profilo"
+                        onAction={() => router.replace({ pathname: '/editProfile', params: { next: 'assisted', from } })}
+                    />
+                </Scroll>
+            </Page>
+        )
     }
 
     if (created) {

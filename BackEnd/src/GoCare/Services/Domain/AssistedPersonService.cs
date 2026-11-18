@@ -20,6 +20,11 @@ public sealed class AssistedPersonService(GoCareDbContext db)
         string? note,
         CancellationToken ct)
     {
+        var caregiver = await db.Persons.AsNoTracking()
+            .SingleOrDefaultAsync(person => person.Id == caregiverId && person.DeletedAt == null, ct);
+        if (caregiver is null || !caregiver.IsProfileComplete)
+            throw new ConflictException("Completa il tuo profilo prima di registrare un assistito.");
+
         var assistedPersonId = Guid.NewGuid();
         var assistedPerson = new AssistedPerson(
             assistedPersonId,
