@@ -30,7 +30,7 @@ public sealed class GenerateOperatorLinkService(
 
         // Il volontario si assegna solo dopo il pagamento confermato dal webhook Stripe
         if (!await IsPaidAsync(transportId, ct))
-            throw new ConflictException("The volunteer can be assigned only after the caregiver has paid for the transport.");
+            throw new ConflictException("Il volontario può essere assegnato solo dopo il pagamento del caregiver.");
 
         var now = DateTimeOffset.UtcNow;
 
