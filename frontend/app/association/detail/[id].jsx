@@ -282,7 +282,11 @@ const AssocDetail = () => {
 						<Text style={styles.sectionTitle}>Stato del trasporto</Text>
 						<Card style={styles.panel}>
 							<Text style={styles.h3}>{status === 'InProgress' ? 'In corso' : 'In attesa dell’operatore'}</Text>
-							<Text style={styles.sub}>L’operatore aggiorna lo stato durante il trasporto.</Text>
+							<Text style={styles.sub}>
+								{trip.isPaid
+									? 'L’operatore aggiorna lo stato durante il trasporto.'
+									: 'In attesa del pagamento del caregiver: potrai assegnare il volontario dopo il pagamento.'}
+							</Text>
 							<Btn
 								label="Gestisci link operatore"
 								icon="link-outline"

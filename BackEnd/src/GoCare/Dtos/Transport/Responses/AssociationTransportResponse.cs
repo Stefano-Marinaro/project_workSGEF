@@ -11,4 +11,5 @@ public sealed record AssociationTransportResponse(
     DateTimeOffset? ReturnDateHour,
     TripAddress StartAddress,
     TripAddress EndAddress,
-    ETripRequestStatus RequestStatus);
+    ETripRequestStatus RequestStatus,
+    bool? IsPaid = null); // valorizzato solo nel dettaglio del trasporto accettato
