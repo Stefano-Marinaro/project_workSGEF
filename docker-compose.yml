@@ -74,5 +74,12 @@ services:
     depends_on:
       - backend
 
+  # Inoltra i webhook di Stripe al backend (solo sviluppo/demo)
+  stripe-cli:
+    image: stripe/stripe-cli
+    command: listen --api-key ${STRIPE_SECRET_KEY} --all-snapshot --forward-to backend:8080/payments/stripe/webhook
+    depends_on:
+      - backend
+
 volumes:
   gocare_db_data:
